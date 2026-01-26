@@ -12,9 +12,9 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getDatabase } from '../store/database';
-import { SquashCourt } from '../components/SquashCourt';
-import { ScoreBoard } from '../components/ScoreBoard';
+import { getDatabase } from '@/store/database';
+import { SquashCourt } from '@/components/SquashCourt';
+import { ScoreBoard } from '@/components/ScoreBoard';
 
 interface Player {
   id: number;
