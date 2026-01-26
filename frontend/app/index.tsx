@@ -99,7 +99,7 @@ export default function Index() {
         </View>
       </View>
       <Text style={styles.matchDate}>
-        {format(new Date(item.date), "d 'de' MMMM, yyyy - HH:mm", { locale: es })}
+        {format(new Date(item.date), "dd/MM/yyyy - HH:mm")}
       </Text>
       {item.winner_name && (
         <Text style={styles.winnerText}>Ganador: {item.winner_name}</Text>
