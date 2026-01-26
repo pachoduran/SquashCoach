@@ -1,6 +1,8 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SQLite from 'expo-sqlite';
+
+// Importación condicional de SQLite solo para móvil
+const SQLite = Platform.OS !== 'web' ? require('expo-sqlite') : null;
 
 // Mock database para web
 class MockDatabase {
