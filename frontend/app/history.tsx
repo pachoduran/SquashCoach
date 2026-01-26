@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getDatabase } from '@/store/database';
+import { getDatabase } from '@/src/store/database';
 import { format } from 'date-fns';
 
 interface Match {

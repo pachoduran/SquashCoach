@@ -10,8 +10,8 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getDatabase } from '@/store/database';
-import { SquashCourt } from '@/components/SquashCourt';
+import { getDatabase } from '@/src/store/database';
+import { SquashCourt } from '@/src/components/SquashCourt';
 import { format } from 'date-fns';
 import { BarChart } from 'react-native-gifted-charts';
 
