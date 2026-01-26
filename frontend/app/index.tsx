@@ -12,7 +12,6 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { initDatabase, getDatabase } from '../store/database';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 
 interface Match {
   id: number;
