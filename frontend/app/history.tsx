@@ -11,7 +11,6 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '@/store/database';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 
 interface Match {
   id: number;
@@ -94,7 +93,7 @@ export default function History() {
       </View>
       
       <Text style={styles.matchDate}>
-        {format(new Date(item.date), "d 'de' MMMM, yyyy - HH:mm", { locale: es })}
+        {format(new Date(item.date), "dd/MM/yyyy - HH:mm")}
       </Text>
       
       {item.status === 'finished' && (

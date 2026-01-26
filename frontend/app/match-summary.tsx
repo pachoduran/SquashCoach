@@ -13,7 +13,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '@/store/database';
 import { SquashCourt } from '@/components/SquashCourt';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { BarChart } from 'react-native-gifted-charts';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -137,7 +136,7 @@ export default function MatchSummary() {
         {/* Resultado Final */}
         <View style={styles.resultCard}>
           <Text style={styles.dateText}>
-            {format(new Date(matchData.date), "d 'de' MMMM, yyyy - HH:mm", { locale: es })}
+            {format(new Date(matchData.date), "dd/MM/yyyy - HH:mm")}
           </Text>
           <View style={styles.resultRow}>
             <View style={styles.playerResult}>
