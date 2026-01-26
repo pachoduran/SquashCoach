@@ -287,7 +287,7 @@ export const initDatabase = async () => {
 };
 
 // Obtener instancia de la base de datos
-let dbInstance: SQLite.SQLiteDatabase | MockDatabase | null = null;
+let dbInstance: any = null;
 
 export const getDatabase = async () => {
   if (Platform.OS === 'web') {
