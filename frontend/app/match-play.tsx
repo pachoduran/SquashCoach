@@ -61,6 +61,7 @@ export default function MatchPlay() {
   const [gamePoints, setGamePoints] = useState<Array<{ x: number; y: number; isWin: boolean; score: string }>>([]);
   const [playerPositions, setPlayerPositions] = useState<Array<{ x: number; y: number; isPlayer1: boolean; score: string }>>([]);
   const [showAllPositions, setShowAllPositions] = useState(false);
+  const [isSaving, setIsSaving] = useState(false); // Prevenir guardados múltiples
 
   useEffect(() => {
     loadMatch();
