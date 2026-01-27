@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Dimensions, Image, Text } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Image } from 'react-native';
 import Svg, { Rect, Text as SvgText } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
