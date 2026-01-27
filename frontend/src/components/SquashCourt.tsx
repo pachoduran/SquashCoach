@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Pressable, Dimensions, Text } from 'react-native';
-import Svg, { Rect, Line, Circle } from 'react-native-svg';
+import Svg, { Rect, Line, Circle, Text as SvgText } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COURT_WIDTH = SCREEN_WIDTH - 40;
@@ -8,10 +8,12 @@ const COURT_HEIGHT = COURT_WIDTH * 1.5; // Cancha de squash es más larga que an
 
 interface SquashCourtProps {
   onCourtPress?: (x: number, y: number) => void;
-  points?: Array<{ x: number; y: number; isWin: boolean }>;
+  points?: Array<{ x: number; y: number; isWin: boolean; number?: number }>;
   playerPosition?: { x: number; y: number };
   opponentPosition?: { x: number; y: number };
   showPositions?: boolean;
+  player1Color?: string;
+  player2Color?: string;
 }
 
 export const SquashCourt: React.FC<SquashCourtProps> = ({
