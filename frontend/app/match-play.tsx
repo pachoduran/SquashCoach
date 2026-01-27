@@ -341,6 +341,15 @@ export default function MatchPlay() {
             ['finished', winnerId, newPlayer1Games, newPlayer2Games, matchId]
           );
           console.log('[MatchPlay] Partido actualizado en BD');
+          
+          // Marcar partido para sincronización
+          await syncService.markMatchForSync(matchId as number);
+          console.log('[MatchPlay] Partido marcado para sync');
+          
+          // Intentar sincronizar automáticamente
+          syncService.syncPendingMatches().then(result => {
+            console.log('[MatchPlay] Auto-sync result:', result);
+          });
 
           // Cerrar modal primero
           setShowPointModal(false);
