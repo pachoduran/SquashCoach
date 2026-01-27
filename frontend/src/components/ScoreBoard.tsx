@@ -39,15 +39,20 @@ export const ScoreBoard: React.FC<ScoreBoardProps> = ({
         ]}>
           <View style={[styles.colorIndicator, { backgroundColor: player1Color }]} />
           <Text style={styles.playerName} numberOfLines={1}>
-            {player1Name} {isPlayer1My && '(Yo)'}
+            {player1Name}
           </Text>
-          <Text style={styles.gamesText}>Games: {player1Games}</Text>
-          <Text style={styles.scoreText}>{player1Score}</Text>
+          
+          {/* Marcador: Games grandes al lado del guion, puntos más alejados */}
+          <View style={styles.scoreRow}>
+            <Text style={styles.gamesScore}>{player1Games}</Text>
+            <Text style={styles.scoreSeparator}>-</Text>
+            <Text style={styles.pointsScore}>{player1Score}</Text>
+          </View>
         </View>
         
-        {/* Separador */}
+        {/* Separador central */}
         <View style={styles.separator}>
-          <Text style={styles.separatorText}>-</Text>
+          <Text style={styles.separatorText}>VS</Text>
         </View>
         
         {/* Jugador 2 */}
@@ -57,10 +62,15 @@ export const ScoreBoard: React.FC<ScoreBoardProps> = ({
         ]}>
           <View style={[styles.colorIndicator, { backgroundColor: player2Color }]} />
           <Text style={styles.playerName} numberOfLines={1}>
-            {player2Name} {!isPlayer1My && '(Yo)'}
+            {player2Name}
           </Text>
-          <Text style={styles.gamesText}>Games: {player2Games}</Text>
-          <Text style={styles.scoreText}>{player2Score}</Text>
+          
+          {/* Marcador: Games grandes al lado del guion, puntos más alejados */}
+          <View style={styles.scoreRow}>
+            <Text style={styles.pointsScore}>{player2Score}</Text>
+            <Text style={styles.scoreSeparator}>-</Text>
+            <Text style={styles.gamesScore}>{player2Games}</Text>
+          </View>
         </View>
       </View>
     </View>
