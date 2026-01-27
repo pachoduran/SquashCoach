@@ -110,33 +110,27 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     textAlign: 'center',
   },
-  gamesSmall: {
+  pointsInBox: {
     fontSize: 28,
     color: '#FFF',
     fontWeight: 'bold',
   },
-  centerSection: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 10,
-  },
-  pointsRow: {
+  gamesRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pointsHuge: {
+  gamesHuge: {
     fontSize: 48,
     fontWeight: 'bold',
     marginHorizontal: 8,
   },
-  pointsSeparator: {
+  gamesSeparator: {
     fontSize: 36,
     color: '#999',
     fontWeight: 'bold',
   },
-  gamesLabel: {
+  gamesLabelCenter: {
     fontSize: 11,
     color: '#666',
     marginTop: 4,
