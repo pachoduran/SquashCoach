@@ -80,9 +80,39 @@ export const ScoreBoard: React.FC<ScoreBoardProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
+  outerContainer: {
+    marginBottom: 12,
+  },
+  gameText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 10,
+    fontWeight: '600',
+  },
+  pointsOuterContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  pointSection: {
+    minWidth: 70,
+    alignItems: 'center',
+  },
+  pointsLarge: {
+    fontSize: 48,
+    fontWeight: 'bold',
+  },
+  pointsSeparator: {
+    fontSize: 36,
+    color: '#999',
+    fontWeight: 'bold',
+    marginHorizontal: 8,
+  },
+  gamesContainer: {
     backgroundColor: '#1E3A5F',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 12,
     borderRadius: 10,
     shadowColor: '#000',
@@ -90,15 +120,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
-  },
-  gameText: {
-    fontSize: 13,
-    color: '#FFF',
-    textAlign: 'center',
-    marginBottom: 10,
-    fontWeight: '600',
-  },
-  scoreContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -106,7 +127,7 @@ const styles = StyleSheet.create({
   playerSection: {
     flex: 1,
     alignItems: 'center',
-    padding: 8,
+    padding: 10,
     borderRadius: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     position: 'relative',
@@ -115,60 +136,32 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 4,
     right: 4,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  myPlayerSection: {
-    backgroundColor: 'rgba(33, 150, 243, 0.3)',
-    borderWidth: 2,
-    borderColor: '#2196F3',
+    width: 12,
+    height: 12,
+    borderRadius: 6,
   },
   playerName: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#FFF',
     fontWeight: '600',
-    marginBottom: 8,
-  },
-  scoreRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gamesScore: {
-    fontSize: 32,
-    color: '#FFF',
-    fontWeight: 'bold',
-    marginHorizontal: 4,
-  },
-  scoreSeparator: {
-    fontSize: 24,
-    color: '#B0BEC5',
-    fontWeight: 'bold',
-    marginHorizontal: 2,
-  },
-  pointsScore: {
-    fontSize: 20,
-    color: '#E3F2FD',
-    fontWeight: '600',
-    marginHorizontal: 4,
-  },
-  gamesText: {
-    fontSize: 10,
-    color: '#B0BEC5',
     marginBottom: 6,
   },
-  scoreText: {
-    fontSize: 24,
+  gamesLabel: {
+    fontSize: 10,
+    color: '#B0BEC5',
+    marginBottom: 4,
+  },
+  gamesScore: {
+    fontSize: 36,
     color: '#FFF',
     fontWeight: 'bold',
   },
   separator: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     justifyContent: 'center',
   },
   separatorText: {
-    fontSize: 16,
+    fontSize: 24,
     color: '#B0BEC5',
     fontWeight: 'bold',
   },
