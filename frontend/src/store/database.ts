@@ -4,52 +4,84 @@ import * as SQLite from 'expo-sqlite';
 let dbInstance: SQLite.SQLiteDatabase | null = null;
 let isInitializing = false;
 
-// Función helper para ejecutar operaciones con retry
-const executeWithRetry = async <T>(
-  operation: () => Promise<T>,
-  retries = 3,
-  delay = 500
-): Promise<T> => {
-  for (let i = 0; i < retries; i++) {
-    try {
-      return await operation();
-    } catch (error: any) {
-      console.log(`Intento ${i + 1} falló:`, error.message);
-      
-      // Si es NullPointerException, la BD está corrupta, resetear
-      if (error.message?.includes('NullPointerException') || 
-          error.message?.includes('closed') ||
-          error.message?.includes('invalid')) {
-        console.log('Base de datos corrupta, reiniciando...');
-        dbInstance = null;
-        
-        if (i < retries - 1) {
-          await new Promise(resolve => setTimeout(resolve, delay));
-          // Reiniciar la BD
-          await initDatabase();
-        }
-      } else if (i < retries - 1) {
-        await new Promise(resolve => setTimeout(resolve, delay));
-      } else {
-        throw error;
+// Cola de operaciones para serializar acceso a BD
+let operationQueue: Array<() => Promise<any>> = [];
+let isProcessingQueue = false;
+
+// Procesar cola de operaciones
+const processQueue = async () => {
+  if (isProcessingQueue || operationQueue.length === 0) return;
+  
+  isProcessingQueue = true;
+  
+  while (operationQueue.length > 0) {
+    const operation = operationQueue.shift();
+    if (operation) {
+      try {
+        await operation();
+      } catch (error) {
+        console.error('Error en operación de cola:', error);
       }
     }
   }
-  throw new Error('Operación falló después de múltiples intentos');
+  
+  isProcessingQueue = false;
+};
+
+// Agregar operación a la cola
+const queueOperation = <T>(operation: () => Promise<T>): Promise<T> => {
+  return new Promise((resolve, reject) => {
+    operationQueue.push(async () => {
+      try {
+        const result = await operation();
+        resolve(result);
+      } catch (error) {
+        reject(error);
+      }
+    });
+    
+    processQueue();
+  });
+};
+
+// Resetear completamente la BD
+const resetDatabase = async () => {
+  console.log('RESETEANDO BASE DE DATOS COMPLETAMENTE...');
+  
+  // Limpiar cola
+  operationQueue = [];
+  isProcessingQueue = false;
+  
+  // Cerrar instancia anterior
+  if (dbInstance) {
+    try {
+      await dbInstance.closeAsync();
+      console.log('BD anterior cerrada');
+    } catch (e) {
+      console.log('Error cerrando BD:', e);
+    }
+    dbInstance = null;
+  }
+  
+  // Esperar un momento
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // Reinicializar
+  await initDatabase();
+  console.log('BD reseteada exitosamente');
 };
 
 // Inicializar base de datos
 export const initDatabase = async () => {
   if (dbInstance && !isInitializing) {
-    console.log('Base de datos ya inicializada, reutilizando instancia');
+    console.log('Base de datos ya existe');
     return dbInstance;
   }
 
   if (isInitializing) {
-    console.log('Esperando inicialización en progreso...');
-    // Esperar a que termine la inicialización
+    console.log('Esperando inicialización...');
     let attempts = 0;
-    while (isInitializing && attempts < 50) {
+    while (isInitializing && attempts < 100) {
       await new Promise(resolve => setTimeout(resolve, 100));
       attempts++;
     }
@@ -59,19 +91,10 @@ export const initDatabase = async () => {
   isInitializing = true;
 
   try {
-    console.log('Inicializando base de datos...');
-    
-    // Cerrar instancia anterior si existe
-    if (dbInstance) {
-      try {
-        await dbInstance.closeAsync();
-      } catch (e) {
-        console.log('Error cerrando BD anterior:', e);
-      }
-      dbInstance = null;
-    }
-    
+    console.log('Abriendo base de datos...');
     const db = await SQLite.openDatabaseAsync('squash_analyzer.db');
+    
+    console.log('Creando tablas...');
     
     // Tabla de jugadores
     await db.execAsync(`
@@ -134,7 +157,7 @@ export const initDatabase = async () => {
       );
     `);
     
-    // Insertar motivos predeterminados si no existen
+    // Insertar motivos predeterminados
     const defaultReasons = [
       'Winner',
       'Error forzado',
@@ -156,10 +179,10 @@ export const initDatabase = async () => {
     }
     
     dbInstance = db;
-    console.log('Base de datos inicializada correctamente');
+    console.log('✅ Base de datos lista');
     return db;
   } catch (error) {
-    console.error('Error inicializando base de datos:', error);
+    console.error('❌ Error inicializando BD:', error);
     dbInstance = null;
     throw error;
   } finally {
@@ -167,12 +190,53 @@ export const initDatabase = async () => {
   }
 };
 
-// Obtener instancia de la base de datos con retry
+// Obtener BD con manejo de errores robusto
 export const getDatabase = async () => {
-  return executeWithRetry(async () => {
-    if (!dbInstance) {
-      return await initDatabase();
+  return queueOperation(async () => {
+    try {
+      if (!dbInstance) {
+        console.log('Inicializando BD por primera vez...');
+        await initDatabase();
+      }
+      
+      // Verificar que la BD sigue válida
+      if (dbInstance) {
+        try {
+          // Test simple para verificar que funciona
+          await dbInstance.getFirstAsync('SELECT 1');
+        } catch (testError: any) {
+          console.log('BD no responde, reseteando...');
+          await resetDatabase();
+        }
+      }
+      
+      if (!dbInstance) {
+        throw new Error('No se pudo obtener la base de datos');
+      }
+      
+      return dbInstance;
+    } catch (error: any) {
+      console.error('Error en getDatabase:', error);
+      
+      // Si hay error, intentar resetear
+      if (error.message?.includes('NullPointerException') || 
+          error.message?.includes('closed') ||
+          error.message?.includes('invalid') ||
+          error.message?.includes('prepareAsync')) {
+        console.log('Detectado error crítico, reseteando BD...');
+        await resetDatabase();
+        
+        if (!dbInstance) {
+          throw new Error('No se pudo recuperar la base de datos');
+        }
+        
+        return dbInstance;
+      }
+      
+      throw error;
     }
-    return dbInstance;
   });
 };
+
+// Exportar función de reset para uso en emergencias
+export const forceResetDatabase = resetDatabase;
