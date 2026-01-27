@@ -15,11 +15,11 @@ import { format } from 'date-fns';
 
 interface Match {
   id: number;
-  player1_name: string;
-  player2_name: string;
+  player1_nickname: string;
+  player2_nickname: string;
   date: string;
   status: string;
-  winner_name?: string;
+  winner_nickname?: string;
 }
 
 export default function Index() {
