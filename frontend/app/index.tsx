@@ -85,7 +85,7 @@ export default function Index() {
     >
       <View style={styles.matchHeader}>
         <Text style={styles.matchPlayers}>
-          {item.player1_name} vs {item.player2_name}
+          {item.player1_nickname} vs {item.player2_nickname}
         </Text>
         <View
           style={[
@@ -101,8 +101,8 @@ export default function Index() {
       <Text style={styles.matchDate}>
         {format(new Date(item.date), "dd/MM/yyyy - HH:mm")}
       </Text>
-      {item.winner_name && (
-        <Text style={styles.winnerText}>Ganador: {item.winner_name}</Text>
+      {item.winner_nickname && (
+        <Text style={styles.winnerText}>Ganador: {item.winner_nickname}</Text>
       )}
     </TouchableOpacity>
   );
