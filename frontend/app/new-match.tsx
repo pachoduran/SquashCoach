@@ -557,4 +557,16 @@ const styles = StyleSheet.create({
   modalButtonTextPrimary: {
     color: '#FFF',
   },
+  addPlayerButtonSmall: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingVertical: 8,
+  },
+  addPlayerText: {
+    fontSize: 14,
+    color: '#2196F3',
+    marginLeft: 6,
+    fontWeight: '500',
+  },
 });
