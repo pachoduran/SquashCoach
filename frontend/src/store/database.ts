@@ -1,242 +1,277 @@
 import * as SQLite from 'expo-sqlite';
+import { Platform } from 'react-native';
 
-// Singleton para la base de datos
-let dbInstance: SQLite.SQLiteDatabase | null = null;
-let isInitializing = false;
+// =============================================================================
+// SISTEMA DE COLA PARA OPERACIONES DE BASE DE DATOS
+// Serializa TODAS las operaciones para evitar bloqueos por concurrencia
+// =============================================================================
 
-// Cola de operaciones para serializar acceso a BD
-let operationQueue: Array<() => Promise<any>> = [];
-let isProcessingQueue = false;
-
-// Procesar cola de operaciones
-const processQueue = async () => {
-  if (isProcessingQueue || operationQueue.length === 0) return;
-  
-  isProcessingQueue = true;
-  
-  while (operationQueue.length > 0) {
-    const operation = operationQueue.shift();
-    if (operation) {
-      try {
-        await operation();
-      } catch (error) {
-        console.error('Error en operación de cola:', error);
-      }
-    }
-  }
-  
-  isProcessingQueue = false;
+type QueuedOperation<T> = {
+  execute: () => Promise<T>;
+  resolve: (value: T) => void;
+  reject: (error: any) => void;
+  id: number;
 };
 
-// Agregar operación a la cola
-const queueOperation = <T>(operation: () => Promise<T>): Promise<T> => {
-  return new Promise((resolve, reject) => {
-    operationQueue.push(async () => {
-      try {
-        const result = await operation();
-        resolve(result);
-      } catch (error) {
-        reject(error);
-      }
-    });
+class DatabaseQueue {
+  private queue: QueuedOperation<any>[] = [];
+  private isProcessing = false;
+  private operationCounter = 0;
+
+  async add<T>(operation: () => Promise<T>): Promise<T> {
+    const id = ++this.operationCounter;
     
-    processQueue();
-  });
-};
+    return new Promise<T>((resolve, reject) => {
+      this.queue.push({
+        execute: operation,
+        resolve,
+        reject,
+        id,
+      });
+      
+      console.log(`[DBQueue] Operación #${id} agregada. Cola: ${this.queue.length}`);
+      this.processNext();
+    });
+  }
 
-// Resetear completamente la BD
-const resetDatabase = async () => {
-  console.log('RESETEANDO BASE DE DATOS COMPLETAMENTE...');
-  
-  // Limpiar cola
-  operationQueue = [];
-  isProcessingQueue = false;
-  
-  // Cerrar instancia anterior
-  if (dbInstance) {
-    try {
-      await dbInstance.closeAsync();
-      console.log('BD anterior cerrada');
-    } catch (e) {
-      console.log('Error cerrando BD:', e);
+  private async processNext(): Promise<void> {
+    if (this.isProcessing || this.queue.length === 0) {
+      return;
     }
-    dbInstance = null;
+
+    this.isProcessing = true;
+
+    while (this.queue.length > 0) {
+      const item = this.queue.shift()!;
+      
+      try {
+        console.log(`[DBQueue] Ejecutando operación #${item.id}...`);
+        const result = await item.execute();
+        console.log(`[DBQueue] Operación #${item.id} completada`);
+        item.resolve(result);
+      } catch (error) {
+        console.error(`[DBQueue] Error en operación #${item.id}:`, error);
+        item.reject(error);
+      }
+      
+      // Pequeña pausa entre operaciones para estabilidad
+      await this.sleep(5);
+    }
+
+    this.isProcessing = false;
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  getStatus(): { queueLength: number; isProcessing: boolean } {
+    return {
+      queueLength: this.queue.length,
+      isProcessing: this.isProcessing,
+    };
+  }
+}
+
+const dbQueue = new DatabaseQueue();
+
+// =============================================================================
+// WRAPPER DE BASE DE DATOS CON COLA
+// Envuelve la instancia de SQLite para que todas las operaciones pasen por cola
+// =============================================================================
+
+class SafeDatabase {
+  private db: SQLite.SQLiteDatabase;
+
+  constructor(database: SQLite.SQLiteDatabase) {
+    this.db = database;
+  }
+
+  async runAsync(sql: string, params: any[] = []): Promise<SQLite.SQLiteRunResult> {
+    return dbQueue.add(async () => {
+      return await this.db.runAsync(sql, params);
+    });
+  }
+
+  async getAllAsync<T = any>(sql: string, params: any[] = []): Promise<T[]> {
+    return dbQueue.add(async () => {
+      return await this.db.getAllAsync(sql, params);
+    });
+  }
+
+  async getFirstAsync<T = any>(sql: string, params: any[] = []): Promise<T | null> {
+    return dbQueue.add(async () => {
+      return await this.db.getFirstAsync(sql, params);
+    });
+  }
+
+  async execAsync(sql: string): Promise<void> {
+    return dbQueue.add(async () => {
+      return await this.db.execAsync(sql);
+    });
+  }
+}
+
+// =============================================================================
+// GESTIÓN DE LA INSTANCIA DE BASE DE DATOS
+// =============================================================================
+
+let rawDbInstance: SQLite.SQLiteDatabase | null = null;
+let safeDbInstance: SafeDatabase | null = null;
+let initializationPromise: Promise<SafeDatabase> | null = null;
+
+const createTables = async (db: SQLite.SQLiteDatabase): Promise<void> => {
+  console.log('[DB] Creando tablas...');
+  
+  // Tabla de jugadores
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS players (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      nickname TEXT,
+      created_at TEXT NOT NULL
+    );
+  `);
+  
+  // Tabla de partidos
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS matches (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      player1_id INTEGER NOT NULL,
+      player2_id INTEGER NOT NULL,
+      my_player_id INTEGER NOT NULL,
+      best_of INTEGER NOT NULL,
+      winner_id INTEGER,
+      date TEXT NOT NULL,
+      status TEXT NOT NULL,
+      current_game INTEGER DEFAULT 1,
+      player1_games INTEGER DEFAULT 0,
+      player2_games INTEGER DEFAULT 0,
+      FOREIGN KEY (player1_id) REFERENCES players (id),
+      FOREIGN KEY (player2_id) REFERENCES players (id),
+      FOREIGN KEY (my_player_id) REFERENCES players (id)
+    );
+  `);
+  
+  // Tabla de puntos
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS points (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      match_id INTEGER NOT NULL,
+      position_x REAL NOT NULL,
+      position_y REAL NOT NULL,
+      winner_player_id INTEGER NOT NULL,
+      reason TEXT NOT NULL,
+      my_player_pos_x REAL,
+      my_player_pos_y REAL,
+      opponent_pos_x REAL,
+      opponent_pos_y REAL,
+      game_number INTEGER NOT NULL,
+      point_number INTEGER NOT NULL,
+      player1_score INTEGER NOT NULL,
+      player2_score INTEGER NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (match_id) REFERENCES matches (id)
+    );
+  `);
+  
+  // Tabla de motivos personalizados
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS custom_reasons (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      is_active INTEGER DEFAULT 1
+    );
+  `);
+  
+  // Insertar motivos predeterminados
+  const defaultReasons = [
+    'Winner',
+    'Error forzado',
+    'Error no forzado',
+    'Let',
+    'Drop shot',
+    'Boast',
+    'Volley',
+    'Drive',
+    'Error en la red',
+    'Fuera'
+  ];
+  
+  for (const reason of defaultReasons) {
+    await db.runAsync(
+      'INSERT OR IGNORE INTO custom_reasons (name, is_active) VALUES (?, 1)',
+      [reason]
+    );
   }
   
-  // Esperar un momento
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // Reinicializar
-  await initDatabase();
-  console.log('BD reseteada exitosamente');
+  console.log('[DB] Tablas creadas correctamente');
 };
 
 // Inicializar base de datos
-export const initDatabase = async () => {
-  if (dbInstance && !isInitializing) {
-    console.log('Base de datos ya existe');
-    return dbInstance;
+export const initDatabase = async (): Promise<SafeDatabase> => {
+  // Si ya está inicializada, retornar
+  if (safeDbInstance) {
+    console.log('[DB] Base de datos ya inicializada');
+    return safeDbInstance;
   }
 
-  if (isInitializing) {
-    console.log('Esperando inicialización...');
-    let attempts = 0;
-    while (isInitializing && attempts < 100) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      attempts++;
-    }
-    if (dbInstance) return dbInstance;
+  // Si hay una inicialización en progreso, esperar
+  if (initializationPromise) {
+    console.log('[DB] Esperando inicialización en progreso...');
+    return initializationPromise;
   }
 
-  isInitializing = true;
-
-  try {
-    console.log('Abriendo base de datos...');
-    const db = await SQLite.openDatabaseAsync('squash_analyzer.db');
-    
-    console.log('Creando tablas...');
-    
-    // Tabla de jugadores
-    await db.execAsync(`
-      CREATE TABLE IF NOT EXISTS players (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        nickname TEXT,
-        created_at TEXT NOT NULL
-      );
-    `);
-    
-    // Tabla de partidos
-    await db.execAsync(`
-      CREATE TABLE IF NOT EXISTS matches (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        player1_id INTEGER NOT NULL,
-        player2_id INTEGER NOT NULL,
-        my_player_id INTEGER NOT NULL,
-        best_of INTEGER NOT NULL,
-        winner_id INTEGER,
-        date TEXT NOT NULL,
-        status TEXT NOT NULL,
-        current_game INTEGER DEFAULT 1,
-        player1_games INTEGER DEFAULT 0,
-        player2_games INTEGER DEFAULT 0,
-        FOREIGN KEY (player1_id) REFERENCES players (id),
-        FOREIGN KEY (player2_id) REFERENCES players (id),
-        FOREIGN KEY (my_player_id) REFERENCES players (id)
-      );
-    `);
-    
-    // Tabla de puntos
-    await db.execAsync(`
-      CREATE TABLE IF NOT EXISTS points (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        match_id INTEGER NOT NULL,
-        position_x REAL NOT NULL,
-        position_y REAL NOT NULL,
-        winner_player_id INTEGER NOT NULL,
-        reason TEXT NOT NULL,
-        my_player_pos_x REAL,
-        my_player_pos_y REAL,
-        opponent_pos_x REAL,
-        opponent_pos_y REAL,
-        game_number INTEGER NOT NULL,
-        point_number INTEGER NOT NULL,
-        player1_score INTEGER NOT NULL,
-        player2_score INTEGER NOT NULL,
-        created_at TEXT NOT NULL,
-        FOREIGN KEY (match_id) REFERENCES matches (id)
-      );
-    `);
-    
-    // Tabla de motivos personalizados
-    await db.execAsync(`
-      CREATE TABLE IF NOT EXISTS custom_reasons (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE,
-        is_active INTEGER DEFAULT 1
-      );
-    `);
-    
-    // Insertar motivos predeterminados
-    const defaultReasons = [
-      'Winner',
-      'Error forzado',
-      'Error no forzado',
-      'Let',
-      'Drop shot',
-      'Boast',
-      'Volley',
-      'Drive',
-      'Error en la red',
-      'Fuera'
-    ];
-    
-    for (const reason of defaultReasons) {
-      await db.runAsync(
-        'INSERT OR IGNORE INTO custom_reasons (name, is_active) VALUES (?, 1)',
-        [reason]
-      );
-    }
-    
-    dbInstance = db;
-    console.log('✅ Base de datos lista');
-    return db;
-  } catch (error) {
-    console.error('❌ Error inicializando BD:', error);
-    dbInstance = null;
-    throw error;
-  } finally {
-    isInitializing = false;
-  }
-};
-
-// Obtener BD con manejo de errores robusto
-export const getDatabase = async () => {
-  return queueOperation(async () => {
+  // Crear promesa de inicialización
+  initializationPromise = (async (): Promise<SafeDatabase> => {
     try {
-      if (!dbInstance) {
-        console.log('Inicializando BD por primera vez...');
-        await initDatabase();
-      }
+      console.log('[DB] Inicializando base de datos...');
+      console.log('[DB] Plataforma:', Platform.OS);
       
-      // Verificar que la BD sigue válida
-      if (dbInstance) {
-        try {
-          // Test simple para verificar que funciona
-          await dbInstance.getFirstAsync('SELECT 1');
-        } catch (testError: any) {
-          console.log('BD no responde, reseteando...');
-          await resetDatabase();
-        }
-      }
+      // Abrir base de datos
+      rawDbInstance = await SQLite.openDatabaseAsync('squash_analyzer.db');
+      console.log('[DB] Base de datos abierta');
       
-      if (!dbInstance) {
-        throw new Error('No se pudo obtener la base de datos');
-      }
+      // Crear tablas directamente (sin pasar por cola aún)
+      await createTables(rawDbInstance);
       
-      return dbInstance;
-    } catch (error: any) {
-      console.error('Error en getDatabase:', error);
+      // Crear wrapper seguro
+      safeDbInstance = new SafeDatabase(rawDbInstance);
+      console.log('[DB] ✅ Base de datos lista');
       
-      // Si hay error, intentar resetear
-      if (error.message?.includes('NullPointerException') || 
-          error.message?.includes('closed') ||
-          error.message?.includes('invalid') ||
-          error.message?.includes('prepareAsync')) {
-        console.log('Detectado error crítico, reseteando BD...');
-        await resetDatabase();
-        
-        if (!dbInstance) {
-          throw new Error('No se pudo recuperar la base de datos');
-        }
-        
-        return dbInstance;
-      }
-      
+      return safeDbInstance;
+    } catch (error) {
+      console.error('[DB] ❌ Error inicializando:', error);
+      rawDbInstance = null;
+      safeDbInstance = null;
+      initializationPromise = null;
       throw error;
     }
-  });
+  })();
+
+  return initializationPromise;
 };
 
-// Exportar función de reset para uso en emergencias
-export const forceResetDatabase = resetDatabase;
+// Obtener base de datos
+export const getDatabase = async (): Promise<SafeDatabase> => {
+  if (safeDbInstance) {
+    return safeDbInstance;
+  }
+  
+  return initDatabase();
+};
+
+// Función para obtener el estado de la cola (debugging)
+export const getDatabaseStatus = () => {
+  return {
+    isInitialized: safeDbInstance !== null,
+    queue: dbQueue.getStatus(),
+  };
+};
+
+// Exportación por defecto para compatibilidad
+export default {
+  initDatabase,
+  getDatabase,
+  getDatabaseStatus,
+};
