@@ -50,9 +50,9 @@ export default function Index() {
           m.id,
           m.date,
           m.status,
-          p1.name as player1_name,
-          p2.name as player2_name,
-          pw.name as winner_name
+          p1.nickname as player1_nickname,
+          p2.nickname as player2_nickname,
+          pw.nickname as winner_nickname
         FROM matches m
         JOIN players p1 ON m.player1_id = p1.id
         JOIN players p2 ON m.player2_id = p2.id
