@@ -171,7 +171,7 @@ export const SquashCourt: React.FC<SquashCourtProps> = ({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    marginVertical: 20,
+    marginVertical: 10,
   },
   courtContainer: {
     backgroundColor: '#F5E6D3',
@@ -182,6 +182,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    overflow: 'hidden',
   },
   legendContainer: {
     marginTop: 15,
