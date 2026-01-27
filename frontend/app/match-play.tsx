@@ -312,6 +312,16 @@ export default function MatchPlay() {
         const player2GamesWon = newPlayer2Score > newPlayer1Score ? 1 : 0;
         const newPlayer1Games = match.player1Games + player1GamesWon;
         const newPlayer2Games = match.player2Games + player2GamesWon;
+        
+        // Guardar resultado del game
+        const gameWinnerId = newPlayer1Score > newPlayer2Score ? match.player1.id : match.player2.id;
+        await db.runAsync(
+          'INSERT INTO game_results (match_id, game_number, player1_score, player2_score, winner_id) VALUES (?, ?, ?, ?, ?)',
+          [matchId, match.currentGame, newPlayer1Score, newPlayer2Score, gameWinnerId]
+        );
+        
+        // Actualizar gameResults localmente
+        setGameResults([...gameResults, { player1Score: newPlayer1Score, player2Score: newPlayer2Score }]);
 
         // Verificar si el partido terminó
         const gamesNeeded = Math.ceil(match.bestOf / 2);
@@ -340,7 +350,7 @@ export default function MatchPlay() {
           setTimeout(() => {
             Alert.alert(
               'Partido Finalizado',
-              `¡${newPlayer1Games > newPlayer2Games ? match.player1.name : match.player2.name} ganó el partido!`,
+              `¡${newPlayer1Games > newPlayer2Games ? match.player1.nickname : match.player2.nickname} ganó el partido!`,
               [
                 {
                   text: 'Ver Resumen',
