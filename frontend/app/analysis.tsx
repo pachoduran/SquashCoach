@@ -7,13 +7,17 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
-  TextInput,
+  Platform,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { getDatabase } from '@/src/store/database';
 import { HeatmapCourt } from '@/src/components/HeatmapCourt';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -35,12 +39,17 @@ export default function AnalysisScreen() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayer1, setSelectedPlayer1] = useState<number | null>(null);
   const [selectedPlayer2, setSelectedPlayer2] = useState<number | null>(null);
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  
+  // Fechas
+  const [dateFrom, setDateFrom] = useState<Date | null>(null);
+  const [dateTo, setDateTo] = useState<Date | null>(null);
+  const [showDateFromPicker, setShowDateFromPicker] = useState(false);
+  const [showDateToPicker, setShowDateToPicker] = useState(false);
   
   const [points, setPoints] = useState<PointData[]>([]);
   const [matchCount, setMatchCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   
   // Estadísticas
   const [player1Wins, setPlayer1Wins] = useState(0);
@@ -66,10 +75,10 @@ export default function AnalysisScreen() {
     if (!selectedPlayer1 || !selectedPlayer2) return;
     
     setLoading(true);
+    setHasSearched(true);
     try {
       const db = await getDatabase();
       
-      // Construir query para buscar partidos entre estos jugadores
       let matchQuery = `
         SELECT id, player1_id, player2_id FROM matches 
         WHERE status = 'finished'
@@ -77,14 +86,13 @@ export default function AnalysisScreen() {
       `;
       let params: any[] = [selectedPlayer1, selectedPlayer2, selectedPlayer2, selectedPlayer1];
       
-      // Agregar filtros de fecha si están presentes
       if (dateFrom) {
         matchQuery += ` AND date >= ?`;
-        params.push(dateFrom + 'T00:00:00');
+        params.push(format(dateFrom, 'yyyy-MM-dd') + 'T00:00:00');
       }
       if (dateTo) {
         matchQuery += ` AND date <= ?`;
-        params.push(dateTo + 'T23:59:59');
+        params.push(format(dateTo, 'yyyy-MM-dd') + 'T23:59:59');
       }
       
       const matches = await db.getAllAsync(matchQuery, params) as any[];
@@ -98,7 +106,6 @@ export default function AnalysisScreen() {
         return;
       }
       
-      // Obtener todos los puntos de esos partidos
       const matchIds = matches.map(m => m.id);
       const placeholders = matchIds.map(() => '?').join(',');
       
@@ -112,12 +119,10 @@ export default function AnalysisScreen() {
       
       setPoints(pointsData);
       
-      // Calcular estadísticas
       let p1Wins = 0;
       let p2Wins = 0;
       
       pointsData.forEach(point => {
-        // Determinar si el punto fue ganado por selectedPlayer1
         const isPlayer1InMatch = point.player1_id === selectedPlayer1;
         const pointWonByPlayer1InMatch = point.winner_player_id === point.player1_id;
         
@@ -156,6 +161,23 @@ export default function AnalysisScreen() {
     }).map(p => ({ x: p.position_x, y: p.position_y }));
   };
 
+  const handleDateFromChange = (event: any, selectedDate?: Date) => {
+    setShowDateFromPicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setDateFrom(selectedDate);
+    }
+  };
+
+  const handleDateToChange = (event: any, selectedDate?: Date) => {
+    setShowDateToPicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setDateTo(selectedDate);
+    }
+  };
+
+  const clearDateFrom = () => setDateFrom(null);
+  const clearDateTo = () => setDateTo(null);
+
   const player1Data = players.find(p => p.id === selectedPlayer1);
   const player2Data = players.find(p => p.id === selectedPlayer2);
 
@@ -174,65 +196,103 @@ export default function AnalysisScreen() {
         <View style={styles.selectorsCard}>
           <Text style={styles.sectionTitle}>Seleccionar Jugadores</Text>
           
-          <View style={styles.pickerRow}>
-            <View style={styles.pickerWrapper}>
-              <Text style={styles.pickerLabel}>Mi Jugador</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={selectedPlayer1}
-                  onValueChange={(value) => setSelectedPlayer1(value)}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Seleccionar..." value={null} />
-                  {players.map((player) => (
-                    <Picker.Item key={player.id} label={player.nickname} value={player.id} />
-                  ))}
-                </Picker>
-              </View>
+          {/* Jugador 1 */}
+          <View style={styles.pickerSection}>
+            <Text style={styles.pickerLabel}>Mi Jugador</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={selectedPlayer1}
+                onValueChange={(value) => setSelectedPlayer1(value)}
+                style={styles.picker}
+                itemStyle={styles.pickerItem}
+              >
+                <Picker.Item label="Seleccionar jugador..." value={null} />
+                {players.map((player) => (
+                  <Picker.Item key={player.id} label={player.nickname} value={player.id} />
+                ))}
+              </Picker>
             </View>
-            
+          </View>
+          
+          <View style={styles.vsContainer}>
+            <View style={styles.vsLine} />
             <Text style={styles.vsText}>VS</Text>
-            
-            <View style={styles.pickerWrapper}>
-              <Text style={styles.pickerLabel}>Oponente</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={selectedPlayer2}
-                  onValueChange={(value) => setSelectedPlayer2(value)}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Seleccionar..." value={null} />
-                  {players.filter(p => p.id !== selectedPlayer1).map((player) => (
-                    <Picker.Item key={player.id} label={player.nickname} value={player.id} />
-                  ))}
-                </Picker>
-              </View>
+            <View style={styles.vsLine} />
+          </View>
+          
+          {/* Jugador 2 */}
+          <View style={styles.pickerSection}>
+            <Text style={styles.pickerLabel}>Oponente</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={selectedPlayer2}
+                onValueChange={(value) => setSelectedPlayer2(value)}
+                style={styles.picker}
+                itemStyle={styles.pickerItem}
+              >
+                <Picker.Item label="Seleccionar oponente..." value={null} />
+                {players.filter(p => p.id !== selectedPlayer1).map((player) => (
+                  <Picker.Item key={player.id} label={player.nickname} value={player.id} />
+                ))}
+              </Picker>
             </View>
           </View>
           
           {/* Filtros de fecha */}
+          <Text style={[styles.pickerLabel, { marginTop: 16 }]}>Rango de Fechas (opcional)</Text>
           <View style={styles.dateFilters}>
-            <View style={styles.dateInputWrapper}>
-              <Text style={styles.dateLabel}>Desde</Text>
-              <TextInput
-                style={styles.dateInput}
-                placeholder="YYYY-MM-DD"
-                value={dateFrom}
-                onChangeText={setDateFrom}
-                placeholderTextColor="#999"
-              />
-            </View>
-            <View style={styles.dateInputWrapper}>
-              <Text style={styles.dateLabel}>Hasta</Text>
-              <TextInput
-                style={styles.dateInput}
-                placeholder="YYYY-MM-DD"
-                value={dateTo}
-                onChangeText={setDateTo}
-                placeholderTextColor="#999"
-              />
-            </View>
+            <TouchableOpacity 
+              style={styles.dateButton}
+              onPress={() => setShowDateFromPicker(true)}
+            >
+              <Ionicons name="calendar-outline" size={20} color="#2196F3" />
+              <Text style={styles.dateButtonText}>
+                {dateFrom ? format(dateFrom, 'dd/MM/yyyy') : 'Desde'}
+              </Text>
+              {dateFrom && (
+                <TouchableOpacity onPress={clearDateFrom} style={styles.clearDateBtn}>
+                  <Ionicons name="close-circle" size={18} color="#999" />
+                </TouchableOpacity>
+              )}
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.dateButton}
+              onPress={() => setShowDateToPicker(true)}
+            >
+              <Ionicons name="calendar-outline" size={20} color="#2196F3" />
+              <Text style={styles.dateButtonText}>
+                {dateTo ? format(dateTo, 'dd/MM/yyyy') : 'Hasta'}
+              </Text>
+              {dateTo && (
+                <TouchableOpacity onPress={clearDateTo} style={styles.clearDateBtn}>
+                  <Ionicons name="close-circle" size={18} color="#999" />
+                </TouchableOpacity>
+              )}
+            </TouchableOpacity>
           </View>
+          
+          {/* Date Pickers */}
+          {showDateFromPicker && (
+            <DateTimePicker
+              value={dateFrom || new Date()}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleDateFromChange}
+              maximumDate={dateTo || new Date()}
+            />
+          )}
+          
+          {showDateToPicker && (
+            <DateTimePicker
+              value={dateTo || new Date()}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleDateToChange}
+              minimumDate={dateFrom || undefined}
+              maximumDate={new Date()}
+            />
+          )}
           
           <TouchableOpacity
             style={[styles.analyzeButton, (!selectedPlayer1 || !selectedPlayer2) && styles.analyzeButtonDisabled]}
@@ -252,7 +312,7 @@ export default function AnalysisScreen() {
             {/* Estadísticas resumen */}
             <View style={styles.statsCard}>
               <Text style={styles.matchCountText}>
-                {matchCount} partido{matchCount !== 1 ? 's' : ''} analizados • {points.length} puntos
+                {matchCount} partido{matchCount !== 1 ? 's' : ''} • {points.length} puntos
               </Text>
               
               <View style={styles.statsRow}>
@@ -267,16 +327,15 @@ export default function AnalysisScreen() {
                 </View>
               </View>
               
-              {/* Barra de porcentaje */}
               <View style={styles.percentBar}>
                 <View style={[styles.percentFill, { 
-                  flex: player1Wins, 
+                  flex: player1Wins || 1, 
                   backgroundColor: '#2196F3',
                   borderTopLeftRadius: 4,
                   borderBottomLeftRadius: 4,
                 }]} />
                 <View style={[styles.percentFill, { 
-                  flex: player2Wins, 
+                  flex: player2Wins || 1, 
                   backgroundColor: '#FF5722',
                   borderTopRightRadius: 4,
                   borderBottomRightRadius: 4,
@@ -295,7 +354,7 @@ export default function AnalysisScreen() {
             {/* Mapas de calor */}
             <View style={styles.heatmapSection}>
               <Text style={styles.heatmapTitle}>
-                Zona de calor - {player1Data?.nickname}
+                {player1Data?.nickname}
               </Text>
               <Text style={styles.heatmapSubtitle}>Donde gana sus puntos</Text>
               <HeatmapCourt 
@@ -306,7 +365,7 @@ export default function AnalysisScreen() {
 
             <View style={styles.heatmapSection}>
               <Text style={styles.heatmapTitle}>
-                Zona de calor - {player2Data?.nickname}
+                {player2Data?.nickname}
               </Text>
               <Text style={styles.heatmapSubtitle}>Donde gana sus puntos</Text>
               <HeatmapCourt 
@@ -315,7 +374,7 @@ export default function AnalysisScreen() {
               />
             </View>
 
-            <View style={styles.heatmapSection}>
+            <View style={[styles.heatmapSection, { marginBottom: 20 }]}>
               <Text style={styles.heatmapTitle}>Todos los puntos</Text>
               <Text style={styles.heatmapSubtitle}>Distribución general</Text>
               <HeatmapCourt 
@@ -326,7 +385,7 @@ export default function AnalysisScreen() {
           </>
         )}
 
-        {matchCount === 0 && selectedPlayer1 && selectedPlayer2 && !loading && (
+        {matchCount === 0 && hasSearched && !loading && (
           <View style={styles.noDataCard}>
             <Ionicons name="information-circle-outline" size={48} color="#999" />
             <Text style={styles.noDataText}>
@@ -384,63 +443,81 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  pickerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  pickerWrapper: {
-    flex: 1,
+  pickerSection: {
+    marginBottom: 8,
   },
   pickerLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#666',
-    marginBottom: 4,
+    marginBottom: 6,
+    fontWeight: '500',
   },
   pickerContainer: {
     backgroundColor: '#F5F7FA',
-    borderRadius: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
     overflow: 'hidden',
   },
   picker: {
-    height: 44,
+    height: 56,
+    width: '100%',
+  },
+  pickerItem: {
+    fontSize: 16,
+    height: 56,
+  },
+  vsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  vsLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E0E0E0',
   },
   vsText: {
     fontSize: 14,
     fontWeight: 'bold',
     color: '#999',
-    marginTop: 16,
+    marginHorizontal: 12,
   },
   dateFilters: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 16,
+    marginTop: 8,
   },
-  dateInputWrapper: {
+  dateButton: {
     flex: 1,
-  },
-  dateLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
-  },
-  dateInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#F5F7FA',
-    borderRadius: 8,
-    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  dateButtonText: {
+    flex: 1,
     fontSize: 14,
     color: '#333',
+  },
+  clearDateBtn: {
+    padding: 2,
   },
   analyzeButton: {
     backgroundColor: '#2196F3',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 16,
+    paddingVertical: 14,
+    borderRadius: 10,
+    marginTop: 20,
     gap: 8,
   },
   analyzeButtonDisabled: {
