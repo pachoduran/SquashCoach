@@ -565,7 +565,7 @@ export default function MatchPlay() {
                       styles.winnerButtonTextSelected,
                   ]}
                 >
-                  {match.player1.name}
+                  {match.player1.nickname}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -585,7 +585,7 @@ export default function MatchPlay() {
                       styles.winnerButtonTextSelected,
                   ]}
                 >
-                  {match.player2.name}
+                  {match.player2.nickname}
                 </Text>
               </TouchableOpacity>
             </View>
