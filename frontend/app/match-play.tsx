@@ -621,18 +621,22 @@ export default function MatchPlay() {
                 style={[
                   styles.modalButton, 
                   styles.modalButtonPrimary,
-                  (!currentPoint?.winnerPlayerId || !currentPoint?.reason) && styles.modalButtonDisabled
+                  (!currentPoint?.winnerPlayerId || !currentPoint?.reason || isSaving) && styles.modalButtonDisabled
                 ]}
                 onPress={savePoint}
-                disabled={!currentPoint?.winnerPlayerId || !currentPoint?.reason}
+                disabled={!currentPoint?.winnerPlayerId || !currentPoint?.reason || isSaving}
               >
-                <Text style={[
-                  styles.modalButtonText, 
-                  styles.modalButtonTextPrimary,
-                  (!currentPoint?.winnerPlayerId || !currentPoint?.reason) && styles.modalButtonTextDisabled
-                ]}>
-                  Guardar
-                </Text>
+                {isSaving ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Text style={[
+                    styles.modalButtonText, 
+                    styles.modalButtonTextPrimary,
+                    (!currentPoint?.winnerPlayerId || !currentPoint?.reason) && styles.modalButtonTextDisabled
+                  ]}>
+                    Guardar
+                  </Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
