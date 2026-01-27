@@ -117,55 +117,6 @@ export default function NewMatch() {
     }
   };
 
-  const PlayerSelector = ({
-    title,
-    selectedPlayer,
-    onSelect,
-  }: {
-    title: string;
-    selectedPlayer: Player | null;
-    onSelect: (player: Player) => void;
-  }) => (
-    <View style={styles.selectorContainer}>
-      <Text style={styles.selectorTitle}>{title}</Text>
-      {selectedPlayer ? (
-        <View style={styles.selectedPlayer}>
-          <Text style={styles.selectedPlayerName}>{selectedPlayer.name}</Text>
-          {selectedPlayer.nickname && (
-            <Text style={styles.selectedPlayerNick}>({selectedPlayer.nickname})</Text>
-          )}
-          <TouchableOpacity
-            style={styles.changeButton}
-            onPress={() => onSelect(null as any)}
-          >
-            <Text style={styles.changeButtonText}>Cambiar</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {players.map((player) => (
-            <TouchableOpacity
-              key={player.id}
-              style={styles.playerButton}
-              onPress={() => onSelect(player)}
-            >
-              <Text style={styles.playerButtonText}>{player.name}</Text>
-              {player.nickname && (
-                <Text style={styles.playerButtonNick}>({player.nickname})</Text>
-              )}
-            </TouchableOpacity>
-          ))}
-          <TouchableOpacity
-            style={styles.addPlayerButton}
-            onPress={() => setShowAddPlayer(true)}
-          >
-            <Ionicons name="add-circle-outline" size={24} color="#2196F3" />
-          </TouchableOpacity>
-        </ScrollView>
-      )}
-    </View>
-  );
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
