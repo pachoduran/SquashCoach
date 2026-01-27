@@ -383,7 +383,16 @@ export default function MatchPlay() {
           <Ionicons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Partido en Curso</Text>
-        <View style={{ width: 40 }} />
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => setShowAllPositions(!showAllPositions)}
+        >
+          <Ionicons 
+            name={showAllPositions ? 'eye-off' : 'eye'} 
+            size={24} 
+            color="#FFF" 
+          />
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>
@@ -399,24 +408,12 @@ export default function MatchPlay() {
             isPlayer1My={true}
           />
           
-          <View style={styles.actionRow}>
-            <View style={styles.instruction}>
-              <Text style={styles.instructionText}>
-                {selectingPosition === 'myPlayer' && 'Toca tu posición'}
-                {selectingPosition === 'opponent' && 'Toca posición oponente'}
-                {!selectingPosition && 'Toca donde terminó el punto'}
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={styles.toggleButton}
-              onPress={() => setShowAllPositions(!showAllPositions)}
-            >
-              <Ionicons 
-                name={showAllPositions ? 'eye-off' : 'eye'} 
-                size={20} 
-                color="#FFF" 
-              />
-            </TouchableOpacity>
+          <View style={styles.instruction}>
+            <Text style={styles.instructionText}>
+              {selectingPosition === 'myPlayer' && 'Toca tu posición'}
+              {selectingPosition === 'opponent' && 'Toca posición oponente'}
+              {!selectingPosition && 'Toca donde terminó el punto'}
+            </Text>
           </View>
         </View>
 
