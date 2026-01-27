@@ -19,8 +19,12 @@ import { ScoreBoard } from '@/src/components/ScoreBoard';
 
 interface Player {
   id: number;
-  name: string;
-  nickname?: string;
+  nickname: string;
+}
+
+interface GameResult {
+  player1Score: number;
+  player2Score: number;
 }
 
 interface Match {
@@ -35,6 +39,7 @@ interface Match {
   player1Score: number;
   player2Score: number;
   status: string;
+  tournamentName?: string;
 }
 
 interface Point {
