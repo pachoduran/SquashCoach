@@ -13,7 +13,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '@/src/store/database';
 import { SquashCourt } from '@/src/components/SquashCourt';
 import { format } from 'date-fns';
-import { BarChart } from 'react-native-gifted-charts';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
