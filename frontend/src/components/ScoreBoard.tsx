@@ -99,6 +99,15 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    position: 'relative',
+  },
+  colorIndicator: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
   },
   myPlayerSection: {
     backgroundColor: 'rgba(33, 150, 243, 0.3)',
