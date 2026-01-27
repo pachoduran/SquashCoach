@@ -426,30 +426,20 @@ const styles = StyleSheet.create({
   myPlayerContainer: {
     marginBottom: 24,
   },
-  myPlayerButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  myPlayerButton: {
-    flex: 1,
+  pickerContainer: {
     backgroundColor: '#FFF',
     borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: '#E0E0E0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  myPlayerButtonSelected: {
-    backgroundColor: '#E3F2FD',
-    borderColor: '#2196F3',
-  },
-  myPlayerButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
-  },
-  myPlayerButtonTextSelected: {
-    color: '#2196F3',
+  picker: {
+    height: 50,
+    color: '#333',
   },
   bestOfContainer: {
     marginBottom: 24,
