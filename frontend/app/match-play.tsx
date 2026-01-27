@@ -241,7 +241,7 @@ export default function MatchPlay() {
 
       const pointNumber = ((pointCount as any)?.count || 0) + 1;
 
-      // Guardar punto
+      // Guardar punto primero
       await db.runAsync(
         `INSERT INTO points 
         (match_id, position_x, position_y, winner_player_id, reason, 
@@ -266,12 +266,16 @@ export default function MatchPlay() {
         ]
       );
 
+      console.log('Punto guardado exitosamente');
+
       // Verificar si el game terminó (11 puntos con diferencia de 2)
       const gameFinished =
         (newPlayer1Score >= 11 && newPlayer1Score - newPlayer2Score >= 2) ||
         (newPlayer2Score >= 11 && newPlayer2Score - newPlayer1Score >= 2);
 
       if (gameFinished) {
+        console.log('Game terminado, actualizando...');
+        
         const player1GamesWon = newPlayer1Score > newPlayer2Score ? 1 : 0;
         const player2GamesWon = newPlayer2Score > newPlayer1Score ? 1 : 0;
         const newPlayer1Games = match.player1Games + player1GamesWon;
@@ -282,35 +286,60 @@ export default function MatchPlay() {
         const matchFinished = newPlayer1Games >= gamesNeeded || newPlayer2Games >= gamesNeeded;
 
         if (matchFinished) {
+          console.log('Partido terminado');
+          
           const winnerId =
             newPlayer1Games > newPlayer2Games ? match.player1.id : match.player2.id;
 
-          await db.runAsync(
-            'UPDATE matches SET status = ?, winner_id = ?, player1_games = ?, player2_games = ? WHERE id = ?',
-            ['finished', winnerId, newPlayer1Games, newPlayer2Games, matchId]
-          );
+          // Actualizar partido como finalizado
+          try {
+            await db.runAsync(
+              'UPDATE matches SET status = ?, winner_id = ?, player1_games = ?, player2_games = ? WHERE id = ?',
+              ['finished', winnerId, newPlayer1Games, newPlayer2Games, matchId]
+            );
+            console.log('Partido actualizado en BD');
+          } catch (error) {
+            console.error('Error actualizando partido finalizado:', error);
+          }
 
-          Alert.alert(
-            'Partido Finalizado',
-            `¡${newPlayer1Games > newPlayer2Games ? match.player1.name : match.player2.name} ganó el partido!`,
-            [
-              {
-                text: 'Ver Resumen',
-                onPress: () => {
-                  router.replace({
-                    pathname: '/match-summary',
-                    params: { matchId },
-                  });
+          // Cerrar modal primero
+          setShowPointModal(false);
+          setCurrentPoint(null);
+          setSelectingPosition(null);
+
+          // Mostrar alerta
+          setTimeout(() => {
+            Alert.alert(
+              'Partido Finalizado',
+              `¡${newPlayer1Games > newPlayer2Games ? match.player1.name : match.player2.name} ganó el partido!`,
+              [
+                {
+                  text: 'Ver Resumen',
+                  onPress: () => {
+                    router.replace({
+                      pathname: '/match-summary',
+                      params: { matchId },
+                    });
+                  },
                 },
-              },
-            ]
-          );
+              ]
+            );
+          }, 300);
+          
+          return;
         } else {
-          // Iniciar siguiente game
-          await db.runAsync(
-            'UPDATE matches SET current_game = ?, player1_games = ?, player2_games = ? WHERE id = ?',
-            [match.currentGame + 1, newPlayer1Games, newPlayer2Games, matchId]
-          );
+          console.log('Iniciando siguiente game');
+          
+          // Actualizar en BD el nuevo game
+          try {
+            await db.runAsync(
+              'UPDATE matches SET current_game = ?, player1_games = ?, player2_games = ? WHERE id = ?',
+              [match.currentGame + 1, newPlayer1Games, newPlayer2Games, matchId]
+            );
+            console.log('Match actualizado para siguiente game');
+          } catch (error) {
+            console.error('Error actualizando match para siguiente game:', error);
+          }
           
           // Resetear arrays de puntos para el nuevo game
           setGamePoints([]);
@@ -326,11 +355,21 @@ export default function MatchPlay() {
             player2Score: 0,
           });
 
-          Alert.alert(
-            'Game Finalizado',
-            `Game ${match.currentGame} terminado. Iniciando Game ${match.currentGame + 1}`,
-            [{ text: 'OK' }]
-          );
+          // Cerrar modal primero
+          setShowPointModal(false);
+          setCurrentPoint(null);
+          setSelectingPosition(null);
+
+          // Mostrar alerta
+          setTimeout(() => {
+            Alert.alert(
+              'Game Finalizado',
+              `Game ${match.currentGame} terminado. Iniciando Game ${match.currentGame + 1}`,
+              [{ text: 'OK' }]
+            );
+          }, 300);
+          
+          return;
         }
       } else {
         // Actualizar marcador y agregar punto al array de visualización
@@ -378,7 +417,7 @@ export default function MatchPlay() {
       setSelectingPosition(null);
     } catch (error) {
       console.error('Error guardando punto:', error);
-      Alert.alert('Error', 'No se pudo guardar el punto');
+      Alert.alert('Error', 'No se pudo guardar el punto. Por favor intenta de nuevo.');
     }
   };
 
