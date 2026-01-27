@@ -219,7 +219,9 @@ export default function MatchPlay() {
       return;
     }
 
-    if (!match) return;
+    if (!match || isSaving) return;
+
+    setIsSaving(true); // Prevenir guardados dobles
 
     try {
       const db = await getDatabase();
