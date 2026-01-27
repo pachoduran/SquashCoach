@@ -26,6 +26,8 @@ export const SquashCourt: React.FC<SquashCourtProps> = ({
   showPositions = false,
   player1Color = '#2196F3',
   player2Color = '#FF5722',
+  playerPositions = [],
+  showAllPositions = false,
 }) => {
   const handlePress = (event: any) => {
     if (onCourtPress) {
@@ -120,7 +122,7 @@ export const SquashCourt: React.FC<SquashCourtProps> = ({
           <SvgText
             x={COURT_WIDTH / 2}
             y={COURT_HEIGHT * 0.12}
-            fontSize="14"
+            fontSize="12"
             fontWeight="bold"
             fill="#8B6F47"
             textAnchor="middle"
@@ -128,30 +130,55 @@ export const SquashCourt: React.FC<SquashCourtProps> = ({
             PARED FRONTAL
           </SvgText>
           
-          {/* Puntos marcados con números */}
+          {/* Puntos marcados con marcador */}
           {points.map((point, index) => (
             <React.Fragment key={index}>
               <Circle
                 cx={point.x * COURT_WIDTH}
                 cy={point.y * COURT_HEIGHT}
-                r="14"
+                r="16"
                 fill={point.isWin ? player1Color : player2Color}
-                opacity="0.8"
+                opacity="0.85"
               />
               <SvgText
                 x={point.x * COURT_WIDTH}
-                y={point.y * COURT_HEIGHT + 5}
-                fontSize="12"
+                y={point.y * COURT_HEIGHT + 4}
+                fontSize="10"
                 fontWeight="bold"
                 fill="#FFF"
                 textAnchor="middle"
               >
-                {point.number || index + 1}
+                {point.score || (index + 1)}
               </SvgText>
             </React.Fragment>
           ))}
           
-          {/* Posición del jugador */}
+          {/* Mostrar todas las posiciones de jugadores cuando está activado */}
+          {showAllPositions && playerPositions.map((pos, index) => (
+            <React.Fragment key={`pos-${index}`}>
+              <Circle
+                cx={pos.x * COURT_WIDTH}
+                cy={pos.y * COURT_HEIGHT}
+                r="12"
+                fill={pos.isPlayer1 ? player1Color : player2Color}
+                opacity="0.6"
+                stroke="#FFF"
+                strokeWidth="2"
+              />
+              <SvgText
+                x={pos.x * COURT_WIDTH}
+                y={pos.y * COURT_HEIGHT + 4}
+                fontSize="9"
+                fontWeight="bold"
+                fill="#FFF"
+                textAnchor="middle"
+              >
+                {pos.score}
+              </SvgText>
+            </React.Fragment>
+          ))}
+          
+          {/* Posición del jugador (temporal durante registro) */}
           {showPositions && playerPosition && (
             <>
               <Circle
@@ -174,7 +201,7 @@ export const SquashCourt: React.FC<SquashCourtProps> = ({
             </>
           )}
           
-          {/* Posición del oponente */}
+          {/* Posición del oponente (temporal durante registro) */}
           {showPositions && opponentPosition && (
             <>
               <Circle
@@ -203,11 +230,11 @@ export const SquashCourt: React.FC<SquashCourtProps> = ({
       <View style={styles.legendContainer}>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: player1Color }]} />
-          <Text style={styles.legendText}>Mi jugador</Text>
+          <Text style={styles.legendText}>Jugador 1</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: player2Color }]} />
-          <Text style={styles.legendText}>Oponente</Text>
+          <Text style={styles.legendText}>Jugador 2</Text>
         </View>
       </View>
     </View>
