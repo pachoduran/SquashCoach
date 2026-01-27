@@ -383,8 +383,14 @@ export const initDatabase = async () => {
   }
 };
 
-// Obtener instancia de la base de datos
+// =============================================================================
+// GESTIÓN DE INSTANCIA DE BASE DE DATOS
+// =============================================================================
+
 let dbInstance: any = null;
+let queuedDbInstance: QueuedDatabase | null = null;
+let isInitializing = false;
+let initPromise: Promise<any> | null = null;
 
 export const getDatabase = async () => {
   if (Platform.OS === 'web') {
@@ -395,8 +401,51 @@ export const getDatabase = async () => {
     return mockDb;
   }
   
-  if (!dbInstance) {
-    dbInstance = await SQLite.openDatabaseAsync('squash_analyzer.db');
+  // Si ya tenemos una instancia con cola, retornarla
+  if (queuedDbInstance) {
+    return queuedDbInstance;
   }
-  return dbInstance;
+
+  // Evitar inicializaciones concurrentes
+  if (isInitializing && initPromise) {
+    await initPromise;
+    return queuedDbInstance!;
+  }
+
+  isInitializing = true;
+  
+  initPromise = (async () => {
+    try {
+      if (!dbInstance) {
+        console.log('[DB] Abriendo base de datos...');
+        dbInstance = await SQLite.openDatabaseAsync('squash_analyzer.db');
+        console.log('[DB] Base de datos abierta exitosamente');
+      }
+      
+      // Crear wrapper con cola
+      queuedDbInstance = new QueuedDatabase(dbInstance);
+      console.log('[DB] Wrapper con cola creado');
+      
+      return queuedDbInstance;
+    } catch (error) {
+      console.error('[DB] Error abriendo base de datos:', error);
+      // Resetear estado para permitir reintentos
+      dbInstance = null;
+      queuedDbInstance = null;
+      throw error;
+    } finally {
+      isInitializing = false;
+    }
+  })();
+
+  return initPromise;
+};
+
+// Función para resetear la conexión (uso en casos de error grave)
+export const resetDatabase = async () => {
+  console.log('[DB] Reseteando conexión de base de datos...');
+  dbInstance = null;
+  queuedDbInstance = null;
+  isInitializing = false;
+  initPromise = null;
 };
