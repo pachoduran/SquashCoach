@@ -595,6 +595,9 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 4,
   },
+  headerButton: {
+    padding: 4,
+  },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
