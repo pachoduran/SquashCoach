@@ -4,6 +4,103 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Importación condicional de SQLite solo para móvil
 const SQLite = Platform.OS !== 'web' ? require('expo-sqlite') : null;
 
+// =============================================================================
+// SISTEMA DE COLA PARA OPERACIONES DE BASE DE DATOS
+// Serializa todas las operaciones para evitar bloqueos por concurrencia
+// =============================================================================
+
+type QueuedOperation = () => Promise<any>;
+
+class DatabaseQueue {
+  private queue: Array<{
+    operation: QueuedOperation;
+    resolve: (value: any) => void;
+    reject: (error: any) => void;
+  }> = [];
+  private isProcessing = false;
+  private operationCount = 0;
+
+  async enqueue<T>(operation: QueuedOperation): Promise<T> {
+    return new Promise((resolve, reject) => {
+      this.queue.push({ operation, resolve, reject });
+      this.processQueue();
+    });
+  }
+
+  private async processQueue(): Promise<void> {
+    if (this.isProcessing || this.queue.length === 0) {
+      return;
+    }
+
+    this.isProcessing = true;
+
+    while (this.queue.length > 0) {
+      const item = this.queue.shift()!;
+      this.operationCount++;
+      
+      try {
+        console.log(`[DB Queue] Ejecutando operación #${this.operationCount}`);
+        const result = await item.operation();
+        item.resolve(result);
+      } catch (error) {
+        console.error(`[DB Queue] Error en operación #${this.operationCount}:`, error);
+        item.reject(error);
+      }
+      
+      // Pequeña pausa entre operaciones para estabilidad
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+
+    this.isProcessing = false;
+  }
+
+  getQueueLength(): number {
+    return this.queue.length;
+  }
+
+  isActive(): boolean {
+    return this.isProcessing;
+  }
+}
+
+const dbQueue = new DatabaseQueue();
+
+// =============================================================================
+// WRAPPER DE BASE DE DATOS CON COLA
+// =============================================================================
+
+class QueuedDatabase {
+  private db: any;
+
+  constructor(database: any) {
+    this.db = database;
+  }
+
+  async execAsync(sql: string): Promise<void> {
+    return dbQueue.enqueue(async () => {
+      return await this.db.execAsync(sql);
+    });
+  }
+
+  async runAsync(sql: string, params: any[] = []): Promise<any> {
+    return dbQueue.enqueue(async () => {
+      return await this.db.runAsync(sql, params);
+    });
+  }
+
+  async getAllAsync(sql: string, params: any[] = []): Promise<any[]> {
+    return dbQueue.enqueue(async () => {
+      return await this.db.getAllAsync(sql, params);
+    });
+  }
+
+  async getFirstAsync(sql: string, params: any[] = []): Promise<any> {
+    return dbQueue.enqueue(async () => {
+      return await this.db.getFirstAsync(sql, params);
+    });
+  }
+}
+
 // Mock database para web
 class MockDatabase {
   private data: { [key: string]: any[] } = {
