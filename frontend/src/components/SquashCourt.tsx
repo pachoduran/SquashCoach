@@ -41,115 +41,117 @@ export const SquashCourt: React.FC<SquashCourtProps> = ({
 
   return (
     <View style={styles.container}>
-      <Pressable onPress={handlePress} style={styles.courtContainer}>
-        {/* Imagen de fondo de la cancha */}
-        <Image
-          source={require('../../assets/squash-court.png')}
-          style={{
-            width: COURT_WIDTH,
-            height: COURT_HEIGHT,
-            position: 'absolute',
-          }}
-          resizeMode="stretch"
-        />
-        
-        {/* SVG transparente encima para los elementos interactivos */}
-        <Svg width={COURT_WIDTH} height={COURT_HEIGHT} style={{ position: 'absolute' }}>
-          {/* Puntos marcados con marcador */}
-          {points.map((point, index) => (
-            <React.Fragment key={index}>
-              <Circle
-                cx={point.x * COURT_WIDTH}
-                cy={point.y * COURT_HEIGHT}
-                r="16"
-                fill={point.isWin ? player1Color : player2Color}
-                opacity="0.85"
-              />
-              <SvgText
-                x={point.x * COURT_WIDTH}
-                y={point.y * COURT_HEIGHT + 4}
-                fontSize="10"
-                fontWeight="bold"
-                fill="#FFF"
-                textAnchor="middle"
-              >
-                {point.score || (index + 1)}
-              </SvgText>
-            </React.Fragment>
-          ))}
+      <View style={styles.courtContainer}>
+        <Pressable onPress={handlePress} style={{ width: COURT_WIDTH, height: COURT_HEIGHT }}>
+          {/* Imagen de fondo de la cancha */}
+          <Image
+            source={require('../../assets/squash-court.png')}
+            style={{
+              width: COURT_WIDTH,
+              height: COURT_HEIGHT,
+              position: 'absolute',
+            }}
+            resizeMode="cover"
+          />
           
-          {/* Mostrar todas las posiciones de jugadores cuando está activado */}
-          {showAllPositions && playerPositions.map((pos, index) => (
-            <React.Fragment key={`pos-${index}`}>
-              <Circle
-                cx={pos.x * COURT_WIDTH}
-                cy={pos.y * COURT_HEIGHT}
-                r="12"
-                fill={pos.isPlayer1 ? player1Color : player2Color}
-                opacity="0.6"
-                stroke="#FFF"
-                strokeWidth="2"
-              />
-              <SvgText
-                x={pos.x * COURT_WIDTH}
-                y={pos.y * COURT_HEIGHT + 4}
-                fontSize="9"
-                fontWeight="bold"
-                fill="#FFF"
-                textAnchor="middle"
-              >
-                {pos.score}
-              </SvgText>
-            </React.Fragment>
-          ))}
-          
-          {/* Posición del jugador (temporal durante registro) */}
-          {showPositions && playerPosition && (
-            <>
-              <Circle
-                cx={playerPosition.x * COURT_WIDTH}
-                cy={playerPosition.y * COURT_HEIGHT}
-                r="16"
-                fill={player1Color}
-                opacity="0.6"
-              />
-              <SvgText
-                x={playerPosition.x * COURT_WIDTH}
-                y={playerPosition.y * COURT_HEIGHT + 5}
-                fontSize="12"
-                fontWeight="bold"
-                fill="#FFF"
-                textAnchor="middle"
-              >
-                YO
-              </SvgText>
-            </>
-          )}
-          
-          {/* Posición del oponente (temporal durante registro) */}
-          {showPositions && opponentPosition && (
-            <>
-              <Circle
-                cx={opponentPosition.x * COURT_WIDTH}
-                cy={opponentPosition.y * COURT_HEIGHT}
-                r="16"
-                fill={player2Color}
-                opacity="0.6"
-              />
-              <SvgText
-                x={opponentPosition.x * COURT_WIDTH}
-                y={opponentPosition.y * COURT_HEIGHT + 5}
-                fontSize="11"
-                fontWeight="bold"
-                fill="#FFF"
-                textAnchor="middle"
-              >
-                RIV
-              </SvgText>
-            </>
-          )}
-        </Svg>
-      </Pressable>
+          {/* SVG transparente encima para los elementos interactivos */}
+          <Svg width={COURT_WIDTH} height={COURT_HEIGHT} style={{ position: 'absolute' }}>
+            {/* Puntos marcados con marcador */}
+            {points.map((point, index) => (
+              <React.Fragment key={index}>
+                <Circle
+                  cx={point.x * COURT_WIDTH}
+                  cy={point.y * COURT_HEIGHT}
+                  r="16"
+                  fill={point.isWin ? player1Color : player2Color}
+                  opacity="0.85"
+                />
+                <SvgText
+                  x={point.x * COURT_WIDTH}
+                  y={point.y * COURT_HEIGHT + 4}
+                  fontSize="10"
+                  fontWeight="bold"
+                  fill="#FFF"
+                  textAnchor="middle"
+                >
+                  {point.score || (index + 1)}
+                </SvgText>
+              </React.Fragment>
+            ))}
+            
+            {/* Mostrar todas las posiciones de jugadores cuando está activado */}
+            {showAllPositions && playerPositions.map((pos, index) => (
+              <React.Fragment key={`pos-${index}`}>
+                <Circle
+                  cx={pos.x * COURT_WIDTH}
+                  cy={pos.y * COURT_HEIGHT}
+                  r="12"
+                  fill={pos.isPlayer1 ? player1Color : player2Color}
+                  opacity="0.6"
+                  stroke="#FFF"
+                  strokeWidth="2"
+                />
+                <SvgText
+                  x={pos.x * COURT_WIDTH}
+                  y={pos.y * COURT_HEIGHT + 4}
+                  fontSize="9"
+                  fontWeight="bold"
+                  fill="#FFF"
+                  textAnchor="middle"
+                >
+                  {pos.score}
+                </SvgText>
+              </React.Fragment>
+            ))}
+            
+            {/* Posición del jugador (temporal durante registro) */}
+            {showPositions && playerPosition && (
+              <>
+                <Circle
+                  cx={playerPosition.x * COURT_WIDTH}
+                  cy={playerPosition.y * COURT_HEIGHT}
+                  r="16"
+                  fill={player1Color}
+                  opacity="0.6"
+                />
+                <SvgText
+                  x={playerPosition.x * COURT_WIDTH}
+                  y={playerPosition.y * COURT_HEIGHT + 5}
+                  fontSize="12"
+                  fontWeight="bold"
+                  fill="#FFF"
+                  textAnchor="middle"
+                >
+                  YO
+                </SvgText>
+              </>
+            )}
+            
+            {/* Posición del oponente (temporal durante registro) */}
+            {showPositions && opponentPosition && (
+              <>
+                <Circle
+                  cx={opponentPosition.x * COURT_WIDTH}
+                  cy={opponentPosition.y * COURT_HEIGHT}
+                  r="16"
+                  fill={player2Color}
+                  opacity="0.6"
+                />
+                <SvgText
+                  x={opponentPosition.x * COURT_WIDTH}
+                  y={opponentPosition.y * COURT_HEIGHT + 5}
+                  fontSize="11"
+                  fontWeight="bold"
+                  fill="#FFF"
+                  textAnchor="middle"
+                >
+                  RIV
+                </SvgText>
+              </>
+            )}
+          </Svg>
+        </Pressable>
+      </View>
       
       {/* Leyenda */}
       <View style={styles.legendContainer}>
