@@ -24,9 +24,8 @@ interface Player {
 export default function NewMatch() {
   const router = useRouter();
   const [players, setPlayers] = useState<Player[]>([]);
-  const [selectedPlayer1, setSelectedPlayer1] = useState<Player | null>(null);
-  const [selectedPlayer2, setSelectedPlayer2] = useState<Player | null>(null);
-  const [myPlayer, setMyPlayer] = useState<Player | null>(null);
+  const [selectedPlayer1Id, setSelectedPlayer1Id] = useState<number | null>(null);
+  const [selectedPlayer2Id, setSelectedPlayer2Id] = useState<number | null>(null);
   const [bestOf, setBestOf] = useState<3 | 5>(3);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState('');
