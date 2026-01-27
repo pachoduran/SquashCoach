@@ -65,16 +65,31 @@ const initializeDatabase = async (): Promise<void> => {
       db = SQLite.openDatabaseSync('squash_analyzer.db');
       console.log('[DB] Base de datos abierta');
       
-      // Crear tablas usando execSync para evitar problemas async
+      // Tabla de jugadores - SOLO nickname (sin nombre)
       db.execSync(`
         CREATE TABLE IF NOT EXISTS players (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          nickname TEXT,
+          nickname TEXT NOT NULL,
           created_at TEXT NOT NULL
         );
       `);
       
+      // Migrar datos antiguos: si existe columna 'name', copiar a nickname
+      try {
+        const tableInfo = db.getAllSync("PRAGMA table_info(players)");
+        const hasName = tableInfo.some((col: any) => col.name === 'name');
+        const hasNickname = tableInfo.some((col: any) => col.name === 'nickname');
+        
+        if (hasName && hasNickname) {
+          // Migrar name a nickname donde nickname está vacío
+          db.runSync("UPDATE players SET nickname = name WHERE nickname IS NULL OR nickname = ''");
+          console.log('[DB] Migración de nombres completada');
+        }
+      } catch (e) {
+        console.log('[DB] No se requiere migración');
+      }
+      
+      // Tabla de partidos - con campos de torneo y fecha
       db.execSync(`
         CREATE TABLE IF NOT EXISTS matches (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -88,12 +103,24 @@ const initializeDatabase = async (): Promise<void> => {
           current_game INTEGER DEFAULT 1,
           player1_games INTEGER DEFAULT 0,
           player2_games INTEGER DEFAULT 0,
+          tournament_name TEXT,
+          match_date TEXT,
           FOREIGN KEY (player1_id) REFERENCES players (id),
           FOREIGN KEY (player2_id) REFERENCES players (id),
           FOREIGN KEY (my_player_id) REFERENCES players (id)
         );
       `);
       
+      // Agregar columnas de torneo si no existen
+      try {
+        db.runSync("ALTER TABLE matches ADD COLUMN tournament_name TEXT");
+      } catch (e) { /* ya existe */ }
+      
+      try {
+        db.runSync("ALTER TABLE matches ADD COLUMN match_date TEXT");
+      } catch (e) { /* ya existe */ }
+      
+      // Tabla de puntos
       db.execSync(`
         CREATE TABLE IF NOT EXISTS points (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -115,6 +142,20 @@ const initializeDatabase = async (): Promise<void> => {
         );
       `);
       
+      // Tabla de resultados de games (para mostrar historial)
+      db.execSync(`
+        CREATE TABLE IF NOT EXISTS game_results (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          match_id INTEGER NOT NULL,
+          game_number INTEGER NOT NULL,
+          player1_score INTEGER NOT NULL,
+          player2_score INTEGER NOT NULL,
+          winner_id INTEGER,
+          FOREIGN KEY (match_id) REFERENCES matches (id)
+        );
+      `);
+      
+      // Tabla de motivos personalizados
       db.execSync(`
         CREATE TABLE IF NOT EXISTS custom_reasons (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -169,7 +210,6 @@ class SafeDatabase {
     return enqueue(async () => {
       await initializeDatabase();
       const database = this.getDb();
-      // Usar método síncrono envuelto en promise
       return database.runSync(sql, params);
     });
   }
@@ -178,7 +218,6 @@ class SafeDatabase {
     return enqueue(async () => {
       await initializeDatabase();
       const database = this.getDb();
-      // Usar método síncrono envuelto en promise
       return database.getAllSync(sql, params) as T[];
     });
   }
@@ -187,7 +226,6 @@ class SafeDatabase {
     return enqueue(async () => {
       await initializeDatabase();
       const database = this.getDb();
-      // Usar método síncrono envuelto en promise
       return database.getFirstSync(sql, params) as T | null;
     });
   }
