@@ -3,6 +3,11 @@ import { View, Text, StyleSheet, Dimensions } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+interface GameResult {
+  player1Score: number;
+  player2Score: number;
+}
+
 interface ScoreBoardProps {
   player1Name: string;
   player2Name: string;
@@ -11,7 +16,9 @@ interface ScoreBoardProps {
   player1Games: number;
   player2Games: number;
   currentGame: number;
-  isPlayer1My: boolean;
+  bestOf: number;
+  gameResults?: GameResult[];
+  tournamentName?: string;
 }
 
 export const ScoreBoard: React.FC<ScoreBoardProps> = ({
@@ -22,49 +29,139 @@ export const ScoreBoard: React.FC<ScoreBoardProps> = ({
   player1Games,
   player2Games,
   currentGame,
-  isPlayer1My,
+  bestOf,
+  gameResults = [],
+  tournamentName,
 }) => {
-  const player1Color = '#2196F3';
-  const player2Color = '#FF5722';
+  // Crear array de games para mostrar (siempre mostrar bestOf columnas)
+  const totalGames = bestOf;
+  
+  // Construir scores de cada game
+  const getGameScores = () => {
+    const scores: Array<{ p1: number | null; p2: number | null; isCurrent: boolean; isPlayed: boolean }> = [];
+    
+    for (let i = 0; i < totalGames; i++) {
+      const gameNum = i + 1;
+      
+      if (gameNum < currentGame && gameResults[i]) {
+        // Game ya jugado
+        scores.push({
+          p1: gameResults[i].player1Score,
+          p2: gameResults[i].player2Score,
+          isCurrent: false,
+          isPlayed: true,
+        });
+      } else if (gameNum === currentGame) {
+        // Game actual
+        scores.push({
+          p1: player1Score,
+          p2: player2Score,
+          isCurrent: true,
+          isPlayed: true,
+        });
+      } else {
+        // Game futuro
+        scores.push({
+          p1: 0,
+          p2: 0,
+          isCurrent: false,
+          isPlayed: false,
+        });
+      }
+    }
+    
+    return scores;
+  };
+  
+  const gameScores = getGameScores();
   
   return (
     <View style={styles.container}>
-      <Text style={styles.gameText}>Game {currentGame}</Text>
+      {/* Header del torneo */}
+      {tournamentName && (
+        <View style={styles.tournamentHeader}>
+          <Text style={styles.tournamentText}>{tournamentName}</Text>
+        </View>
+      )}
       
-      <View style={styles.mainRow}>
-        {/* Cuadro Jugador 1 - Izquierda - PUNTOS */}
-        <View style={[
-          styles.playerBox,
-          { borderColor: player1Color, borderWidth: 2 }
-        ]}>
-          <View style={[styles.colorIndicator, { backgroundColor: player1Color }]} />
-          <Text style={styles.playerNameSmall} numberOfLines={1}>
-            {player1Name}
-          </Text>
-          <Text style={styles.pointsInBox}>{player1Score}</Text>
+      {/* Fila del Jugador 1 */}
+      <View style={styles.playerRow}>
+        <View style={styles.nameContainer}>
+          <Text style={styles.playerName} numberOfLines={1}>{player1Name}</Text>
         </View>
-        
-        {/* Centro - GAMES grandes */}
-        <View style={styles.centerSection}>
-          <View style={styles.gamesRow}>
-            <Text style={[styles.gamesHuge, { color: player1Color }]}>{player1Games}</Text>
-            <Text style={styles.gamesSeparator}>-</Text>
-            <Text style={[styles.gamesHuge, { color: player2Color }]}>{player2Games}</Text>
+        <View style={styles.scoresContainer}>
+          {gameScores.map((score, index) => (
+            <View
+              key={index}
+              style={[
+                styles.scoreBox,
+                score.isCurrent && styles.scoreBoxCurrent,
+                !score.isPlayed && styles.scoreBoxFuture,
+                score.isPlayed && !score.isCurrent && 
+                  (score.p1! > score.p2! ? styles.scoreBoxWon : styles.scoreBoxLost),
+              ]}
+            >
+              <Text
+                style={[
+                  styles.scoreText,
+                  score.isCurrent && styles.scoreTextCurrent,
+                  !score.isPlayed && styles.scoreTextFuture,
+                ]}
+              >
+                {score.p1}
+              </Text>
+            </View>
+          ))}
+          {/* Games ganados */}
+          <View style={styles.gamesWonBox}>
+            <Text style={styles.gamesWonText}>{player1Games}</Text>
           </View>
-          <Text style={styles.gamesLabelCenter}>Games</Text>
         </View>
-        
-        {/* Cuadro Jugador 2 - Derecha - PUNTOS */}
-        <View style={[
-          styles.playerBox,
-          { borderColor: player2Color, borderWidth: 2 }
-        ]}>
-          <View style={[styles.colorIndicator, { backgroundColor: player2Color }]} />
-          <Text style={styles.playerNameSmall} numberOfLines={1}>
-            {player2Name}
-          </Text>
-          <Text style={styles.pointsInBox}>{player2Score}</Text>
+      </View>
+      
+      {/* Separador */}
+      <View style={styles.separator} />
+      
+      {/* Fila del Jugador 2 */}
+      <View style={styles.playerRow}>
+        <View style={styles.nameContainer}>
+          <Text style={styles.playerName} numberOfLines={1}>{player2Name}</Text>
         </View>
+        <View style={styles.scoresContainer}>
+          {gameScores.map((score, index) => (
+            <View
+              key={index}
+              style={[
+                styles.scoreBox,
+                score.isCurrent && styles.scoreBoxCurrent,
+                !score.isPlayed && styles.scoreBoxFuture,
+                score.isPlayed && !score.isCurrent && 
+                  (score.p2! > score.p1! ? styles.scoreBoxWon : styles.scoreBoxLost),
+              ]}
+            >
+              <Text
+                style={[
+                  styles.scoreText,
+                  score.isCurrent && styles.scoreTextCurrent,
+                  !score.isPlayed && styles.scoreTextFuture,
+                ]}
+              >
+                {score.p2}
+              </Text>
+            </View>
+          ))}
+          {/* Games ganados */}
+          <View style={styles.gamesWonBox}>
+            <Text style={styles.gamesWonText}>{player2Games}</Text>
+          </View>
+        </View>
+      </View>
+      
+      {/* Indicador de game actual */}
+      <View style={styles.gameIndicator}>
+        <Text style={styles.gameIndicatorText}>
+          Game {currentGame} de {bestOf}
+        </Text>
       </View>
     </View>
   );
@@ -72,68 +169,104 @@ export const ScoreBoard: React.FC<ScoreBoardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 8,
-    paddingHorizontal: 8,
+    backgroundColor: '#2C3E50',
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginVertical: 8,
   },
-  gameText: {
+  tournamentHeader: {
+    backgroundColor: '#1A252F',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#34495E',
+  },
+  tournamentText: {
+    color: '#ECF0F1',
     fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 8,
     fontWeight: '600',
+    textAlign: 'center',
   },
-  mainRow: {
+  playerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
   },
-  playerBox: {
-    width: 70,
-    backgroundColor: 'rgba(30, 58, 95, 0.8)',
-    borderRadius: 8,
-    padding: 6,
+  nameContainer: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  playerName: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  scoresContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    position: 'relative',
   },
-  colorIndicator: {
-    position: 'absolute',
-    top: 3,
-    right: 3,
-    width: 8,
-    height: 8,
+  scoreBox: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#34495E',
+    marginHorizontal: 2,
     borderRadius: 4,
   },
-  playerNameSmall: {
-    fontSize: 10,
-    color: '#FFF',
-    fontWeight: '600',
-    marginBottom: 4,
-    textAlign: 'center',
+  scoreBoxCurrent: {
+    backgroundColor: '#F1C40F',
   },
-  pointsInBox: {
-    fontSize: 28,
-    color: '#FFF',
+  scoreBoxWon: {
+    backgroundColor: '#2980B9',
+  },
+  scoreBoxLost: {
+    backgroundColor: '#34495E',
+  },
+  scoreBoxFuture: {
+    backgroundColor: '#1A252F',
+    opacity: 0.5,
+  },
+  scoreText: {
+    color: '#FFFFFF',
+    fontSize: 18,
     fontWeight: 'bold',
   },
-  gamesRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  scoreTextCurrent: {
+    color: '#000000',
+  },
+  scoreTextFuture: {
+    color: '#7F8C8D',
+  },
+  gamesWonBox: {
+    width: 40,
+    height: 36,
     justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+    borderLeftWidth: 2,
+    borderLeftColor: '#F1C40F',
+    paddingLeft: 8,
   },
-  gamesHuge: {
-    fontSize: 48,
+  gamesWonText: {
+    color: '#F1C40F',
+    fontSize: 22,
     fontWeight: 'bold',
-    marginHorizontal: 8,
   },
-  gamesSeparator: {
-    fontSize: 36,
-    color: '#999',
-    fontWeight: 'bold',
+  separator: {
+    height: 1,
+    backgroundColor: '#34495E',
+    marginHorizontal: 12,
   },
-  gamesLabelCenter: {
+  gameIndicator: {
+    backgroundColor: '#1A252F',
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+  },
+  gameIndicatorText: {
+    color: '#7F8C8D',
     fontSize: 11,
-    color: '#666',
-    marginTop: 4,
-    fontWeight: '600',
+    textAlign: 'center',
   },
 });
