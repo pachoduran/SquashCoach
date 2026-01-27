@@ -113,7 +113,7 @@ export default function MatchPlay() {
         });
 
         // Cargar puntos del game actual
-        await loadCurrentGamePoints(matchData.current_game);
+        await loadCurrentGamePoints(matchData.current_game, matchData.p1_id);
       }
     } catch (error) {
       console.error('Error cargando partido:', error);
@@ -123,7 +123,7 @@ export default function MatchPlay() {
     }
   };
 
-  const loadCurrentGamePoints = async (gameNumber: number) => {
+  const loadCurrentGamePoints = async (gameNumber: number, player1Id: number) => {
     try {
       const db = await getDatabase();
       const points = await db.getAllAsync(
@@ -149,7 +149,7 @@ export default function MatchPlay() {
         const visualPoints = points.map((p: any) => ({
           x: p.position_x,
           y: p.position_y,
-          isWin: p.winner_player_id === matchData.p1_id, // Jugador 1 = azul
+          isWin: p.winner_player_id === player1Id, // Jugador 1 = azul
           score: `${p.player1_score}-${p.player2_score}`,
         }));
         setGamePoints(visualPoints);
