@@ -81,9 +81,9 @@ export default function MatchPlay() {
       const result = await db.getFirstAsync(
         `SELECT 
           m.*,
-          p1.id as p1_id, p1.name as p1_name, p1.nickname as p1_nickname,
-          p2.id as p2_id, p2.name as p2_name, p2.nickname as p2_nickname,
-          mp.id as mp_id, mp.name as mp_name, mp.nickname as mp_nickname
+          p1.id as p1_id, p1.nickname as p1_nickname,
+          p2.id as p2_id, p2.nickname as p2_nickname,
+          mp.id as mp_id, mp.nickname as mp_nickname
         FROM matches m
         JOIN players p1 ON m.player1_id = p1.id
         JOIN players p2 ON m.player2_id = p2.id
@@ -98,17 +98,14 @@ export default function MatchPlay() {
           id: matchData.id,
           player1: {
             id: matchData.p1_id,
-            name: matchData.p1_name,
             nickname: matchData.p1_nickname,
           },
           player2: {
             id: matchData.p2_id,
-            name: matchData.p2_name,
             nickname: matchData.p2_nickname,
           },
           myPlayer: {
             id: matchData.mp_id,
-            name: matchData.mp_name,
             nickname: matchData.mp_nickname,
           },
           bestOf: matchData.best_of,
@@ -118,8 +115,12 @@ export default function MatchPlay() {
           player1Score: 0,
           player2Score: 0,
           status: matchData.status,
+          tournamentName: matchData.tournament_name,
         });
 
+        // Cargar resultados de games anteriores
+        await loadGameResults();
+        
         // Cargar puntos del game actual
         await loadCurrentGamePoints(matchData.current_game, matchData.p1_id);
       }
@@ -128,6 +129,22 @@ export default function MatchPlay() {
       Alert.alert('Error', 'No se pudo cargar el partido');
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const loadGameResults = async () => {
+    try {
+      const db = await getDatabase();
+      const results = await db.getAllAsync(
+        'SELECT * FROM game_results WHERE match_id = ? ORDER BY game_number ASC',
+        [matchId]
+      );
+      setGameResults(results.map((r: any) => ({
+        player1Score: r.player1_score,
+        player2Score: r.player2_score,
+      })));
+    } catch (error) {
+      console.error('Error cargando resultados de games:', error);
     }
   };
 
