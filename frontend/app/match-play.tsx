@@ -161,17 +161,24 @@ export default function MatchPlay() {
   };
 
   const handleCourtPress = (x: number, y: number) => {
-    if (selectingPosition === 'point') {
-      setCurrentPoint({ ...currentPoint!, positionX: x, positionY: y });
-      setSelectingPosition(null);
-      setShowPointModal(true);
-    } else if (selectingPosition === 'myPlayer') {
+    if (selectingPosition === 'myPlayer') {
       setCurrentPoint({ ...currentPoint!, myPlayerPosX: x, myPlayerPosY: y });
       setSelectingPosition(null);
       setShowPointModal(true);
     } else if (selectingPosition === 'opponent') {
       setCurrentPoint({ ...currentPoint!, opponentPosX: x, opponentPosY: y });
       setSelectingPosition(null);
+      setShowPointModal(true);
+    } else {
+      // Nuevo flujo: detectar ganador por mitad de cancha
+      // Si x < 0.5 es jugador 1 (izquierda), si x >= 0.5 es jugador 2 (derecha)
+      const winnerPlayerId = x < 0.5 ? match!.player1.id : match!.player2.id;
+      
+      setCurrentPoint({
+        positionX: x,
+        positionY: y,
+        winnerPlayerId: winnerPlayerId,
+      });
       setShowPointModal(true);
     }
   };
