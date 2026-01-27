@@ -223,9 +223,11 @@ export default function MatchPlay() {
     if (!match || isSaving) return;
 
     setIsSaving(true); // Prevenir guardados dobles
+    console.log('[MatchPlay] Iniciando guardado de punto...');
 
     try {
       const db = await getDatabase();
+      console.log('[MatchPlay] Base de datos obtenida');
       
       // Calcular nuevo marcador
       let newPlayer1Score = match.player1Score;
@@ -238,14 +240,17 @@ export default function MatchPlay() {
       }
 
       // Obtener número de puntos en este game
+      console.log('[MatchPlay] Consultando número de puntos...');
       const pointCount = await db.getFirstAsync(
         'SELECT COUNT(*) as count FROM points WHERE match_id = ? AND game_number = ?',
         [matchId, match.currentGame]
       );
+      console.log('[MatchPlay] Puntos actuales:', pointCount);
 
       const pointNumber = ((pointCount as any)?.count || 0) + 1;
 
-      // Guardar punto primero
+      // Guardar punto
+      console.log('[MatchPlay] Guardando punto #' + pointNumber);
       await db.runAsync(
         `INSERT INTO points 
         (match_id, position_x, position_y, winner_player_id, reason, 
@@ -270,7 +275,7 @@ export default function MatchPlay() {
         ]
       );
 
-      console.log('Punto guardado exitosamente');
+      console.log('[MatchPlay] Punto guardado exitosamente');
 
       // Verificar si el game terminó (11 puntos con diferencia de 2)
       const gameFinished =
@@ -278,7 +283,7 @@ export default function MatchPlay() {
         (newPlayer2Score >= 11 && newPlayer2Score - newPlayer1Score >= 2);
 
       if (gameFinished) {
-        console.log('Game terminado, actualizando...');
+        console.log('[MatchPlay] Game terminado, actualizando...');
         
         const player1GamesWon = newPlayer1Score > newPlayer2Score ? 1 : 0;
         const player2GamesWon = newPlayer2Score > newPlayer1Score ? 1 : 0;
@@ -290,21 +295,18 @@ export default function MatchPlay() {
         const matchFinished = newPlayer1Games >= gamesNeeded || newPlayer2Games >= gamesNeeded;
 
         if (matchFinished) {
-          console.log('Partido terminado');
+          console.log('[MatchPlay] Partido terminado');
           
           const winnerId =
             newPlayer1Games > newPlayer2Games ? match.player1.id : match.player2.id;
 
           // Actualizar partido como finalizado
-          try {
-            await db.runAsync(
-              'UPDATE matches SET status = ?, winner_id = ?, player1_games = ?, player2_games = ? WHERE id = ?',
-              ['finished', winnerId, newPlayer1Games, newPlayer2Games, matchId]
-            );
-            console.log('Partido actualizado en BD');
-          } catch (error) {
-            console.error('Error actualizando partido finalizado:', error);
-          }
+          console.log('[MatchPlay] Actualizando partido como finalizado...');
+          await db.runAsync(
+            'UPDATE matches SET status = ?, winner_id = ?, player1_games = ?, player2_games = ? WHERE id = ?',
+            ['finished', winnerId, newPlayer1Games, newPlayer2Games, matchId]
+          );
+          console.log('[MatchPlay] Partido actualizado en BD');
 
           // Cerrar modal primero
           setShowPointModal(false);
@@ -332,18 +334,15 @@ export default function MatchPlay() {
           
           return;
         } else {
-          console.log('Iniciando siguiente game');
+          console.log('[MatchPlay] Iniciando siguiente game');
           
           // Actualizar en BD el nuevo game
-          try {
-            await db.runAsync(
-              'UPDATE matches SET current_game = ?, player1_games = ?, player2_games = ? WHERE id = ?',
-              [match.currentGame + 1, newPlayer1Games, newPlayer2Games, matchId]
-            );
-            console.log('Match actualizado para siguiente game');
-          } catch (error) {
-            console.error('Error actualizando match para siguiente game:', error);
-          }
+          console.log('[MatchPlay] Actualizando match para siguiente game...');
+          await db.runAsync(
+            'UPDATE matches SET current_game = ?, player1_games = ?, player2_games = ? WHERE id = ?',
+            [match.currentGame + 1, newPlayer1Games, newPlayer2Games, matchId]
+          );
+          console.log('[MatchPlay] Match actualizado para siguiente game');
           
           // Resetear arrays de puntos para el nuevo game
           setGamePoints([]);
@@ -419,8 +418,9 @@ export default function MatchPlay() {
       setShowPointModal(false);
       setCurrentPoint(null);
       setSelectingPosition(null);
+      console.log('[MatchPlay] Guardado completado exitosamente');
     } catch (error) {
-      console.error('Error guardando punto:', error);
+      console.error('[MatchPlay] Error guardando punto:', error);
       Alert.alert('Error', 'No se pudo guardar el punto. Por favor intenta de nuevo.');
     } finally {
       setIsSaving(false); // Habilitar guardado nuevamente
