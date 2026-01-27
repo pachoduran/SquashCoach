@@ -177,39 +177,54 @@ export default function NewMatch() {
       </View>
 
       <ScrollView style={styles.content}>
-        <PlayerSelector
-          title="Jugador 1"
-          selectedPlayer={selectedPlayer1}
-          onSelect={setSelectedPlayer1}
-        />
-
-        <PlayerSelector
-          title="Jugador 2"
-          selectedPlayer={selectedPlayer2}
-          onSelect={setSelectedPlayer2}
-        />
-
-        {selectedPlayer1 && selectedPlayer2 && (
-          <View style={styles.myPlayerContainer}>
-            <Text style={styles.selectorTitle}>Mi jugador</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={myPlayer?.id || ''}
-                onValueChange={(itemValue) => {
-                  if (itemValue) {
-                    const player = itemValue === selectedPlayer1.id ? selectedPlayer1 : selectedPlayer2;
-                    setMyPlayer(player);
-                  }
-                }}
-                style={styles.picker}
-              >
-                <Picker.Item label="Selecciona tu jugador" value="" />
-                <Picker.Item label={selectedPlayer1.name} value={selectedPlayer1.id} />
-                <Picker.Item label={selectedPlayer2.name} value={selectedPlayer2.id} />
-              </Picker>
-            </View>
+        {/* Mi Jugador */}
+        <View style={styles.selectorContainer}>
+          <Text style={styles.selectorTitle}>Mi Jugador</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={selectedPlayer1Id}
+              onValueChange={(itemValue) => setSelectedPlayer1Id(itemValue)}
+              style={styles.picker}
+            >
+              <Picker.Item label="Selecciona tu jugador" value={null} />
+              {players.map((player) => (
+                <Picker.Item
+                  key={player.id}
+                  label={player.nickname ? `${player.name} (${player.nickname})` : player.name}
+                  value={player.id}
+                />
+              ))}
+            </Picker>
           </View>
-        )}
+          <TouchableOpacity
+            style={styles.addPlayerButtonSmall}
+            onPress={() => setShowAddPlayer(true)}
+          >
+            <Ionicons name="add-circle-outline" size={20} color="#2196F3" />
+            <Text style={styles.addPlayerText}>Agregar nuevo jugador</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Oponente */}
+        <View style={styles.selectorContainer}>
+          <Text style={styles.selectorTitle}>Oponente</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={selectedPlayer2Id}
+              onValueChange={(itemValue) => setSelectedPlayer2Id(itemValue)}
+              style={styles.picker}
+            >
+              <Picker.Item label="Selecciona oponente" value={null} />
+              {players.map((player) => (
+                <Picker.Item
+                  key={player.id}
+                  label={player.nickname ? `${player.name} (${player.nickname})` : player.name}
+                  value={player.id}
+                />
+              ))}
+            </Picker>
+          </View>
+        </View>
 
         <View style={styles.bestOfContainer}>
           <Text style={styles.selectorTitle}>Formato del Partido</Text>
@@ -254,10 +269,10 @@ export default function NewMatch() {
         <TouchableOpacity
           style={[
             styles.startButton,
-            (!selectedPlayer1 || !selectedPlayer2 || !myPlayer) && styles.startButtonDisabled,
+            (!selectedPlayer1Id || !selectedPlayer2Id) && styles.startButtonDisabled,
           ]}
           onPress={startMatch}
-          disabled={!selectedPlayer1 || !selectedPlayer2 || !myPlayer}
+          disabled={!selectedPlayer1Id || !selectedPlayer2Id}
         >
           <Text style={styles.startButtonText}>Comenzar Partido</Text>
         </TouchableOpacity>
