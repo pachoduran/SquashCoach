@@ -28,51 +28,44 @@ export const ScoreBoard: React.FC<ScoreBoardProps> = ({
   const player2Color = '#FF5722';
   
   return (
-    <View style={styles.outerContainer}>
+    <View style={styles.container}>
       <Text style={styles.gameText}>Game {currentGame}</Text>
       
-      {/* Puntos fuera del recuadro - Más grandes */}
-      <View style={styles.pointsOuterContainer}>
-        <View style={styles.pointSection}>
-          <Text style={[styles.pointsLarge, { color: player1Color }]}>{player1Score}</Text>
-        </View>
-        <Text style={styles.pointsSeparator}>-</Text>
-        <View style={styles.pointSection}>
-          <Text style={[styles.pointsLarge, { color: player2Color }]}>{player2Score}</Text>
-        </View>
-      </View>
-      
-      {/* Recuadro solo con Games */}
-      <View style={styles.gamesContainer}>
-        {/* Jugador 1 */}
+      <View style={styles.mainRow}>
+        {/* Cuadro Jugador 1 - Izquierda */}
         <View style={[
-          styles.playerSection,
+          styles.playerBox,
           { borderColor: player1Color, borderWidth: 2 }
         ]}>
           <View style={[styles.colorIndicator, { backgroundColor: player1Color }]} />
-          <Text style={styles.playerName} numberOfLines={1}>
+          <Text style={styles.playerNameSmall} numberOfLines={1}>
             {player1Name}
           </Text>
-          <Text style={styles.gamesLabel}>Games</Text>
-          <Text style={styles.gamesScore}>{player1Games}</Text>
+          <Text style={styles.gamesSmall}>{player1Games}</Text>
         </View>
         
-        {/* Separador central */}
-        <View style={styles.separator}>
-          <Text style={styles.separatorText}>-</Text>
+        {/* Centro - Puntos grandes */}
+        <View style={styles.centerSection}>
+          <View style={styles.pointsRow}>
+            <Text style={[styles.pointsHuge, { color: player1Color }]}>{player1Score}</Text>
+            <Text style={styles.pointsSeparator}>-</Text>
+            <Text style={[styles.pointsHuge, { color: player2Color }]}>{player2Score}</Text>
+          </View>
+          <Text style={styles.gamesLabel}>
+            Games: {player1Games} - {player2Games}
+          </Text>
         </View>
         
-        {/* Jugador 2 */}
+        {/* Cuadro Jugador 2 - Derecha */}
         <View style={[
-          styles.playerSection,
+          styles.playerBox,
           { borderColor: player2Color, borderWidth: 2 }
         ]}>
           <View style={[styles.colorIndicator, { backgroundColor: player2Color }]} />
-          <Text style={styles.playerName} numberOfLines={1}>
+          <Text style={styles.playerNameSmall} numberOfLines={1}>
             {player2Name}
           </Text>
-          <Text style={styles.gamesLabel}>Games</Text>
-          <Text style={styles.gamesScore}>{player2Games}</Text>
+          <Text style={styles.gamesSmall}>{player2Games}</Text>
         </View>
       </View>
     </View>
