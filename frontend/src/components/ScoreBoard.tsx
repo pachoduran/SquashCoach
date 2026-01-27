@@ -73,89 +73,75 @@ export const ScoreBoard: React.FC<ScoreBoardProps> = ({
 };
 
 const styles = StyleSheet.create({
-  outerContainer: {
-    marginBottom: 12,
+  container: {
+    paddingVertical: 8,
+    paddingHorizontal: 8,
   },
   gameText: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
     fontWeight: '600',
   },
-  pointsOuterContainer: {
+  mainRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  playerBox: {
+    width: 70,
+    backgroundColor: 'rgba(30, 58, 95, 0.8)',
+    borderRadius: 8,
+    padding: 6,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  colorIndicator: {
+    position: 'absolute',
+    top: 3,
+    right: 3,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  playerNameSmall: {
+    fontSize: 10,
+    color: '#FFF',
+    fontWeight: '600',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  gamesSmall: {
+    fontSize: 28,
+    color: '#FFF',
+    fontWeight: 'bold',
+  },
+  centerSection: {
+    flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
+    paddingHorizontal: 10,
   },
-  pointSection: {
-    minWidth: 70,
+  pointsRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  pointsLarge: {
+  pointsHuge: {
     fontSize: 48,
     fontWeight: 'bold',
+    marginHorizontal: 8,
   },
   pointsSeparator: {
     fontSize: 36,
     color: '#999',
     fontWeight: 'bold',
-    marginHorizontal: 8,
-  },
-  gamesContainer: {
-    backgroundColor: '#1E3A5F',
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  playerSection: {
-    flex: 1,
-    alignItems: 'center',
-    padding: 10,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    position: 'relative',
-  },
-  colorIndicator: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  playerName: {
-    fontSize: 13,
-    color: '#FFF',
-    fontWeight: '600',
-    marginBottom: 6,
   },
   gamesLabel: {
-    fontSize: 10,
-    color: '#B0BEC5',
-    marginBottom: 4,
-  },
-  gamesScore: {
-    fontSize: 36,
-    color: '#FFF',
-    fontWeight: 'bold',
-  },
-  separator: {
-    paddingHorizontal: 10,
-    justifyContent: 'center',
-  },
-  separatorText: {
-    fontSize: 24,
-    color: '#B0BEC5',
-    fontWeight: 'bold',
+    fontSize: 11,
+    color: '#666',
+    marginTop: 4,
+    fontWeight: '600',
   },
 });
