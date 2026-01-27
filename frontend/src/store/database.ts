@@ -1,8 +1,29 @@
 import * as SQLite from 'expo-sqlite';
 
+// Singleton para la base de datos
+let dbInstance: SQLite.SQLiteDatabase | null = null;
+let isInitializing = false;
+
 // Inicializar base de datos
 export const initDatabase = async () => {
+  if (dbInstance) {
+    console.log('Base de datos ya inicializada, reutilizando instancia');
+    return dbInstance;
+  }
+
+  if (isInitializing) {
+    console.log('Esperando inicialización en progreso...');
+    // Esperar a que termine la inicialización
+    while (isInitializing) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    return dbInstance;
+  }
+
+  isInitializing = true;
+
   try {
+    console.log('Inicializando base de datos...');
     const db = await SQLite.openDatabaseAsync('squash_analyzer.db');
     
     // Tabla de jugadores
@@ -87,20 +108,21 @@ export const initDatabase = async () => {
       );
     }
     
+    dbInstance = db;
     console.log('Base de datos inicializada correctamente');
     return db;
   } catch (error) {
     console.error('Error inicializando base de datos:', error);
     throw error;
+  } finally {
+    isInitializing = false;
   }
 };
 
 // Obtener instancia de la base de datos
-let dbInstance: SQLite.SQLiteDatabase | null = null;
-
 export const getDatabase = async () => {
   if (!dbInstance) {
-    dbInstance = await SQLite.openDatabaseAsync('squash_analyzer.db');
+    return await initDatabase();
   }
   return dbInstance;
 };
