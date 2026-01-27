@@ -421,6 +421,8 @@ export default function MatchPlay() {
     } catch (error) {
       console.error('Error guardando punto:', error);
       Alert.alert('Error', 'No se pudo guardar el punto. Por favor intenta de nuevo.');
+    } finally {
+      setIsSaving(false); // Habilitar guardado nuevamente
     }
   };
 
