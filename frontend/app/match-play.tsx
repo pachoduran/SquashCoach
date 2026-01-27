@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '@/src/store/database';
 import { SquashCourt } from '@/src/components/SquashCourt';
 import { ScoreBoard } from '@/src/components/ScoreBoard';
+import { syncService } from '@/src/store/syncService';
 
 interface Player {
   id: number;
