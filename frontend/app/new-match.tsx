@@ -9,6 +9,7 @@ import {
   ScrollView,
   Modal,
   Alert,
+  Platform,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
@@ -17,8 +18,7 @@ import { getDatabase } from '@/src/store/database';
 
 interface Player {
   id: number;
-  name: string;
-  nickname?: string;
+  nickname: string;
 }
 
 export default function NewMatch() {
@@ -28,8 +28,11 @@ export default function NewMatch() {
   const [selectedPlayer2Id, setSelectedPlayer2Id] = useState<number | null>(null);
   const [bestOf, setBestOf] = useState<3 | 5>(3);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
-  const [newPlayerName, setNewPlayerName] = useState('');
   const [newPlayerNickname, setNewPlayerNickname] = useState('');
+  
+  // Nuevos campos
+  const [tournamentName, setTournamentName] = useState('');
+  const [matchDate, setMatchDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
     loadPlayers();
@@ -39,7 +42,7 @@ export default function NewMatch() {
     try {
       const db = await getDatabase();
       const result = await db.getAllAsync(
-        'SELECT * FROM players ORDER BY name ASC'
+        'SELECT id, nickname FROM players ORDER BY nickname ASC'
       );
       setPlayers(result as Player[]);
     } catch (error) {
@@ -48,26 +51,24 @@ export default function NewMatch() {
   };
 
   const addPlayer = async () => {
-    if (!newPlayerName.trim()) {
-      Alert.alert('Error', 'Por favor ingresa un nombre');
+    if (!newPlayerNickname.trim()) {
+      Alert.alert('Error', 'Por favor ingresa un apodo');
       return;
     }
 
     try {
       const db = await getDatabase();
       const result = await db.runAsync(
-        'INSERT INTO players (name, nickname, created_at) VALUES (?, ?, ?)',
-        [newPlayerName.trim(), newPlayerNickname.trim() || null, new Date().toISOString()]
+        'INSERT INTO players (nickname, created_at) VALUES (?, ?)',
+        [newPlayerNickname.trim(), new Date().toISOString()]
       );
       
       const newPlayer: Player = {
         id: result.lastInsertRowId,
-        name: newPlayerName.trim(),
-        nickname: newPlayerNickname.trim() || undefined,
+        nickname: newPlayerNickname.trim(),
       };
 
-      setPlayers([...players, newPlayer]);
-      setNewPlayerName('');
+      setPlayers([...players, newPlayer].sort((a, b) => a.nickname.localeCompare(b.nickname)));
       setNewPlayerNickname('');
       setShowAddPlayer(false);
       Alert.alert('Éxito', 'Jugador agregado correctamente');
@@ -92,18 +93,20 @@ export default function NewMatch() {
       const db = await getDatabase();
       const result = await db.runAsync(
         `INSERT INTO matches 
-        (player1_id, player2_id, my_player_id, best_of, date, status, current_game, player1_games, player2_games) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (player1_id, player2_id, my_player_id, best_of, date, status, current_game, player1_games, player2_games, tournament_name, match_date) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          selectedPlayer1Id,  // Mi jugador
-          selectedPlayer2Id,  // Oponente
-          selectedPlayer1Id,  // my_player_id siempre es player1
+          selectedPlayer1Id,
+          selectedPlayer2Id,
+          selectedPlayer1Id,
           bestOf,
           new Date().toISOString(),
           'playing',
           1,
           0,
           0,
+          tournamentName.trim() || null,
+          matchDate,
         ]
       );
 
@@ -117,6 +120,11 @@ export default function NewMatch() {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    const [year, month, day] = dateString.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -128,6 +136,31 @@ export default function NewMatch() {
       </View>
 
       <ScrollView style={styles.content}>
+        {/* Información del Torneo */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Información del Partido</Text>
+          
+          <TextInput
+            style={styles.textInput}
+            placeholder="Nombre del Torneo (opcional)"
+            value={tournamentName}
+            onChangeText={setTournamentName}
+            placeholderTextColor="#999"
+          />
+          
+          <View style={styles.dateContainer}>
+            <Ionicons name="calendar-outline" size={20} color="#666" />
+            <TextInput
+              style={styles.dateInput}
+              placeholder="YYYY-MM-DD"
+              value={matchDate}
+              onChangeText={setMatchDate}
+              placeholderTextColor="#999"
+            />
+            <Text style={styles.dateFormatted}>{formatDate(matchDate)}</Text>
+          </View>
+        </View>
+
         {/* Mi Jugador */}
         <View style={styles.selectorContainer}>
           <Text style={styles.selectorTitle}>Mi Jugador</Text>
@@ -136,12 +169,13 @@ export default function NewMatch() {
               selectedValue={selectedPlayer1Id}
               onValueChange={(itemValue) => setSelectedPlayer1Id(itemValue)}
               style={styles.picker}
+              dropdownIconColor="#333"
             >
               <Picker.Item label="Selecciona tu jugador" value={null} />
               {players.map((player) => (
                 <Picker.Item
                   key={player.id}
-                  label={player.nickname ? `${player.name} (${player.nickname})` : player.name}
+                  label={player.nickname}
                   value={player.id}
                 />
               ))}
@@ -164,12 +198,13 @@ export default function NewMatch() {
               selectedValue={selectedPlayer2Id}
               onValueChange={(itemValue) => setSelectedPlayer2Id(itemValue)}
               style={styles.picker}
+              dropdownIconColor="#333"
             >
               <Picker.Item label="Selecciona oponente" value={null} />
               {players.map((player) => (
                 <Picker.Item
                   key={player.id}
-                  label={player.nickname ? `${player.name} (${player.nickname})` : player.name}
+                  label={player.nickname}
                   value={player.id}
                 />
               ))}
@@ -242,24 +277,24 @@ export default function NewMatch() {
             
             <TextInput
               style={styles.input}
-              placeholder="Nombre *"
-              value={newPlayerName}
-              onChangeText={setNewPlayerName}
-              placeholderTextColor="#999"
-            />
-            
-            <TextInput
-              style={styles.input}
-              placeholder="Nickname (opcional)"
+              placeholder="Apodo / Nickname *"
               value={newPlayerNickname}
               onChangeText={setNewPlayerNickname}
               placeholderTextColor="#999"
+              autoCapitalize="words"
             />
+            
+            <Text style={styles.helperText}>
+              Ingresa el nombre o apodo con el que identificarás al jugador
+            </Text>
             
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={styles.modalButton}
-                onPress={() => setShowAddPlayer(false)}
+                onPress={() => {
+                  setShowAddPlayer(false);
+                  setNewPlayerNickname('');
+                }}
               >
                 <Text style={styles.modalButtonText}>Cancelar</Text>
               </TouchableOpacity>
@@ -305,6 +340,50 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
   },
+  sectionContainer: {
+    marginBottom: 24,
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 12,
+    textTransform: 'uppercase',
+  },
+  textInput: {
+    backgroundColor: '#F5F7FA',
+    borderRadius: 8,
+    padding: 14,
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 12,
+  },
+  dateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F7FA',
+    borderRadius: 8,
+    padding: 14,
+  },
+  dateInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+    marginLeft: 10,
+  },
+  dateFormatted: {
+    fontSize: 14,
+    color: '#2196F3',
+    fontWeight: '500',
+  },
   selectorContainer: {
     marginBottom: 24,
   },
@@ -328,72 +407,19 @@ const styles = StyleSheet.create({
   },
   picker: {
     height: 50,
+    color: '#333',
   },
   addPlayerButtonSmall: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    backgroundColor: '#E3F2FD',
-    borderRadius: 8,
-    alignSelf: 'flex-start',
+    marginTop: 8,
+    paddingVertical: 8,
   },
   addPlayerText: {
     fontSize: 14,
     color: '#2196F3',
-    fontWeight: '500',
     marginLeft: 6,
-  },
-  selectedPlayer: {
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  selectedPlayerName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    flex: 1,
-  },
-  selectedPlayerNick: {
-    fontSize: 14,
-    color: '#666',
-    marginRight: 12,
-  },
-  changeButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#E3F2FD',
-    borderRadius: 8,
-  },
-  changeButtonText: {
-    fontSize: 14,
-    color: '#2196F3',
     fontWeight: '500',
-  },
-  pickerContainer: {
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  picker: {
-    height: 50,
-    color: '#333',
   },
   bestOfContainer: {
     marginBottom: 24,
@@ -477,7 +503,12 @@ const styles = StyleSheet.create({
     padding: 14,
     fontSize: 16,
     color: '#333',
-    marginBottom: 12,
+    marginBottom: 8,
+  },
+  helperText: {
+    fontSize: 12,
+    color: '#999',
+    marginBottom: 16,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -501,17 +532,5 @@ const styles = StyleSheet.create({
   },
   modalButtonTextPrimary: {
     color: '#FFF',
-  },
-  addPlayerButtonSmall: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    paddingVertical: 8,
-  },
-  addPlayerText: {
-    fontSize: 14,
-    color: '#2196F3',
-    marginLeft: 6,
-    fontWeight: '500',
   },
 });
