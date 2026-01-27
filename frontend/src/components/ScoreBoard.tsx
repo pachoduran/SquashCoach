@@ -32,7 +32,7 @@ export const ScoreBoard: React.FC<ScoreBoardProps> = ({
       <Text style={styles.gameText}>Game {currentGame}</Text>
       
       <View style={styles.mainRow}>
-        {/* Cuadro Jugador 1 - Izquierda */}
+        {/* Cuadro Jugador 1 - Izquierda - PUNTOS */}
         <View style={[
           styles.playerBox,
           { borderColor: player1Color, borderWidth: 2 }
@@ -41,22 +41,20 @@ export const ScoreBoard: React.FC<ScoreBoardProps> = ({
           <Text style={styles.playerNameSmall} numberOfLines={1}>
             {player1Name}
           </Text>
-          <Text style={styles.gamesSmall}>{player1Games}</Text>
+          <Text style={styles.pointsInBox}>{player1Score}</Text>
         </View>
         
-        {/* Centro - Puntos grandes */}
+        {/* Centro - GAMES grandes */}
         <View style={styles.centerSection}>
-          <View style={styles.pointsRow}>
-            <Text style={[styles.pointsHuge, { color: player1Color }]}>{player1Score}</Text>
-            <Text style={styles.pointsSeparator}>-</Text>
-            <Text style={[styles.pointsHuge, { color: player2Color }]}>{player2Score}</Text>
+          <View style={styles.gamesRow}>
+            <Text style={[styles.gamesHuge, { color: player1Color }]}>{player1Games}</Text>
+            <Text style={styles.gamesSeparator}>-</Text>
+            <Text style={[styles.gamesHuge, { color: player2Color }]}>{player2Games}</Text>
           </View>
-          <Text style={styles.gamesLabel}>
-            Games: {player1Games} - {player2Games}
-          </Text>
+          <Text style={styles.gamesLabelCenter}>Games</Text>
         </View>
         
-        {/* Cuadro Jugador 2 - Derecha */}
+        {/* Cuadro Jugador 2 - Derecha - PUNTOS */}
         <View style={[
           styles.playerBox,
           { borderColor: player2Color, borderWidth: 2 }
@@ -65,7 +63,7 @@ export const ScoreBoard: React.FC<ScoreBoardProps> = ({
           <Text style={styles.playerNameSmall} numberOfLines={1}>
             {player2Name}
           </Text>
-          <Text style={styles.gamesSmall}>{player2Games}</Text>
+          <Text style={styles.pointsInBox}>{player2Score}</Text>
         </View>
       </View>
     </View>
