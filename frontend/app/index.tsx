@@ -155,13 +155,23 @@ export default function Index() {
       </View>
 
       <View style={styles.bottomButtons}>
-        <TouchableOpacity
-          style={styles.newMatchButton}
-          onPress={() => router.push('/new-match')}
-        >
-          <Ionicons name="add-circle" size={28} color="#FFF" />
-          <Text style={styles.newMatchText}>Nuevo Partido</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
+            style={styles.analysisButton}
+            onPress={() => router.push('/analysis')}
+          >
+            <Ionicons name="analytics" size={24} color="#1E3A5F" />
+            <Text style={styles.analysisButtonText}>Análisis</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.newMatchButton}
+            onPress={() => router.push('/new-match')}
+          >
+            <Ionicons name="add-circle" size={24} color="#FFF" />
+            <Text style={styles.newMatchText}>Nuevo Partido</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
