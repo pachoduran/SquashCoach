@@ -78,17 +78,12 @@ export default function NewMatch() {
   };
 
   const startMatch = async () => {
-    if (!selectedPlayer1 || !selectedPlayer2) {
+    if (!selectedPlayer1Id || !selectedPlayer2Id) {
       Alert.alert('Error', 'Por favor selecciona ambos jugadores');
       return;
     }
 
-    if (!myPlayer) {
-      Alert.alert('Error', 'Por favor indica cuál es tu jugador');
-      return;
-    }
-
-    if (selectedPlayer1.id === selectedPlayer2.id) {
+    if (selectedPlayer1Id === selectedPlayer2Id) {
       Alert.alert('Error', 'Debes seleccionar jugadores diferentes');
       return;
     }
@@ -100,9 +95,9 @@ export default function NewMatch() {
         (player1_id, player2_id, my_player_id, best_of, date, status, current_game, player1_games, player2_games) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          selectedPlayer1.id,
-          selectedPlayer2.id,
-          myPlayer.id,
+          selectedPlayer1Id,  // Mi jugador
+          selectedPlayer2Id,  // Oponente
+          selectedPlayer1Id,  // my_player_id siempre es player1
           bestOf,
           new Date().toISOString(),
           'playing',
