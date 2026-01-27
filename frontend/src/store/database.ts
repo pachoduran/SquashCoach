@@ -4,9 +4,43 @@ import * as SQLite from 'expo-sqlite';
 let dbInstance: SQLite.SQLiteDatabase | null = null;
 let isInitializing = false;
 
+// Función helper para ejecutar operaciones con retry
+const executeWithRetry = async <T>(
+  operation: () => Promise<T>,
+  retries = 3,
+  delay = 500
+): Promise<T> => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      console.log(`Intento ${i + 1} falló:`, error.message);
+      
+      // Si es NullPointerException, la BD está corrupta, resetear
+      if (error.message?.includes('NullPointerException') || 
+          error.message?.includes('closed') ||
+          error.message?.includes('invalid')) {
+        console.log('Base de datos corrupta, reiniciando...');
+        dbInstance = null;
+        
+        if (i < retries - 1) {
+          await new Promise(resolve => setTimeout(resolve, delay));
+          // Reiniciar la BD
+          await initDatabase();
+        }
+      } else if (i < retries - 1) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        throw error;
+      }
+    }
+  }
+  throw new Error('Operación falló después de múltiples intentos');
+};
+
 // Inicializar base de datos
 export const initDatabase = async () => {
-  if (dbInstance) {
+  if (dbInstance && !isInitializing) {
     console.log('Base de datos ya inicializada, reutilizando instancia');
     return dbInstance;
   }
@@ -14,16 +48,29 @@ export const initDatabase = async () => {
   if (isInitializing) {
     console.log('Esperando inicialización en progreso...');
     // Esperar a que termine la inicialización
-    while (isInitializing) {
+    let attempts = 0;
+    while (isInitializing && attempts < 50) {
       await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
     }
-    return dbInstance;
+    if (dbInstance) return dbInstance;
   }
 
   isInitializing = true;
 
   try {
     console.log('Inicializando base de datos...');
+    
+    // Cerrar instancia anterior si existe
+    if (dbInstance) {
+      try {
+        await dbInstance.closeAsync();
+      } catch (e) {
+        console.log('Error cerrando BD anterior:', e);
+      }
+      dbInstance = null;
+    }
+    
     const db = await SQLite.openDatabaseAsync('squash_analyzer.db');
     
     // Tabla de jugadores
@@ -113,16 +160,19 @@ export const initDatabase = async () => {
     return db;
   } catch (error) {
     console.error('Error inicializando base de datos:', error);
+    dbInstance = null;
     throw error;
   } finally {
     isInitializing = false;
   }
 };
 
-// Obtener instancia de la base de datos
+// Obtener instancia de la base de datos con retry
 export const getDatabase = async () => {
-  if (!dbInstance) {
-    return await initDatabase();
-  }
-  return dbInstance;
+  return executeWithRetry(async () => {
+    if (!dbInstance) {
+      return await initDatabase();
+    }
+    return dbInstance;
+  });
 };
