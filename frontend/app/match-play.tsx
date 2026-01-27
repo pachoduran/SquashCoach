@@ -203,25 +203,13 @@ export default function MatchPlay() {
       setSelectingPosition(null);
       setShowPointModal(true);
     } else {
-      // Nuevo flujo: detectar ganador por mitad de cancha
-      // Si x < 0.5 es jugador 1 (izquierda), si x >= 0.5 es jugador 2 (derecha)
-      const winnerPlayerId = x < 0.5 ? match!.player1.id : match!.player2.id;
-      
+      // Nuevo flujo: solo marcar posición, usuario elige ganador en modal
       setCurrentPoint({
         positionX: x,
         positionY: y,
-        winnerPlayerId: winnerPlayerId,
       });
       setShowPointModal(true);
     }
-  };
-
-  const startPointRegistration = () => {
-    setCurrentPoint({
-      positionX: 0,
-      positionY: 0,
-    });
-    setSelectingPosition('point');
   };
 
   const savePoint = async () => {
