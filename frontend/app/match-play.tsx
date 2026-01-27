@@ -612,10 +612,19 @@ export default function MatchPlay() {
                 <Text style={styles.modalButtonText}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonPrimary]}
+                style={[
+                  styles.modalButton, 
+                  styles.modalButtonPrimary,
+                  (!currentPoint?.winnerPlayerId || !currentPoint?.reason) && styles.modalButtonDisabled
+                ]}
                 onPress={savePoint}
+                disabled={!currentPoint?.winnerPlayerId || !currentPoint?.reason}
               >
-                <Text style={[styles.modalButtonText, styles.modalButtonTextPrimary]}>
+                <Text style={[
+                  styles.modalButtonText, 
+                  styles.modalButtonTextPrimary,
+                  (!currentPoint?.winnerPlayerId || !currentPoint?.reason) && styles.modalButtonTextDisabled
+                ]}>
                   Guardar
                 </Text>
               </TouchableOpacity>
