@@ -205,20 +205,24 @@ export default function MatchSummary() {
         {reasonStats.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Motivos de Puntos</Text>
-            <View style={styles.chartContainer}>
-              <BarChart
-                data={reasonStats}
-                width={SCREEN_WIDTH - 80}
-                height={220}
-                barWidth={32}
-                spacing={16}
-                roundedTop
-                hideRules
-                xAxisThickness={0}
-                yAxisThickness={0}
-                yAxisTextStyle={{ color: '#666' }}
-                noOfSections={4}
-              />
+            <View style={styles.reasonsList}>
+              {reasonStats.map((stat, index) => (
+                <View key={index} style={styles.reasonBar}>
+                  <Text style={styles.reasonLabel}>{stat.label}</Text>
+                  <View style={styles.barContainer}>
+                    <View
+                      style={[
+                        styles.bar,
+                        {
+                          width: `${(stat.value / Math.max(...reasonStats.map((s) => s.value))) * 100}%`,
+                          backgroundColor: stat.frontColor,
+                        },
+                      ]}
+                    />
+                    <Text style={styles.barValue}>{stat.value}</Text>
+                  </View>
+                </View>
+              ))}
             </View>
           </View>
         )}
