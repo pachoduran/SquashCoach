@@ -58,7 +58,9 @@ export default function MatchPlay() {
   const [selectingPosition, setSelectingPosition] = useState<'myPlayer' | 'opponent' | null>(null);
   const [reasons, setReasons] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [gamePoints, setGamePoints] = useState<Array<{ x: number; y: number; isWin: boolean; number: number }>>([]);
+  const [gamePoints, setGamePoints] = useState<Array<{ x: number; y: number; isWin: boolean; score: string }>>([]);
+  const [playerPositions, setPlayerPositions] = useState<Array<{ x: number; y: number; isPlayer1: boolean; score: string }>>([]);
+  const [showAllPositions, setShowAllPositions] = useState(false);
 
   useEffect(() => {
     loadMatch();
