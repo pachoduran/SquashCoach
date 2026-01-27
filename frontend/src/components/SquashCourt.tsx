@@ -1,14 +1,14 @@
-import React from 'react';
-import { View, StyleSheet, Pressable, Dimensions, Text, Image } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, Pressable, Dimensions, Text, Image, Animated } from 'react-native';
 import Svg, { Rect, Line, Circle, Text as SvgText } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COURT_WIDTH = SCREEN_WIDTH - 40;
-const COURT_HEIGHT = COURT_WIDTH * 1.5; // Cancha de squash es más larga que ancha
+const COURT_HEIGHT = COURT_WIDTH * 1.5;
 
 interface SquashCourtProps {
   onCourtPress?: (x: number, y: number) => void;
-  points?: Array<{ x: number; y: number; isWin: boolean; score?: string }>;
+  points?: Array<{ x: number; y: number; isWin: boolean; score?: string; isSelected?: boolean }>;
   playerPosition?: { x: number; y: number };
   opponentPosition?: { x: number; y: number };
   showPositions?: boolean;
@@ -16,7 +16,104 @@ interface SquashCourtProps {
   player2Color?: string;
   playerPositions?: Array<{ x: number; y: number; isPlayer1: boolean; score: string }>;
   showAllPositions?: boolean;
+  selectedPointIndex?: number;
+  showSelectedHighlight?: boolean;
 }
+
+// Componente animado para el punto seleccionado
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+const PulsingPoint: React.FC<{
+  x: number;
+  y: number;
+  color: string;
+  score?: string;
+}> = ({ x, y, color, score }) => {
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const opacityAnim = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.parallel([
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 2,
+            duration: 600,
+            useNativeDriver: false,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: false,
+          }),
+        ]),
+        Animated.sequence([
+          Animated.timing(opacityAnim, {
+            toValue: 0,
+            duration: 600,
+            useNativeDriver: false,
+          }),
+          Animated.timing(opacityAnim, {
+            toValue: 0.3,
+            duration: 600,
+            useNativeDriver: false,
+          }),
+        ]),
+      ])
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, []);
+
+  return (
+    <View
+      style={{
+        position: 'absolute',
+        left: x * COURT_WIDTH - 30,
+        top: y * COURT_HEIGHT - 30,
+        width: 60,
+        height: 60,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {/* Círculo exterior pulsante */}
+      <Animated.View
+        style={{
+          position: 'absolute',
+          width: 60,
+          height: 60,
+          borderRadius: 30,
+          backgroundColor: color,
+          opacity: opacityAnim,
+          transform: [{ scale: pulseAnim }],
+        }}
+      />
+      {/* Círculo interior sólido */}
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          backgroundColor: color,
+          borderWidth: 3,
+          borderColor: '#FFD700',
+          alignItems: 'center',
+          justifyContent: 'center',
+          shadowColor: '#FFD700',
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.8,
+          shadowRadius: 10,
+          elevation: 10,
+        }}
+      >
+        <Text style={{ color: '#FFF', fontSize: 11, fontWeight: 'bold' }}>
+          {score || '•'}
+        </Text>
+      </View>
+    </View>
+  );
+};
 
 export const SquashCourt: React.FC<SquashCourtProps> = ({
   onCourtPress,
@@ -28,16 +125,19 @@ export const SquashCourt: React.FC<SquashCourtProps> = ({
   player2Color = '#FF5722',
   playerPositions = [],
   showAllPositions = false,
+  selectedPointIndex,
+  showSelectedHighlight = false,
 }) => {
   const handlePress = (event: any) => {
     if (onCourtPress) {
       const { locationX, locationY } = event.nativeEvent;
-      // Normalizar coordenadas (0-1)
       const normalizedX = locationX / COURT_WIDTH;
       const normalizedY = locationY / COURT_HEIGHT;
       onCourtPress(normalizedX, normalizedY);
     }
   };
+
+  const selectedPoint = selectedPointIndex !== undefined ? points[selectedPointIndex] : null;
 
   return (
     <View style={styles.container}>
@@ -54,32 +154,38 @@ export const SquashCourt: React.FC<SquashCourtProps> = ({
             resizeMode="cover"
           />
           
-          {/* SVG transparente encima para los elementos interactivos */}
+          {/* SVG para los puntos */}
           <Svg width={COURT_WIDTH} height={COURT_HEIGHT} style={{ position: 'absolute' }}>
-            {/* Puntos marcados con marcador */}
-            {points.map((point, index) => (
-              <React.Fragment key={index}>
-                <Circle
-                  cx={point.x * COURT_WIDTH}
-                  cy={point.y * COURT_HEIGHT}
-                  r="16"
-                  fill={point.isWin ? player1Color : player2Color}
-                  opacity="0.85"
-                />
-                <SvgText
-                  x={point.x * COURT_WIDTH}
-                  y={point.y * COURT_HEIGHT + 4}
-                  fontSize="10"
-                  fontWeight="bold"
-                  fill="#FFF"
-                  textAnchor="middle"
-                >
-                  {point.score || (index + 1)}
-                </SvgText>
-              </React.Fragment>
-            ))}
+            {/* Puntos marcados (excepto el seleccionado) */}
+            {points.map((point, index) => {
+              const isSelected = showSelectedHighlight && index === selectedPointIndex;
+              if (isSelected) return null; // El seleccionado se renderiza por separado
+              
+              return (
+                <React.Fragment key={index}>
+                  <Circle
+                    cx={point.x * COURT_WIDTH}
+                    cy={point.y * COURT_HEIGHT}
+                    r="16"
+                    fill={point.isWin ? player1Color : player2Color}
+                    opacity={showSelectedHighlight ? 0.4 : 0.85}
+                  />
+                  <SvgText
+                    x={point.x * COURT_WIDTH}
+                    y={point.y * COURT_HEIGHT + 4}
+                    fontSize="10"
+                    fontWeight="bold"
+                    fill="#FFF"
+                    textAnchor="middle"
+                    opacity={showSelectedHighlight ? 0.6 : 1}
+                  >
+                    {point.score || (index + 1)}
+                  </SvgText>
+                </React.Fragment>
+              );
+            })}
             
-            {/* Mostrar todas las posiciones de jugadores cuando está activado */}
+            {/* Mostrar todas las posiciones de jugadores */}
             {showAllPositions && playerPositions.map((pos, index) => (
               <React.Fragment key={`pos-${index}`}>
                 <Circle
@@ -104,7 +210,7 @@ export const SquashCourt: React.FC<SquashCourtProps> = ({
               </React.Fragment>
             ))}
             
-            {/* Posición del jugador (temporal durante registro) */}
+            {/* Posición del jugador (temporal) */}
             {showPositions && playerPosition && (
               <>
                 <Circle
@@ -127,7 +233,7 @@ export const SquashCourt: React.FC<SquashCourtProps> = ({
               </>
             )}
             
-            {/* Posición del oponente (temporal durante registro) */}
+            {/* Posición del oponente (temporal) */}
             {showPositions && opponentPosition && (
               <>
                 <Circle
@@ -150,6 +256,16 @@ export const SquashCourt: React.FC<SquashCourtProps> = ({
               </>
             )}
           </Svg>
+          
+          {/* Punto seleccionado con animación */}
+          {showSelectedHighlight && selectedPoint && (
+            <PulsingPoint
+              x={selectedPoint.x}
+              y={selectedPoint.y}
+              color={selectedPoint.isWin ? player1Color : player2Color}
+              score={selectedPoint.score}
+            />
+          )}
         </Pressable>
       </View>
       
@@ -194,10 +310,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 10,
   },
-  legendColor: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
+  legendDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     marginRight: 6,
   },
   legendText: {
