@@ -147,7 +147,7 @@ export default function MatchPlay() {
         const visualPoints = points.map((p: any, index: number) => ({
           x: p.position_x,
           y: p.position_y,
-          isWin: p.winner_player_id === match?.myPlayer.id,
+          isWin: p.winner_player_id === matchData.p1_id, // Jugador 1 = azul
           number: index + 1,
         }));
         setGamePoints(visualPoints);
