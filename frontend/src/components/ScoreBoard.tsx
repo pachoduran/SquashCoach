@@ -126,7 +126,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#FFF',
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 8,
+  },
+  scoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gamesScore: {
+    fontSize: 32,
+    color: '#FFF',
+    fontWeight: 'bold',
+    marginHorizontal: 4,
+  },
+  scoreSeparator: {
+    fontSize: 24,
+    color: '#B0BEC5',
+    fontWeight: 'bold',
+    marginHorizontal: 2,
+  },
+  pointsScore: {
+    fontSize: 20,
+    color: '#E3F2FD',
+    fontWeight: '600',
+    marginHorizontal: 4,
   },
   gamesText: {
     fontSize: 10,
@@ -139,11 +162,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   separator: {
-    paddingHorizontal: 15,
+    paddingHorizontal: 8,
+    justifyContent: 'center',
   },
   separatorText: {
-    fontSize: 28,
-    color: '#FFF',
+    fontSize: 16,
+    color: '#B0BEC5',
     fontWeight: 'bold',
   },
 });
