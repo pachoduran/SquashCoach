@@ -142,6 +142,15 @@ export default function MatchPlay() {
               }
             : null
         );
+        
+        // Cargar puntos para visualización en la cancha
+        const visualPoints = points.map((p: any, index: number) => ({
+          x: p.position_x,
+          y: p.position_y,
+          isWin: p.winner_player_id === match?.myPlayer.id,
+          number: index + 1,
+        }));
+        setGamePoints(visualPoints);
       }
     } catch (error) {
       console.error('Error cargando puntos:', error);
