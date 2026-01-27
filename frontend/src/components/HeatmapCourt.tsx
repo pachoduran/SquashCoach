@@ -117,8 +117,8 @@ export const HeatmapCourt: React.FC<HeatmapCourtProps> = ({
           <View style={[styles.legendBlock, { backgroundColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.8)` }]} />
         </View>
         <View style={styles.legendLabels}>
-          <SvgText style={styles.legendText}>Menos</SvgText>
-          <SvgText style={styles.legendText}>Más</SvgText>
+          <Text style={styles.legendText}>Menos</Text>
+          <Text style={styles.legendText}>Más</Text>
         </View>
       </View>
     </View>
