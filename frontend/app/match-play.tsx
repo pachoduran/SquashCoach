@@ -853,6 +853,10 @@ const styles = StyleSheet.create({
   modalButtonPrimary: {
     backgroundColor: '#2196F3',
   },
+  modalButtonDisabled: {
+    backgroundColor: '#B0BEC5',
+    opacity: 0.6,
+  },
   modalButtonText: {
     fontSize: 16,
     fontWeight: '600',
@@ -860,5 +864,8 @@ const styles = StyleSheet.create({
   },
   modalButtonTextPrimary: {
     color: '#FFF',
+  },
+  modalButtonTextDisabled: {
+    color: '#E0E0E0',
   },
 });
