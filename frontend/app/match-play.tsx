@@ -480,14 +480,16 @@ export default function MatchPlay() {
       <ScrollView style={styles.content}>
         <View style={styles.compactHeader}>
           <ScoreBoard
-            player1Name={match.player1.name}
-            player2Name={match.player2.name}
+            player1Name={match.player1.nickname}
+            player2Name={match.player2.nickname}
             player1Score={match.player1Score}
             player2Score={match.player2Score}
             player1Games={match.player1Games}
             player2Games={match.player2Games}
             currentGame={match.currentGame}
-            isPlayer1My={true}
+            bestOf={match.bestOf}
+            gameResults={gameResults}
+            tournamentName={match.tournamentName}
           />
           
           <View style={styles.instruction}>
