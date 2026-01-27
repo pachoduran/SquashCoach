@@ -307,12 +307,20 @@ export default function MatchPlay() {
           );
         }
       } else {
-        // Actualizar marcador
+        // Actualizar marcador y agregar punto al array de visualización
         setMatch({
           ...match,
           player1Score: newPlayer1Score,
           player2Score: newPlayer2Score,
         });
+        
+        const newPoint = {
+          x: currentPoint.positionX,
+          y: currentPoint.positionY,
+          isWin: currentPoint.winnerPlayerId === match.myPlayer.id,
+          number: pointNumber,
+        };
+        setGamePoints([...gamePoints, newPoint]);
       }
 
       setShowPointModal(false);
