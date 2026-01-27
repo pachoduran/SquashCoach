@@ -1,16 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  SafeAreaView,
   StatusBar,
+  Alert,
+  Image,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { initDatabase, getDatabase } from '@/src/store/database';
+import { useAuth } from '@/src/context/AuthContext';
+import { syncService } from '@/src/store/syncService';
 import { format } from 'date-fns';
 
 interface Match {
@@ -24,17 +28,36 @@ interface Match {
 
 export default function Index() {
   const router = useRouter();
+  const { user, isAuthenticated, isLoading: authLoading, login, logout } = useAuth();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [hasPendingSync, setHasPendingSync] = useState(false);
 
   useEffect(() => {
     initializeApp();
   }, []);
 
+  // Refresh when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadMatches();
+      checkPendingSync();
+    }, [])
+  );
+
+  // Auto-sync on app open if authenticated and has pending
+  useEffect(() => {
+    if (isAuthenticated && hasPendingSync) {
+      handleSync();
+    }
+  }, [isAuthenticated, hasPendingSync]);
+
   const initializeApp = async () => {
     try {
       await initDatabase();
       await loadMatches();
+      await checkPendingSync();
     } catch (error) {
       console.error('Error inicializando app:', error);
     } finally {
@@ -64,6 +87,39 @@ export default function Index() {
     } catch (error) {
       console.error('Error cargando partidos:', error);
     }
+  };
+
+  const checkPendingSync = async () => {
+    const pending = await syncService.hasPendingSync();
+    setHasPendingSync(pending);
+  };
+
+  const handleSync = async () => {
+    if (!isAuthenticated) {
+      Alert.alert('Iniciar Sesión', 'Debes iniciar sesión para sincronizar', [
+        { text: 'Cancelar' },
+        { text: 'Iniciar Sesión', onPress: login }
+      ]);
+      return;
+    }
+
+    setSyncing(true);
+    const result = await syncService.syncPendingMatches();
+    setSyncing(false);
+
+    if (result.success) {
+      setHasPendingSync(false);
+      Alert.alert('Sincronización', result.message);
+    } else {
+      Alert.alert('Error', result.message);
+    }
+  };
+
+  const handleLogout = () => {
+    Alert.alert('Cerrar Sesión', '¿Estás seguro?', [
+      { text: 'Cancelar' },
+      { text: 'Cerrar Sesión', onPress: logout, style: 'destructive' }
+    ]);
   };
 
   const renderMatch = ({ item }: { item: Match }) => (
@@ -111,46 +167,67 @@ export default function Index() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1E3A5F" />
       
+      {/* Header con usuario */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Squash Analyzer</Text>
-          <Text style={styles.subtitle}>Análisis de Partidos</Text>
+        <View style={styles.headerTop}>
+          <Text style={styles.title}>Squash Coach</Text>
+          {isAuthenticated && user ? (
+            <TouchableOpacity style={styles.userButton} onPress={handleLogout}>
+              {user.picture ? (
+                <Image source={{ uri: user.picture }} style={styles.userAvatar} />
+              ) : (
+                <Ionicons name="person-circle" size={32} color="#FFF" />
+              )}
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.loginButton} onPress={login}>
+              <Ionicons name="log-in-outline" size={20} color="#FFF" />
+              <Text style={styles.loginButtonText}>Entrar</Text>
+            </TouchableOpacity>
+          )}
         </View>
-        <TouchableOpacity
-          style={styles.settingsButton}
-          onPress={() => router.push('/settings')}
-        >
-          <Ionicons name="settings-outline" size={24} color="#FFF" />
-        </TouchableOpacity>
+        
+        {/* Indicador de sync pendiente */}
+        {hasPendingSync && isAuthenticated && (
+          <TouchableOpacity style={styles.syncBanner} onPress={handleSync} disabled={syncing}>
+            <Ionicons name="cloud-upload-outline" size={18} color="#FFF" />
+            <Text style={styles.syncBannerText}>
+              {syncing ? 'Sincronizando...' : 'Hay partidos pendientes de sincronizar'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.content}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Partidos Recientes</Text>
-          <TouchableOpacity onPress={() => router.push('/history')}>
-            <Text style={styles.viewAllText}>Ver todos</Text>
-          </TouchableOpacity>
+          {isAuthenticated && (
+            <TouchableOpacity 
+              style={styles.cloudButton}
+              onPress={() => router.push('/cloud-matches')}
+            >
+              <Ionicons name="cloud-outline" size={18} color="#2196F3" />
+              <Text style={styles.cloudButtonText}>Nube</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        {loading ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Cargando...</Text>
-          </View>
-        ) : matches.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="tennisball-outline" size={64} color="#CCC" />
-            <Text style={styles.emptyText}>No hay partidos registrados</Text>
-            <Text style={styles.emptySubtext}>
-              Comienza tu primer partido para ver el análisis
-            </Text>
-          </View>
-        ) : (
+        {matches.length > 0 ? (
           <FlatList
             data={matches}
             renderItem={renderMatch}
             keyExtractor={(item) => item.id.toString()}
-            contentContainerStyle={styles.matchList}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
           />
+        ) : (
+          <View style={styles.emptyState}>
+            <Ionicons name="tennisball-outline" size={64} color="#CCC" />
+            <Text style={styles.emptyText}>No hay partidos aún</Text>
+            <Text style={styles.emptySubtext}>
+              Comienza un nuevo partido para empezar a analizar
+            </Text>
+          </View>
         )}
       </View>
 
@@ -185,47 +262,91 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#1E3A5F',
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingTop: 10,
+    paddingBottom: 16,
+  },
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#FFF',
   },
-  subtitle: {
-    fontSize: 14,
-    color: '#B0BEC5',
-    marginTop: 4,
+  userButton: {
+    padding: 4,
   },
-  settingsButton: {
-    padding: 8,
+  userAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  loginButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  loginButtonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  syncBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FF9800',
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  syncBannerText: {
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: '500',
+    flex: 1,
   },
   content: {
     flex: 1,
+    paddingHorizontal: 20,
     paddingTop: 20,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 15,
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#333',
   },
-  viewAllText: {
-    fontSize: 14,
-    color: '#2196F3',
-    fontWeight: '500',
+  cloudButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
   },
-  matchList: {
-    paddingHorizontal: 20,
+  cloudButtonText: {
+    color: '#2196F3',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  listContent: {
+    paddingBottom: 20,
   },
   matchCard: {
     backgroundColor: '#FFF',
@@ -263,36 +384,36 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#666',
+    fontWeight: '600',
   },
   matchDate: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#666',
     marginBottom: 4,
   },
   winnerText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#4CAF50',
     fontWeight: '500',
   },
-  emptyContainer: {
+  emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
+    paddingBottom: 100,
   },
   emptyText: {
     fontSize: 18,
+    fontWeight: '600',
     color: '#666',
     marginTop: 16,
-    textAlign: 'center',
   },
   emptySubtext: {
     fontSize: 14,
     color: '#999',
     marginTop: 8,
     textAlign: 'center',
+    paddingHorizontal: 40,
   },
   bottomButtons: {
     paddingHorizontal: 20,
@@ -337,9 +458,9 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   newMatchText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#FFF',
-    marginLeft: 8,
+    marginLeft: 6,
   },
 });
