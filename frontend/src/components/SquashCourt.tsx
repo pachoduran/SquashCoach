@@ -42,94 +42,19 @@ export const SquashCourt: React.FC<SquashCourtProps> = ({
   return (
     <View style={styles.container}>
       <Pressable onPress={handlePress} style={styles.courtContainer}>
-        <Svg width={COURT_WIDTH} height={COURT_HEIGHT}>
-          {/* Piso de la cancha con textura */}
-          <Rect
-            x="0"
-            y="0"
-            width={COURT_WIDTH}
-            height={COURT_HEIGHT}
-            fill="#E8D5B5"
-            stroke="#8B6F47"
-            strokeWidth="4"
-          />
-          
-          {/* Línea divisoria central (mitad de la cancha) */}
-          <Line
-            x1={COURT_WIDTH / 2}
-            y1="0"
-            x2={COURT_WIDTH / 2}
-            y2={COURT_HEIGHT}
-            stroke="#8B6F47"
-            strokeWidth="3"
-            strokeDasharray="10,5"
-            opacity="0.4"
-          />
-          
-          {/* Línea de servicio frontal (más cerca de la pared) */}
-          <Line
-            x1="0"
-            y1={COURT_HEIGHT * 0.25}
-            x2={COURT_WIDTH}
-            y2={COURT_HEIGHT * 0.25}
-            stroke="#8B6F47"
-            strokeWidth="2"
-          />
-          
-          {/* Línea de media cancha (horizontal) */}
-          <Line
-            x1={COURT_WIDTH / 2}
-            y1={COURT_HEIGHT * 0.25}
-            x2={COURT_WIDTH / 2}
-            y2={COURT_HEIGHT}
-            stroke="#8B6F47"
-            strokeWidth="2"
-          />
-          
-          {/* Caja de servicio izquierda */}
-          <Rect
-            x={COURT_WIDTH * 0.05}
-            y={COURT_HEIGHT * 0.55}
-            width={COURT_WIDTH * 0.4}
-            height={COURT_HEIGHT * 0.35}
-            fill="none"
-            stroke="#8B6F47"
-            strokeWidth="2"
-          />
-          
-          {/* Caja de servicio derecha */}
-          <Rect
-            x={COURT_WIDTH * 0.55}
-            y={COURT_HEIGHT * 0.55}
-            width={COURT_WIDTH * 0.4}
-            height={COURT_HEIGHT * 0.35}
-            fill="none"
-            stroke="#8B6F47"
-            strokeWidth="2"
-          />
-          
-          {/* Línea T (horizontal en el fondo) */}
-          <Line
-            x1="0"
-            y1={COURT_HEIGHT * 0.55}
-            x2={COURT_WIDTH}
-            y2={COURT_HEIGHT * 0.55}
-            stroke="#8B6F47"
-            strokeWidth="2"
-          />
-          
-          {/* Texto "PARED FRONTAL" en la parte superior */}
-          <SvgText
-            x={COURT_WIDTH / 2}
-            y={COURT_HEIGHT * 0.12}
-            fontSize="12"
-            fontWeight="bold"
-            fill="#8B6F47"
-            textAnchor="middle"
-          >
-            PARED FRONTAL
-          </SvgText>
-          
+        {/* Imagen de fondo de la cancha */}
+        <Image
+          source={require('../../assets/squash-court.png')}
+          style={{
+            width: COURT_WIDTH,
+            height: COURT_HEIGHT,
+            position: 'absolute',
+          }}
+          resizeMode="stretch"
+        />
+        
+        {/* SVG transparente encima para los elementos interactivos */}
+        <Svg width={COURT_WIDTH} height={COURT_HEIGHT} style={{ position: 'absolute' }}>
           {/* Puntos marcados con marcador */}
           {points.map((point, index) => (
             <React.Fragment key={index}>
