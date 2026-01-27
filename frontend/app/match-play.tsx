@@ -146,13 +146,35 @@ export default function MatchPlay() {
         );
         
         // Cargar puntos para visualización en la cancha
-        const visualPoints = points.map((p: any, index: number) => ({
+        const visualPoints = points.map((p: any) => ({
           x: p.position_x,
           y: p.position_y,
           isWin: p.winner_player_id === matchData.p1_id, // Jugador 1 = azul
-          number: index + 1,
+          score: `${p.player1_score}-${p.player2_score}`,
         }));
         setGamePoints(visualPoints);
+        
+        // Cargar posiciones de jugadores
+        const positions: Array<{ x: number; y: number; isPlayer1: boolean; score: string }> = [];
+        points.forEach((p: any) => {
+          if (p.my_player_pos_x !== null && p.my_player_pos_y !== null) {
+            positions.push({
+              x: p.my_player_pos_x,
+              y: p.my_player_pos_y,
+              isPlayer1: true, // Mi jugador siempre es jugador 1
+              score: `${p.player1_score}-${p.player2_score}`,
+            });
+          }
+          if (p.opponent_pos_x !== null && p.opponent_pos_y !== null) {
+            positions.push({
+              x: p.opponent_pos_x,
+              y: p.opponent_pos_y,
+              isPlayer1: false,
+              score: `${p.player1_score}-${p.player2_score}`,
+            });
+          }
+        });
+        setPlayerPositions(positions);
       }
     } catch (error) {
       console.error('Error cargando puntos:', error);
