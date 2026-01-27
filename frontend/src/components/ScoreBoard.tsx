@@ -24,6 +24,9 @@ export const ScoreBoard: React.FC<ScoreBoardProps> = ({
   currentGame,
   isPlayer1My,
 }) => {
+  const player1Color = '#2196F3';
+  const player2Color = '#FF5722';
+  
   return (
     <View style={styles.container}>
       <Text style={styles.gameText}>Game {currentGame}</Text>
@@ -32,8 +35,9 @@ export const ScoreBoard: React.FC<ScoreBoardProps> = ({
         {/* Jugador 1 */}
         <View style={[
           styles.playerSection,
-          isPlayer1My && styles.myPlayerSection
+          { borderColor: player1Color, borderWidth: 2 }
         ]}>
+          <View style={[styles.colorIndicator, { backgroundColor: player1Color }]} />
           <Text style={styles.playerName} numberOfLines={1}>
             {player1Name} {isPlayer1My && '(Yo)'}
           </Text>
@@ -49,8 +53,9 @@ export const ScoreBoard: React.FC<ScoreBoardProps> = ({
         {/* Jugador 2 */}
         <View style={[
           styles.playerSection,
-          !isPlayer1My && styles.myPlayerSection
+          { borderColor: player2Color, borderWidth: 2 }
         ]}>
+          <View style={[styles.colorIndicator, { backgroundColor: player2Color }]} />
           <Text style={styles.playerName} numberOfLines={1}>
             {player2Name} {!isPlayer1My && '(Yo)'}
           </Text>
