@@ -387,34 +387,37 @@ export default function MatchPlay() {
       </View>
 
       <ScrollView style={styles.content}>
-        <ScoreBoard
-          player1Name={match.player1.name}
-          player2Name={match.player2.name}
-          player1Score={match.player1Score}
-          player2Score={match.player2Score}
-          player1Games={match.player1Games}
-          player2Games={match.player2Games}
-          currentGame={match.currentGame}
-          isPlayer1My={match.myPlayer.id === match.player1.id}
-        />
-
-        <View style={styles.instructionContainer}>
-          {selectingPosition ? (
+        <View style={styles.compactHeader}>
+          <ScoreBoard
+            player1Name={match.player1.name}
+            player2Name={match.player2.name}
+            player1Score={match.player1Score}
+            player2Score={match.player2Score}
+            player1Games={match.player1Games}
+            player2Games={match.player2Games}
+            currentGame={match.currentGame}
+            isPlayer1My={true}
+          />
+          
+          <View style={styles.actionRow}>
             <View style={styles.instruction}>
-              <Ionicons name="hand-left" size={24} color="#2196F3" />
               <Text style={styles.instructionText}>
-                {selectingPosition === 'myPlayer' && 'Toca tu posición en la cancha'}
-                {selectingPosition === 'opponent' && 'Toca la posición del oponente'}
+                {selectingPosition === 'myPlayer' && 'Toca tu posición'}
+                {selectingPosition === 'opponent' && 'Toca posición oponente'}
+                {!selectingPosition && 'Toca donde terminó el punto'}
               </Text>
             </View>
-          ) : (
-            <View style={styles.instruction}>
-              <Ionicons name="information-circle" size={24} color="#2196F3" />
-              <Text style={styles.instructionText}>
-                Toca la mitad izquierda si ganó {match.player1.name} o la derecha si ganó {match.player2.name}
-              </Text>
-            </View>
-          )}
+            <TouchableOpacity
+              style={styles.toggleButton}
+              onPress={() => setShowAllPositions(!showAllPositions)}
+            >
+              <Ionicons 
+                name={showAllPositions ? 'eye-off' : 'eye'} 
+                size={20} 
+                color="#FFF" 
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <SquashCourt
@@ -435,6 +438,8 @@ export default function MatchPlay() {
           }
           player1Color="#2196F3"
           player2Color="#FF5722"
+          playerPositions={playerPositions}
+          showAllPositions={showAllPositions}
         />
       </ScrollView>
 
