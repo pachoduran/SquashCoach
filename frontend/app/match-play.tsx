@@ -311,11 +311,25 @@ export default function MatchPlay() {
             'UPDATE matches SET current_game = ?, player1_games = ?, player2_games = ? WHERE id = ?',
             [match.currentGame + 1, newPlayer1Games, newPlayer2Games, matchId]
           );
+          
+          // Resetear arrays de puntos para el nuevo game
+          setGamePoints([]);
+          setPlayerPositions([]);
+          
+          // Actualizar el estado del match
+          setMatch({
+            ...match,
+            currentGame: match.currentGame + 1,
+            player1Games: newPlayer1Games,
+            player2Games: newPlayer2Games,
+            player1Score: 0,
+            player2Score: 0,
+          });
 
           Alert.alert(
             'Game Finalizado',
             `Game ${match.currentGame} terminado. Iniciando Game ${match.currentGame + 1}`,
-            [{ text: 'OK', onPress: () => loadMatch() }]
+            [{ text: 'OK' }]
           );
         }
       } else {
