@@ -606,6 +606,40 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  compactHeader: {
+    paddingHorizontal: 15,
+    paddingTop: 10,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  instruction: {
+    flex: 1,
+    backgroundColor: '#E3F2FD',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginRight: 8,
+  },
+  instructionText: {
+    fontSize: 13,
+    color: '#1976D2',
+    textAlign: 'center',
+  },
+  toggleButton: {
+    backgroundColor: '#2196F3',
+    borderRadius: 8,
+    padding: 10,
+    shadowColor: '#2196F3',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
   instructionContainer: {
     paddingHorizontal: 20,
     paddingVertical: 16,
