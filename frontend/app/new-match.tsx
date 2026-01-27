@@ -197,40 +197,22 @@ export default function NewMatch() {
 
         {selectedPlayer1 && selectedPlayer2 && (
           <View style={styles.myPlayerContainer}>
-            <Text style={styles.selectorTitle}>¿Cuál es tu jugador?</Text>
-            <View style={styles.myPlayerButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.myPlayerButton,
-                  myPlayer?.id === selectedPlayer1.id && styles.myPlayerButtonSelected,
-                ]}
-                onPress={() => setMyPlayer(selectedPlayer1)}
+            <Text style={styles.selectorTitle}>Mi jugador</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={myPlayer?.id || ''}
+                onValueChange={(itemValue) => {
+                  if (itemValue) {
+                    const player = itemValue === selectedPlayer1.id ? selectedPlayer1 : selectedPlayer2;
+                    setMyPlayer(player);
+                  }
+                }}
+                style={styles.picker}
               >
-                <Text
-                  style={[
-                    styles.myPlayerButtonText,
-                    myPlayer?.id === selectedPlayer1.id && styles.myPlayerButtonTextSelected,
-                  ]}
-                >
-                  {selectedPlayer1.name}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.myPlayerButton,
-                  myPlayer?.id === selectedPlayer2.id && styles.myPlayerButtonSelected,
-                ]}
-                onPress={() => setMyPlayer(selectedPlayer2)}
-              >
-                <Text
-                  style={[
-                    styles.myPlayerButtonText,
-                    myPlayer?.id === selectedPlayer2.id && styles.myPlayerButtonTextSelected,
-                  ]}
-                >
-                  {selectedPlayer2.name}
-                </Text>
-              </TouchableOpacity>
+                <Picker.Item label="Selecciona tu jugador" value="" />
+                <Picker.Item label={selectedPlayer1.name} value={selectedPlayer1.id} />
+                <Picker.Item label={selectedPlayer2.name} value={selectedPlayer2.id} />
+              </Picker>
             </View>
           </View>
         )}
