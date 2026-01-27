@@ -367,24 +367,23 @@ export default function MatchPlay() {
             <View style={styles.instruction}>
               <Ionicons name="hand-left" size={24} color="#2196F3" />
               <Text style={styles.instructionText}>
-                {selectingPosition === 'point' && 'Toca donde terminó el punto'}
                 {selectingPosition === 'myPlayer' && 'Toca tu posición en la cancha'}
                 {selectingPosition === 'opponent' && 'Toca la posición del oponente'}
               </Text>
             </View>
           ) : (
-            <TouchableOpacity
-              style={styles.registerPointButton}
-              onPress={startPointRegistration}
-            >
-              <Ionicons name="add-circle" size={24} color="#FFF" />
-              <Text style={styles.registerPointText}>Registrar Punto</Text>
-            </TouchableOpacity>
+            <View style={styles.instruction}>
+              <Ionicons name="information-circle" size={24} color="#2196F3" />
+              <Text style={styles.instructionText}>
+                Toca la mitad izquierda si ganó {match.player1.name} o la derecha si ganó {match.player2.name}
+              </Text>
+            </View>
           )}
         </View>
 
         <SquashCourt
           onCourtPress={handleCourtPress}
+          points={gamePoints}
           showPositions={
             currentPoint?.myPlayerPosX !== undefined || currentPoint?.opponentPosX !== undefined
           }
@@ -398,6 +397,8 @@ export default function MatchPlay() {
               ? { x: currentPoint.opponentPosX, y: currentPoint.opponentPosY! }
               : undefined
           }
+          player1Color="#2196F3"
+          player2Color="#FF5722"
         />
       </ScrollView>
 
