@@ -230,11 +230,11 @@ export const SquashCourt: React.FC<SquashCourtProps> = ({
       <View style={styles.legendContainer}>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: player1Color }]} />
-          <Text style={styles.legendText}>Jugador 1</Text>
+          <Text style={styles.legendText}>Mi Jugador</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: player2Color }]} />
-          <Text style={styles.legendText}>Jugador 2</Text>
+          <Text style={styles.legendText}>Oponente</Text>
         </View>
       </View>
     </View>
