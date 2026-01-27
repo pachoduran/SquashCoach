@@ -411,6 +411,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
   },
+  reasonsList: {
+    gap: 12,
+  },
+  reasonBar: {
+    marginBottom: 8,
+  },
+  reasonLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+    fontWeight: '500',
+  },
+  barContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  bar: {
+    height: 24,
+    borderRadius: 4,
+    minWidth: 40,
+  },
+  barValue: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '600',
+    minWidth: 30,
+  },
   gameCard: {
     backgroundColor: '#F5F7FA',
     borderRadius: 12,
