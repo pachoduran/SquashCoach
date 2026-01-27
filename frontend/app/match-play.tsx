@@ -213,8 +213,8 @@ export default function MatchPlay() {
   };
 
   const savePoint = async () => {
+    // No mostrar alerta, el botón ya está deshabilitado si faltan datos
     if (!currentPoint || !currentPoint.winnerPlayerId || !currentPoint.reason) {
-      Alert.alert('Error', 'Por favor completa todos los datos del punto');
       return;
     }
 
