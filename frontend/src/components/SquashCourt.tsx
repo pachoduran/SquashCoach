@@ -8,12 +8,14 @@ const COURT_HEIGHT = COURT_WIDTH * 1.5; // Cancha de squash es más larga que an
 
 interface SquashCourtProps {
   onCourtPress?: (x: number, y: number) => void;
-  points?: Array<{ x: number; y: number; isWin: boolean; number?: number }>;
+  points?: Array<{ x: number; y: number; isWin: boolean; score?: string }>;
   playerPosition?: { x: number; y: number };
   opponentPosition?: { x: number; y: number };
   showPositions?: boolean;
   player1Color?: string;
   player2Color?: string;
+  playerPositions?: Array<{ x: number; y: number; isPlayer1: boolean; score: string }>;
+  showAllPositions?: boolean;
 }
 
 export const SquashCourt: React.FC<SquashCourtProps> = ({
