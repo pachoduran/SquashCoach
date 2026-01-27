@@ -329,10 +329,34 @@ export default function MatchPlay() {
         const newPoint = {
           x: currentPoint.positionX,
           y: currentPoint.positionY,
-          isWin: currentPoint.winnerPlayerId === match.myPlayer.id,
-          number: pointNumber,
+          isWin: currentPoint.winnerPlayerId === match.player1.id,
+          score: `${newPlayer1Score}-${newPlayer2Score}`,
         };
         setGamePoints([...gamePoints, newPoint]);
+        
+        // Agregar posiciones de jugadores si fueron registradas
+        if (currentPoint.myPlayerPosX !== undefined) {
+          setPlayerPositions([
+            ...playerPositions,
+            {
+              x: currentPoint.myPlayerPosX,
+              y: currentPoint.myPlayerPosY!,
+              isPlayer1: true,
+              score: `${newPlayer1Score}-${newPlayer2Score}`,
+            },
+          ]);
+        }
+        if (currentPoint.opponentPosX !== undefined) {
+          setPlayerPositions((prev) => [
+            ...prev,
+            {
+              x: currentPoint.opponentPosX!,
+              y: currentPoint.opponentPosY!,
+              isPlayer1: false,
+              score: `${newPlayer1Score}-${newPlayer2Score}`,
+            },
+          ]);
+        }
       }
 
       setShowPointModal(false);
