@@ -141,11 +141,11 @@ export default function Index() {
             try {
               const db = await getDatabase();
               // Eliminar puntos del partido
-              db.runSync('DELETE FROM points WHERE match_id = ?', [matchId]);
+              await db.runAsync('DELETE FROM points WHERE match_id = ?', [matchId]);
               // Eliminar resultados de games
-              db.runSync('DELETE FROM game_results WHERE match_id = ?', [matchId]);
+              await db.runAsync('DELETE FROM game_results WHERE match_id = ?', [matchId]);
               // Eliminar el partido
-              db.runSync('DELETE FROM matches WHERE id = ?', [matchId]);
+              await db.runAsync('DELETE FROM matches WHERE id = ?', [matchId]);
               
               // Recargar la lista
               await loadActiveMatches();
