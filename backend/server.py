@@ -282,7 +282,8 @@ async def exchange_session(request: Request, response: Response):
     
     # Remove old sessions for this user
     await db.user_sessions.delete_many({"user_id": user_id})
-    await db.user_sessions.insert_one(session)
+    result = await db.user_sessions.insert_one(session)
+    logger.info(f"Session created for user {user_id}, inserted_id: {result.inserted_id}")
     
     # Set cookie
     response.set_cookie(
