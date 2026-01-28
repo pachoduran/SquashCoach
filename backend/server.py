@@ -270,7 +270,8 @@ async def exchange_session(request: Request, response: Response):
     
     # Create session
     session_token = user_data["session_token"]
-    expires_at = datetime.now(timezone.utc).replace(day=datetime.now().day + 7)
+    from datetime import timedelta
+    expires_at = datetime.now(timezone.utc) + timedelta(days=7)
     
     session = {
         "user_id": user_id,
