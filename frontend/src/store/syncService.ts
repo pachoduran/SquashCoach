@@ -198,6 +198,9 @@ class SyncService {
       }
 
       // Send to server
+      console.log('[Sync] Enviando datos al servidor:', BACKEND_URL);
+      console.log('[Sync] Token:', sessionToken?.substring(0, 20) + '...');
+      
       const response = await fetch(`${BACKEND_URL}/api/sync`, {
         method: 'POST',
         headers: {
@@ -206,6 +209,8 @@ class SyncService {
         },
         body: JSON.stringify(syncData)
       });
+
+      console.log('[Sync] Response status:', response.status);
 
       if (response.ok) {
         const result = await response.json();
