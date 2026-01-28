@@ -1,19 +1,12 @@
-import { Platform } from 'react-native';
+import * as SQLite from 'expo-sqlite';
 
 // =============================================================================
-// SOLUCIÓN ROBUSTA PARA EXPO-SQLITE
+// SOLUCIÓN ROBUSTA PARA EXPO-SQLITE (NATIVE)
 // Usa una única conexión y manejo síncrono para evitar NullPointerException
-// Web: Usa un mock ya que expo-sqlite no soporta web completamente
 // =============================================================================
-
-// Import condicional para evitar errores en web
-let SQLite: any = null;
-if (Platform.OS !== 'web') {
-  SQLite = require('expo-sqlite');
-}
 
 // Variable global única para la base de datos
-let db: any = null;
+let db: SQLite.SQLiteDatabase | null = null;
 let isInitialized = false;
 let initPromise: Promise<void> | null = null;
 
