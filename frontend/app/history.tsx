@@ -5,9 +5,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  TextInput,
-  ScrollView,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -16,10 +15,11 @@ import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { getDatabase } from '@/src/store/database';
 import { format } from 'date-fns';
-import { Platform } from 'react-native';
 
 interface Match {
   id: number;
+  player1_id: number;
+  player2_id: number;
   player1_nickname: string;
   player2_nickname: string;
   date: string;
@@ -47,13 +47,14 @@ export default function HistoryScreen() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   
   // Filtros
-  const [selectedPlayer, setSelectedPlayer] = useState<number | null>(null);
+  const [myPlayer, setMyPlayer] = useState<number | null>(null);
+  const [opponent, setOpponent] = useState<number | null>(null);
   const [selectedTournament, setSelectedTournament] = useState<string | null>(null);
   const [dateFrom, setDateFrom] = useState<Date | null>(null);
   const [dateTo, setDateTo] = useState<Date | null>(null);
   const [showDateFromPicker, setShowDateFromPicker] = useState(false);
   const [showDateToPicker, setShowDateToPicker] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
 
   useEffect(() => {
     loadInitialData();
@@ -62,20 +63,18 @@ export default function HistoryScreen() {
   useFocusEffect(
     useCallback(() => {
       loadMatches();
-    }, [selectedPlayer, selectedTournament, dateFrom, dateTo])
+    }, [myPlayer, opponent, selectedTournament, dateFrom, dateTo])
   );
 
   const loadInitialData = async () => {
     try {
       const db = await getDatabase();
       
-      // Cargar jugadores
       const playersData = await db.getAllAsync(
         'SELECT id, nickname FROM players ORDER BY nickname ASC'
       );
       setPlayers(playersData as Player[]);
       
-      // Cargar torneos únicos
       const tournamentsData = await db.getAllAsync(
         "SELECT DISTINCT tournament_name as name FROM matches WHERE tournament_name IS NOT NULL AND tournament_name != '' ORDER BY tournament_name ASC"
       );
@@ -95,6 +94,8 @@ export default function HistoryScreen() {
       let query = `
         SELECT 
           m.id,
+          m.player1_id,
+          m.player2_id,
           m.date,
           m.status,
           m.player1_games,
@@ -112,10 +113,16 @@ export default function HistoryScreen() {
       
       const params: any[] = [];
       
-      // Filtro por jugador
-      if (selectedPlayer) {
+      // Filtro por Mi Jugador
+      if (myPlayer) {
         query += ` AND (m.player1_id = ? OR m.player2_id = ?)`;
-        params.push(selectedPlayer, selectedPlayer);
+        params.push(myPlayer, myPlayer);
+      }
+      
+      // Filtro por Contrincante
+      if (opponent) {
+        query += ` AND (m.player1_id = ? OR m.player2_id = ?)`;
+        params.push(opponent, opponent);
       }
       
       // Filtro por torneo
@@ -148,13 +155,14 @@ export default function HistoryScreen() {
   };
 
   const clearFilters = () => {
-    setSelectedPlayer(null);
+    setMyPlayer(null);
+    setOpponent(null);
     setSelectedTournament(null);
     setDateFrom(null);
     setDateTo(null);
   };
 
-  const hasActiveFilters = selectedPlayer || selectedTournament || dateFrom || dateTo;
+  const hasActiveFilters = myPlayer || opponent || selectedTournament || dateFrom || dateTo;
 
   const handleDateFromChange = (event: any, selectedDate?: Date) => {
     setShowDateFromPicker(Platform.OS === 'ios');
@@ -179,11 +187,11 @@ export default function HistoryScreen() {
       })}
     >
       <View style={styles.matchHeader}>
-        <Text style={styles.matchPlayers}>
+        <Text style={styles.matchPlayers} numberOfLines={1}>
           {item.player1_nickname} vs {item.player2_nickname}
         </Text>
         <Text style={styles.matchScore}>
-          {item.player1_games} - {item.player2_games}
+          {item.player1_games}-{item.player2_games}
         </Text>
       </View>
       
@@ -193,7 +201,7 @@ export default function HistoryScreen() {
         </Text>
         {item.tournament_name && (
           <View style={styles.tournamentBadge}>
-            <Ionicons name="trophy-outline" size={12} color="#FF9800" />
+            <Ionicons name="trophy-outline" size={11} color="#FF9800" />
             <Text style={styles.tournamentText}>{item.tournament_name}</Text>
           </View>
         )}
@@ -201,7 +209,7 @@ export default function HistoryScreen() {
       
       {item.winner_nickname && (
         <Text style={styles.winnerText}>
-          <Ionicons name="checkmark-circle" size={14} color="#4CAF50" /> {item.winner_nickname}
+          <Ionicons name="checkmark-circle" size={12} color="#4CAF50" /> {item.winner_nickname}
         </Text>
       )}
     </TouchableOpacity>
@@ -218,7 +226,7 @@ export default function HistoryScreen() {
           onPress={() => setShowFilters(!showFilters)} 
           style={[styles.filterToggle, hasActiveFilters && styles.filterToggleActive]}
         >
-          <Ionicons name="filter" size={22} color="#FFF" />
+          <Ionicons name={showFilters ? "chevron-up" : "filter"} size={22} color="#FFF" />
           {hasActiveFilters && <View style={styles.filterDot} />}
         </TouchableOpacity>
       </View>
@@ -226,41 +234,62 @@ export default function HistoryScreen() {
       {/* Panel de Filtros */}
       {showFilters && (
         <View style={styles.filtersPanel}>
-          <View style={styles.filterRow}>
-            <View style={styles.filterItem}>
-              <Text style={styles.filterLabel}>Jugador</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={selectedPlayer}
-                  onValueChange={(value) => setSelectedPlayer(value)}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Todos" value={null} />
-                  {players.map((player) => (
-                    <Picker.Item key={player.id} label={player.nickname} value={player.id} />
-                  ))}
-                </Picker>
-              </View>
-            </View>
-            
-            <View style={styles.filterItem}>
-              <Text style={styles.filterLabel}>Torneo</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={selectedTournament}
-                  onValueChange={(value) => setSelectedTournament(value)}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Todos" value={null} />
-                  {tournaments.map((t, index) => (
-                    <Picker.Item key={index} label={t.name} value={t.name} />
-                  ))}
-                </Picker>
-              </View>
+          {/* Mi Jugador */}
+          <View style={styles.filterSection}>
+            <Text style={styles.filterLabel}>Mi Jugador</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={myPlayer}
+                onValueChange={(value) => setMyPlayer(value)}
+                style={styles.picker}
+                itemStyle={styles.pickerItem}
+              >
+                <Picker.Item label="Todos" value={null} />
+                {players.map((player) => (
+                  <Picker.Item key={player.id} label={player.nickname} value={player.id} />
+                ))}
+              </Picker>
             </View>
           </View>
           
-          <View style={styles.filterRow}>
+          {/* Contrincante */}
+          <View style={styles.filterSection}>
+            <Text style={styles.filterLabel}>Contrincante</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={opponent}
+                onValueChange={(value) => setOpponent(value)}
+                style={styles.picker}
+                itemStyle={styles.pickerItem}
+              >
+                <Picker.Item label="Todos" value={null} />
+                {players.filter(p => p.id !== myPlayer).map((player) => (
+                  <Picker.Item key={player.id} label={player.nickname} value={player.id} />
+                ))}
+              </Picker>
+            </View>
+          </View>
+          
+          {/* Torneo */}
+          <View style={styles.filterSection}>
+            <Text style={styles.filterLabel}>Torneo</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={selectedTournament}
+                onValueChange={(value) => setSelectedTournament(value)}
+                style={styles.picker}
+                itemStyle={styles.pickerItem}
+              >
+                <Picker.Item label="Todos" value={null} />
+                {tournaments.map((t, index) => (
+                  <Picker.Item key={index} label={t.name} value={t.name} />
+                ))}
+              </Picker>
+            </View>
+          </View>
+          
+          {/* Fechas */}
+          <View style={styles.dateRow}>
             <TouchableOpacity 
               style={styles.dateButton}
               onPress={() => setShowDateFromPicker(true)}
@@ -290,17 +319,20 @@ export default function HistoryScreen() {
                 </TouchableOpacity>
               )}
             </TouchableOpacity>
-            
-            {hasActiveFilters && (
-              <TouchableOpacity style={styles.clearButton} onPress={clearFilters}>
-                <Ionicons name="trash-outline" size={18} color="#F44336" />
-              </TouchableOpacity>
-            )}
           </View>
           
-          <TouchableOpacity style={styles.applyButton} onPress={loadMatches}>
-            <Text style={styles.applyButtonText}>Aplicar Filtros</Text>
-          </TouchableOpacity>
+          {/* Botones */}
+          <View style={styles.filterButtons}>
+            {hasActiveFilters && (
+              <TouchableOpacity style={styles.clearButton} onPress={clearFilters}>
+                <Ionicons name="trash-outline" size={16} color="#F44336" />
+                <Text style={styles.clearButtonText}>Limpiar</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity style={styles.applyButton} onPress={loadMatches}>
+              <Text style={styles.applyButtonText}>Buscar</Text>
+            </TouchableOpacity>
+          </View>
           
           {showDateFromPicker && (
             <DateTimePicker
@@ -331,13 +363,20 @@ export default function HistoryScreen() {
           <ActivityIndicator size="large" color="#2196F3" />
         </View>
       ) : matches.length > 0 ? (
-        <FlatList
-          data={matches}
-          renderItem={renderMatch}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        />
+        <>
+          <View style={styles.resultsHeader}>
+            <Text style={styles.resultsCount}>
+              {matches.length} partido{matches.length !== 1 ? 's' : ''}
+            </Text>
+          </View>
+          <FlatList
+            data={matches}
+            renderItem={renderMatch}
+            keyExtractor={(item) => item.id.toString()}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+          />
+        </>
       ) : (
         <View style={styles.emptyState}>
           <Ionicons name="document-text-outline" size={64} color="#CCC" />
@@ -347,15 +386,6 @@ export default function HistoryScreen() {
               <Text style={styles.clearFiltersText}>Limpiar filtros</Text>
             </TouchableOpacity>
           )}
-        </View>
-      )}
-
-      {/* Contador de resultados */}
-      {!loading && matches.length > 0 && (
-        <View style={styles.resultsCount}>
-          <Text style={styles.resultsCountText}>
-            {matches.length} partido{matches.length !== 1 ? 's' : ''} encontrado{matches.length !== 1 ? 's' : ''}
-          </Text>
         </View>
       )}
     </SafeAreaView>
@@ -402,59 +432,76 @@ const styles = StyleSheet.create({
   },
   filtersPanel: {
     backgroundColor: '#FFF',
-    padding: 16,
+    padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
-  filterRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
-  },
-  filterItem: {
-    flex: 1,
+  filterSection: {
+    marginBottom: 10,
   },
   filterLabel: {
     fontSize: 12,
     color: '#666',
     marginBottom: 4,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   pickerContainer: {
     backgroundColor: '#F5F7FA',
-    borderRadius: 8,
-    overflow: 'hidden',
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#E0E0E0',
+    overflow: 'hidden',
   },
   picker: {
-    height: 44,
+    height: 50,
+  },
+  pickerItem: {
+    fontSize: 16,
+    height: 50,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 10,
   },
   dateButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F5F7FA',
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#E0E0E0',
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 12,
-    gap: 6,
+    gap: 8,
   },
   dateButtonText: {
     flex: 1,
     fontSize: 14,
     color: '#333',
   },
+  filterButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
   clearButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#FFEBEE',
     borderRadius: 8,
-    padding: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingVertical: 10,
+    gap: 6,
+  },
+  clearButtonText: {
+    color: '#F44336',
+    fontSize: 14,
+    fontWeight: '600',
   },
   applyButton: {
+    flex: 2,
     backgroundColor: '#2196F3',
     borderRadius: 8,
     paddingVertical: 12,
@@ -470,65 +517,73 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  resultsHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  resultsCount: {
+    fontSize: 13,
+    color: '#666',
+  },
   listContent: {
-    padding: 16,
-    paddingBottom: 60,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
   },
   matchCard: {
     backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 3,
+    elevation: 2,
   },
   matchHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   matchPlayers: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: '#333',
     flex: 1,
   },
   matchScore: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#2196F3',
   },
   matchDetails: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   matchDate: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#666',
   },
   tournamentBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFF3E0',
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 10,
-    gap: 4,
+    borderRadius: 8,
+    gap: 3,
   },
   tournamentText: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#FF9800',
     fontWeight: '500',
   },
   winnerText: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#4CAF50',
-    marginTop: 8,
+    marginTop: 6,
     fontWeight: '500',
   },
   emptyState: {
@@ -553,20 +608,5 @@ const styles = StyleSheet.create({
     color: '#2196F3',
     fontSize: 14,
     fontWeight: '600',
-  },
-  resultsCount: {
-    position: 'absolute',
-    bottom: 16,
-    left: 16,
-    right: 16,
-    backgroundColor: '#1E3A5F',
-    borderRadius: 20,
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  resultsCountText: {
-    color: '#FFF',
-    fontSize: 13,
-    fontWeight: '500',
   },
 });
