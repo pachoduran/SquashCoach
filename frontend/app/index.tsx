@@ -257,7 +257,11 @@ export default function Index() {
           />
         ) : (
           <View style={styles.emptyState}>
-            <SquashBallIcon size={64} color="#CCC" />
+            <Image 
+              source={require('@/assets/images/icon.png')} 
+              style={styles.emptyLogo}
+              resizeMode="contain"
+            />
             <Text style={styles.emptyText}>No hay partidos en curso</Text>
             <Text style={styles.emptySubtext}>
               Comienza un nuevo partido para empezar a analizar
