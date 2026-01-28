@@ -212,7 +212,7 @@ export default function Index() {
           />
         ) : (
           <View style={styles.emptyState}>
-            <Ionicons name="tennisball-outline" size={64} color="#CCC" />
+            <SquashBallIcon size={64} color="#CCC" />
             <Text style={styles.emptyText}>No hay partidos en curso</Text>
             <Text style={styles.emptySubtext}>
               Comienza un nuevo partido para empezar a analizar
