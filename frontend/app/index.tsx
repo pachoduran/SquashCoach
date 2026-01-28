@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { initDatabase, getDatabase } from '@/src/store/database';
+import { SquashBallIcon } from '@/src/components/SquashBallIcon';
 import { useAuth } from '@/src/context/AuthContext';
 import { syncService } from '@/src/store/syncService';
 import { format } from 'date-fns';
