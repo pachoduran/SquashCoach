@@ -293,6 +293,28 @@ const styles = StyleSheet.create({
   userButton: {
     padding: 4,
   },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  userDetails: {
+    alignItems: 'flex-start',
+  },
+  userName: {
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: '600',
+    maxWidth: 100,
+  },
+  userStatus: {
+    color: '#A5D6A7',
+    fontSize: 10,
+  },
   userAvatar: {
     width: 36,
     height: 36,
