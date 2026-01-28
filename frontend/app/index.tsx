@@ -501,6 +501,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: 100,
   },
+  emptyLogo: {
+    width: 120,
+    height: 120,
+    marginBottom: 8,
+  },
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
