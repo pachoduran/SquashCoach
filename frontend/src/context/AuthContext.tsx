@@ -26,7 +26,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Get backend URL
 const getBackendUrl = () => {
   if (Platform.OS === 'web') {
-    return window.location.origin;
+    // Check if window is available (client-side)
+    if (typeof window !== 'undefined') {
+      return window.location.origin;
+    }
+    // Fallback for SSR
+    return '';
   }
   // For mobile, use the packager proxy URL
   const expoConfig = Constants.expoConfig as any;
