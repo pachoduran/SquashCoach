@@ -128,15 +128,47 @@ export default function Index() {
     ]);
   };
 
+  const deleteMatch = async (matchId: number) => {
+    Alert.alert(
+      'Eliminar Partido',
+      '¿Estás seguro de que quieres eliminar este partido? Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const db = await getDatabase();
+              // Eliminar puntos del partido
+              db.runSync('DELETE FROM points WHERE match_id = ?', [matchId]);
+              // Eliminar resultados de games
+              db.runSync('DELETE FROM game_results WHERE match_id = ?', [matchId]);
+              // Eliminar el partido
+              db.runSync('DELETE FROM matches WHERE id = ?', [matchId]);
+              
+              // Recargar la lista
+              await loadActiveMatches();
+              Alert.alert('Eliminado', 'El partido ha sido eliminado');
+            } catch (error) {
+              console.error('Error eliminando partido:', error);
+              Alert.alert('Error', 'No se pudo eliminar el partido');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const renderActiveMatch = ({ item }: { item: Match }) => (
-    <TouchableOpacity
-      style={styles.activeMatchCard}
-      onPress={() => router.push({
-        pathname: '/match-play',
-        params: { matchId: item.id },
-      })}
-    >
-      <View style={styles.matchRow}>
+    <View style={styles.activeMatchCard}>
+      <TouchableOpacity
+        style={styles.matchContent}
+        onPress={() => router.push({
+          pathname: '/match-play',
+          params: { matchId: item.id },
+        })}
+      >
         <View style={styles.matchInfo}>
           <View style={styles.matchLive}>
             <View style={styles.liveDot} />
@@ -158,8 +190,15 @@ export default function Index() {
         <View style={styles.playButton}>
           <Ionicons name="play" size={20} color="#FFF" />
         </View>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+      
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={() => deleteMatch(item.id)}
+      >
+        <Ionicons name="trash-outline" size={18} color="#F44336" />
+      </TouchableOpacity>
+    </View>
   );
 
   return (
