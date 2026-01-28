@@ -422,6 +422,17 @@ const styles = StyleSheet.create({
     elevation: 3,
     borderLeftWidth: 3,
     borderLeftColor: '#4CAF50',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  matchContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  deleteButton: {
+    padding: 8,
+    marginLeft: 8,
   },
   matchRow: {
     flexDirection: 'row',
