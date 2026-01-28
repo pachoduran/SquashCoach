@@ -12,6 +12,13 @@ const getBackendUrl = () => {
   if (Platform.OS === 'web') {
     return typeof window !== 'undefined' ? window.location.origin : '';
   }
+  // Use environment variable for mobile
+  const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
+  if (backendUrl) {
+    console.log('[Sync] Using BACKEND_URL:', backendUrl);
+    return backendUrl;
+  }
+  // Fallback
   const expoConfig = Constants.expoConfig as any;
   return expoConfig?.extra?.EXPO_BACKEND_URL || '';
 };
