@@ -171,12 +171,18 @@ export default function Index() {
         <View style={styles.headerTop}>
           <Text style={styles.title}>Squash Coach</Text>
           {isAuthenticated && user ? (
-            <TouchableOpacity style={styles.userButton} onPress={handleLogout}>
+            <TouchableOpacity style={styles.userInfo} onPress={handleLogout}>
               {user.picture ? (
                 <Image source={{ uri: user.picture }} style={styles.userAvatar} />
               ) : (
                 <Ionicons name="person-circle" size={32} color="#FFF" />
               )}
+              <View style={styles.userDetails}>
+                <Text style={styles.userName} numberOfLines={1}>{user.name}</Text>
+                <Text style={styles.userStatus}>
+                  <Ionicons name="cloud-done" size={10} color="#4CAF50" /> Conectado
+                </Text>
+              </View>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={styles.loginButton} onPress={login}>
