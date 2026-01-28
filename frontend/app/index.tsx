@@ -23,13 +23,18 @@ interface Match {
   player2_nickname: string;
   date: string;
   status: string;
-  winner_nickname?: string;
+  player1_games: number;
+  player2_games: number;
+  player1_score: number;
+  player2_score: number;
+  current_game: number;
+  tournament_name?: string;
 }
 
 export default function Index() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading, login, logout } = useAuth();
-  const [matches, setMatches] = useState<Match[]>([]);
+  const [activeMatches, setActiveMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [hasPendingSync, setHasPendingSync] = useState(false);
@@ -38,15 +43,13 @@ export default function Index() {
     initializeApp();
   }, []);
 
-  // Refresh when screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      loadMatches();
+      loadActiveMatches();
       checkPendingSync();
     }, [])
   );
 
-  // Auto-sync on app open if authenticated and has pending
   useEffect(() => {
     if (isAuthenticated && hasPendingSync) {
       handleSync();
@@ -56,7 +59,7 @@ export default function Index() {
   const initializeApp = async () => {
     try {
       await initDatabase();
-      await loadMatches();
+      await loadActiveMatches();
       await checkPendingSync();
     } catch (error) {
       console.error('Error inicializando app:', error);
@@ -65,7 +68,7 @@ export default function Index() {
     }
   };
 
-  const loadMatches = async () => {
+  const loadActiveMatches = async () => {
     try {
       const db = await getDatabase();
       const result = await db.getAllAsync(`
@@ -73,19 +76,21 @@ export default function Index() {
           m.id,
           m.date,
           m.status,
+          m.player1_games,
+          m.player2_games,
+          m.current_game,
+          m.tournament_name,
           p1.nickname as player1_nickname,
-          p2.nickname as player2_nickname,
-          pw.nickname as winner_nickname
+          p2.nickname as player2_nickname
         FROM matches m
         JOIN players p1 ON m.player1_id = p1.id
         JOIN players p2 ON m.player2_id = p2.id
-        LEFT JOIN players pw ON m.winner_id = pw.id
+        WHERE m.status = 'playing'
         ORDER BY m.date DESC
-        LIMIT 10
       `);
-      setMatches(result as Match[]);
+      setActiveMatches(result as Match[]);
     } catch (error) {
-      console.error('Error cargando partidos:', error);
+      console.error('Error cargando partidos activos:', error);
     }
   };
 
@@ -109,9 +114,9 @@ export default function Index() {
 
     if (result.success) {
       setHasPendingSync(false);
-      Alert.alert('Sincronización', result.message);
-    } else {
-      Alert.alert('Error', result.message);
+      if (result.message !== 'Nada que sincronizar') {
+        Alert.alert('Sincronización', result.message);
+      }
     }
   };
 
@@ -122,44 +127,38 @@ export default function Index() {
     ]);
   };
 
-  const renderMatch = ({ item }: { item: Match }) => (
+  const renderActiveMatch = ({ item }: { item: Match }) => (
     <TouchableOpacity
-      style={styles.matchCard}
-      onPress={() => {
-        if (item.status === 'finished') {
-          router.push({
-            pathname: '/match-summary',
-            params: { matchId: item.id },
-          });
-        } else {
-          router.push({
-            pathname: '/match-play',
-            params: { matchId: item.id },
-          });
-        }
-      }}
+      style={styles.activeMatchCard}
+      onPress={() => router.push({
+        pathname: '/match-play',
+        params: { matchId: item.id },
+      })}
     >
-      <View style={styles.matchHeader}>
-        <Text style={styles.matchPlayers}>
-          {item.player1_nickname} vs {item.player2_nickname}
-        </Text>
-        <View
-          style={[
-            styles.statusBadge,
-            item.status === 'finished' ? styles.finishedBadge : styles.playingBadge,
-          ]}
-        >
-          <Text style={styles.statusText}>
-            {item.status === 'finished' ? 'Finalizado' : 'En curso'}
-          </Text>
-        </View>
+      <View style={styles.matchLive}>
+        <View style={styles.liveDot} />
+        <Text style={styles.liveText}>EN CURSO</Text>
       </View>
-      <Text style={styles.matchDate}>
-        {format(new Date(item.date), "dd/MM/yyyy - HH:mm")}
+      
+      <Text style={styles.matchPlayers}>
+        {item.player1_nickname} vs {item.player2_nickname}
       </Text>
-      {item.winner_nickname && (
-        <Text style={styles.winnerText}>Ganador: {item.winner_nickname}</Text>
+      
+      <View style={styles.scoreContainer}>
+        <Text style={styles.gamesScore}>
+          {item.player1_games} - {item.player2_games}
+        </Text>
+        <Text style={styles.gameLabel}>Game {item.current_game}</Text>
+      </View>
+      
+      {item.tournament_name && (
+        <Text style={styles.tournamentName}>{item.tournament_name}</Text>
       )}
+      
+      <TouchableOpacity style={styles.continueButton}>
+        <Text style={styles.continueButtonText}>Continuar</Text>
+        <Ionicons name="play" size={16} color="#FFF" />
+      </TouchableOpacity>
     </TouchableOpacity>
   );
 
@@ -187,35 +186,26 @@ export default function Index() {
           )}
         </View>
         
-        {/* Indicador de sync pendiente */}
         {hasPendingSync && isAuthenticated && (
           <TouchableOpacity style={styles.syncBanner} onPress={handleSync} disabled={syncing}>
             <Ionicons name="cloud-upload-outline" size={18} color="#FFF" />
             <Text style={styles.syncBannerText}>
-              {syncing ? 'Sincronizando...' : 'Hay partidos pendientes de sincronizar'}
+              {syncing ? 'Sincronizando...' : 'Partidos pendientes de sincronizar'}
             </Text>
           </TouchableOpacity>
         )}
       </View>
 
       <View style={styles.content}>
+        {/* Partidos en curso */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Partidos Recientes</Text>
-          {isAuthenticated && (
-            <TouchableOpacity 
-              style={styles.cloudButton}
-              onPress={() => router.push('/cloud-matches')}
-            >
-              <Ionicons name="cloud-outline" size={18} color="#2196F3" />
-              <Text style={styles.cloudButtonText}>Nube</Text>
-            </TouchableOpacity>
-          )}
+          <Text style={styles.sectionTitle}>Partidos en Curso</Text>
         </View>
 
-        {matches.length > 0 ? (
+        {activeMatches.length > 0 ? (
           <FlatList
-            data={matches}
-            renderItem={renderMatch}
+            data={activeMatches}
+            renderItem={renderActiveMatch}
             keyExtractor={(item) => item.id.toString()}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
@@ -223,7 +213,7 @@ export default function Index() {
         ) : (
           <View style={styles.emptyState}>
             <Ionicons name="tennisball-outline" size={64} color="#CCC" />
-            <Text style={styles.emptyText}>No hay partidos aún</Text>
+            <Text style={styles.emptyText}>No hay partidos en curso</Text>
             <Text style={styles.emptySubtext}>
               Comienza un nuevo partido para empezar a analizar
             </Text>
@@ -231,24 +221,43 @@ export default function Index() {
         )}
       </View>
 
+      {/* Botones inferiores */}
       <View style={styles.bottomButtons}>
         <View style={styles.buttonRow}>
+          <TouchableOpacity
+            style={styles.historyButton}
+            onPress={() => router.push('/history')}
+          >
+            <Ionicons name="time-outline" size={22} color="#1E3A5F" />
+            <Text style={styles.historyButtonText}>Historial</Text>
+          </TouchableOpacity>
+          
           <TouchableOpacity
             style={styles.analysisButton}
             onPress={() => router.push('/analysis')}
           >
-            <Ionicons name="analytics" size={24} color="#1E3A5F" />
+            <Ionicons name="analytics" size={22} color="#1E3A5F" />
             <Text style={styles.analysisButtonText}>Análisis</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity
-            style={styles.newMatchButton}
-            onPress={() => router.push('/new-match')}
-          >
-            <Ionicons name="add-circle" size={24} color="#FFF" />
-            <Text style={styles.newMatchText}>Nuevo Partido</Text>
-          </TouchableOpacity>
+          {isAuthenticated && (
+            <TouchableOpacity
+              style={styles.cloudButton}
+              onPress={() => router.push('/cloud-matches')}
+            >
+              <Ionicons name="cloud-outline" size={22} color="#1E3A5F" />
+              <Text style={styles.cloudButtonText}>Nube</Text>
+            </TouchableOpacity>
+          )}
         </View>
+        
+        <TouchableOpacity
+          style={styles.newMatchButton}
+          onPress={() => router.push('/new-match')}
+        >
+          <Ionicons name="add-circle" size={24} color="#FFF" />
+          <Text style={styles.newMatchText}>Nuevo Partido</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -331,70 +340,80 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
   },
-  cloudButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E3F2FD',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
-  },
-  cloudButtonText: {
-    color: '#2196F3',
-    fontSize: 13,
-    fontWeight: '600',
-  },
   listContent: {
     paddingBottom: 20,
   },
-  matchCard: {
+  activeMatchCard: {
     backgroundColor: '#FFF',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 5,
+    borderLeftWidth: 4,
+    borderLeftColor: '#4CAF50',
   },
-  matchHeader: {
+  matchLive: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4CAF50',
+    marginRight: 6,
+  },
+  liveText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+    letterSpacing: 1,
+  },
   matchPlayers: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: '#333',
-    flex: 1,
+    marginBottom: 8,
   },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+  scoreContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 12,
+    marginBottom: 8,
   },
-  finishedBadge: {
-    backgroundColor: '#E8F5E9',
+  gamesScore: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#2196F3',
   },
-  playingBadge: {
-    backgroundColor: '#FFF3E0',
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  matchDate: {
+  gameLabel: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 4,
   },
-  winnerText: {
+  tournamentName: {
+    fontSize: 13,
+    color: '#999',
+    fontStyle: 'italic',
+    marginBottom: 12,
+  },
+  continueButton: {
+    backgroundColor: '#4CAF50',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 6,
+  },
+  continueButtonText: {
+    color: '#FFF',
     fontSize: 14,
-    color: '#4CAF50',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   emptyState: {
     flex: 1,
@@ -424,7 +443,23 @@ const styles = StyleSheet.create({
   },
   buttonRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
+    marginBottom: 12,
+  },
+  historyButton: {
+    flex: 1,
+    backgroundColor: '#E3F2FD',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+    gap: 6,
+  },
+  historyButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E3A5F',
   },
   analysisButton: {
     flex: 1,
@@ -432,19 +467,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#1E3A5F',
+    paddingVertical: 12,
+    borderRadius: 10,
+    gap: 6,
   },
   analysisButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '600',
     color: '#1E3A5F',
-    marginLeft: 6,
+  },
+  cloudButton: {
+    flex: 1,
+    backgroundColor: '#E3F2FD',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+    gap: 6,
+  },
+  cloudButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E3A5F',
   },
   newMatchButton: {
-    flex: 1,
     backgroundColor: '#2196F3',
     flexDirection: 'row',
     alignItems: 'center',
@@ -461,6 +508,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#FFF',
-    marginLeft: 6,
+    marginLeft: 8,
   },
 });
