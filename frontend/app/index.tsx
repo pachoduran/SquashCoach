@@ -135,30 +135,29 @@ export default function Index() {
         params: { matchId: item.id },
       })}
     >
-      <View style={styles.matchLive}>
-        <View style={styles.liveDot} />
-        <Text style={styles.liveText}>EN CURSO</Text>
+      <View style={styles.matchRow}>
+        <View style={styles.matchInfo}>
+          <View style={styles.matchLive}>
+            <View style={styles.liveDot} />
+            <Text style={styles.liveText}>EN CURSO</Text>
+          </View>
+          <Text style={styles.matchPlayers} numberOfLines={1}>
+            {item.player1_nickname} vs {item.player2_nickname}
+          </Text>
+          {item.tournament_name && (
+            <Text style={styles.tournamentName} numberOfLines={1}>{item.tournament_name}</Text>
+          )}
+        </View>
+        
+        <View style={styles.scoreSection}>
+          <Text style={styles.gamesScore}>{item.player1_games}-{item.player2_games}</Text>
+          <Text style={styles.gameLabel}>G{item.current_game}</Text>
+        </View>
+        
+        <View style={styles.playButton}>
+          <Ionicons name="play" size={20} color="#FFF" />
+        </View>
       </View>
-      
-      <Text style={styles.matchPlayers}>
-        {item.player1_nickname} vs {item.player2_nickname}
-      </Text>
-      
-      <View style={styles.scoreContainer}>
-        <Text style={styles.gamesScore}>
-          {item.player1_games} - {item.player2_games}
-        </Text>
-        <Text style={styles.gameLabel}>Game {item.current_game}</Text>
-      </View>
-      
-      {item.tournament_name && (
-        <Text style={styles.tournamentName}>{item.tournament_name}</Text>
-      )}
-      
-      <TouchableOpacity style={styles.continueButton}>
-        <Text style={styles.continueButtonText}>Continuar</Text>
-        <Ionicons name="play" size={16} color="#FFF" />
-      </TouchableOpacity>
     </TouchableOpacity>
   );
 
