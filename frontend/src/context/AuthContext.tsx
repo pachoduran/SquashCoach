@@ -127,13 +127,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const exchangeSessionId = async (sessionId: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/api/auth/session`, {
+      const url = `${BACKEND_URL}/api/auth/session`;
+      console.log('[AUTH] Exchanging session at:', url);
+      console.log('[AUTH] BACKEND_URL:', BACKEND_URL);
+      console.log('[AUTH] Session ID:', sessionId?.substring(0, 10) + '...');
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'X-Session-ID': sessionId,
           'Content-Type': 'application/json'
         }
       });
+      
+      console.log('[AUTH] Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
