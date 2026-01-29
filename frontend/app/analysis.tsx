@@ -189,18 +189,18 @@ export default function AnalysisScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={22} color="#FFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Análisis Acumulado</Text>
+        <Text style={styles.headerTitle}>{t('analysis.title')}</Text>
         <View style={{ width: 30 }} />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Selectores de jugadores */}
         <View style={styles.selectorsCard}>
-          <Text style={styles.sectionTitle}>Seleccionar Jugadores</Text>
+          <Text style={styles.sectionTitle}>{t('analysis.selectPlayers')}</Text>
           
           {/* Jugador 1 */}
           <View style={styles.pickerSection}>
-            <Text style={styles.pickerLabel}>Mi Jugador</Text>
+            <Text style={styles.pickerLabel}>{t('newMatch.myPlayer')}</Text>
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={selectedPlayer1}
@@ -208,7 +208,7 @@ export default function AnalysisScreen() {
                 style={styles.picker}
                 itemStyle={styles.pickerItem}
               >
-                <Picker.Item label="Seleccionar jugador..." value={null} />
+                <Picker.Item label={t('newMatch.selectPlayer')} value={null} />
                 {players.map((player) => (
                   <Picker.Item key={player.id} label={player.nickname} value={player.id} />
                 ))}
@@ -224,7 +224,7 @@ export default function AnalysisScreen() {
           
           {/* Jugador 2 */}
           <View style={styles.pickerSection}>
-            <Text style={styles.pickerLabel}>Oponente</Text>
+            <Text style={styles.pickerLabel}>{t('history.opponent')}</Text>
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={selectedPlayer2}
@@ -232,7 +232,7 @@ export default function AnalysisScreen() {
                 style={styles.picker}
                 itemStyle={styles.pickerItem}
               >
-                <Picker.Item label="Seleccionar oponente..." value={null} />
+                <Picker.Item label={t('newMatch.selectPlayer')} value={null} />
                 {players.filter(p => p.id !== selectedPlayer1).map((player) => (
                   <Picker.Item key={player.id} label={player.nickname} value={player.id} />
                 ))}
@@ -241,7 +241,7 @@ export default function AnalysisScreen() {
           </View>
           
           {/* Filtros de fecha */}
-          <Text style={[styles.pickerLabel, { marginTop: 16 }]}>Rango de Fechas (opcional)</Text>
+          <Text style={[styles.pickerLabel, { marginTop: 16 }]}>{t('analysis.dateRange')}</Text>
           <View style={styles.dateFilters}>
             <TouchableOpacity 
               style={styles.dateButton}
@@ -249,7 +249,7 @@ export default function AnalysisScreen() {
             >
               <Ionicons name="calendar-outline" size={20} color="#2196F3" />
               <Text style={styles.dateButtonText}>
-                {dateFrom ? format(dateFrom, 'dd/MM/yyyy') : 'Desde'}
+                {dateFrom ? format(dateFrom, 'dd/MM/yyyy') : t('common.from')}
               </Text>
               {dateFrom && (
                 <TouchableOpacity onPress={clearDateFrom} style={styles.clearDateBtn}>
