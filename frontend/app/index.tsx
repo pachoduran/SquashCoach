@@ -173,7 +173,7 @@ export default function Index() {
         <View style={styles.matchInfo}>
           <View style={styles.matchLive}>
             <View style={styles.liveDot} />
-            <Text style={styles.liveText}>EN CURSO</Text>
+            <Text style={styles.liveText}>{t('home.inProgress')}</Text>
           </View>
           <Text style={styles.matchPlayers} numberOfLines={1}>
             {item.player1_nickname} vs {item.player2_nickname}
@@ -209,7 +209,7 @@ export default function Index() {
       {/* Header con usuario */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Text style={styles.title}>Squash Coach</Text>
+          <Text style={styles.title}>{t('home.title')}</Text>
           {isAuthenticated && user ? (
             <TouchableOpacity style={styles.userInfo} onPress={handleLogout}>
               {user.picture ? (
@@ -220,14 +220,14 @@ export default function Index() {
               <View style={styles.userDetails}>
                 <Text style={styles.userName} numberOfLines={1}>{user.name}</Text>
                 <Text style={styles.userStatus}>
-                  <Ionicons name="cloud-done" size={10} color="#4CAF50" /> Conectado
+                  <Ionicons name="cloud-done" size={10} color="#4CAF50" /> {t('home.connected')}
                 </Text>
               </View>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={styles.loginButton} onPress={login}>
               <Ionicons name="log-in-outline" size={20} color="#FFF" />
-              <Text style={styles.loginButtonText}>Entrar</Text>
+              <Text style={styles.loginButtonText}>{t('home.login')}</Text>
             </TouchableOpacity>
           )}
         </View>
