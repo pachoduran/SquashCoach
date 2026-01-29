@@ -12,10 +12,12 @@ import {
   Platform,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '@/src/store/database';
 import { useLanguage } from '@/src/context/LanguageContext';
+import { format } from 'date-fns';
 
 interface Player {
   id: number;
