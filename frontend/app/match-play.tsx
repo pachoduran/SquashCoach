@@ -72,6 +72,8 @@ export default function MatchPlay() {
   const [showAllPositions, setShowAllPositions] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingPointId, setEditingPointId] = useState<number | null>(null);
 
   useEffect(() => {
     loadMatch();
