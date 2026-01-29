@@ -42,6 +42,7 @@ interface Tournament {
 
 export default function HistoryScreen() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [players, setPlayers] = useState<Player[]>([]);
