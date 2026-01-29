@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { getDatabase } from '@/src/store/database';
+import { useLanguage } from '@/src/context/LanguageContext';
 import { HeatmapCourt } from '@/src/components/HeatmapCourt';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -35,6 +36,7 @@ interface PointData {
 
 export default function AnalysisScreen() {
   const router = useRouter();
+  const { t } = useLanguage();
   
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayer1, setSelectedPlayer1] = useState<number | null>(null);
