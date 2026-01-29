@@ -558,16 +558,24 @@ export default function MatchPlay() {
           <Ionicons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Partido en Curso</Text>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => setShowAllPositions(!showAllPositions)}
-        >
-          <Ionicons 
-            name={showAllPositions ? 'eye-off' : 'eye'} 
-            size={24} 
-            color="#FFF" 
-          />
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={editLastPoint}
+          >
+            <Ionicons name="pencil" size={22} color="#FFF" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => setShowAllPositions(!showAllPositions)}
+          >
+            <Ionicons 
+              name={showAllPositions ? 'eye-off' : 'eye'} 
+              size={22} 
+              color="#FFF" 
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.content}>
