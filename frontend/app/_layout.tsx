@@ -49,22 +49,24 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <GestureHandlerRootView style={styles.container}>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="login" />
-            <Stack.Screen name="new-match" />
-            <Stack.Screen name="match-play" />
-            <Stack.Screen name="match-summary" />
-            <Stack.Screen name="history" />
-            <Stack.Screen name="player-analysis" />
-            <Stack.Screen name="settings" />
-            <Stack.Screen name="analysis" />
-            <Stack.Screen name="cloud-matches" />
-          </Stack>
-        </GestureHandlerRootView>
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <GestureHandlerRootView style={styles.container}>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="login" />
+              <Stack.Screen name="new-match" />
+              <Stack.Screen name="match-play" />
+              <Stack.Screen name="match-summary" />
+              <Stack.Screen name="history" />
+              <Stack.Screen name="player-analysis" />
+              <Stack.Screen name="settings" />
+              <Stack.Screen name="analysis" />
+              <Stack.Screen name="cloud-matches" />
+            </Stack>
+          </GestureHandlerRootView>
+        </AuthProvider>
+      </LanguageProvider>
     </SafeAreaProvider>
   );
 }
