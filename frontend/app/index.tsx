@@ -344,6 +344,44 @@ export default function Index() {
           <Text style={styles.newMatchText}>{t('home.newMatch')}</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Modal de selección de idioma */}
+      <Modal
+        visible={showLanguageModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowLanguageModal(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowLanguageModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{t('home.selectLanguage')}</Text>
+            
+            <TouchableOpacity
+              style={[styles.modalLangButton, language === 'es' && styles.modalLangButtonActive]}
+              onPress={() => { setLang('es'); setShowLanguageModal(false); }}
+            >
+              <Text style={[styles.modalLangText, language === 'es' && styles.modalLangTextActive]}>
+                🇪🇸 Español
+              </Text>
+              {language === 'es' && <Ionicons name="checkmark" size={20} color="#FFF" />}
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.modalLangButton, language === 'en' && styles.modalLangButtonActive]}
+              onPress={() => { setLang('en'); setShowLanguageModal(false); }}
+            >
+              <Text style={[styles.modalLangText, language === 'en' && styles.modalLangTextActive]}>
+                🇺🇸 English
+              </Text>
+              {language === 'en' && <Ionicons name="checkmark" size={20} color="#FFF" />}
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
