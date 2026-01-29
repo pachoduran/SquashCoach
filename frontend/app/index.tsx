@@ -236,7 +236,7 @@ export default function Index() {
           <TouchableOpacity style={styles.syncBanner} onPress={handleSync} disabled={syncing}>
             <Ionicons name="cloud-upload-outline" size={18} color="#FFF" />
             <Text style={styles.syncBannerText}>
-              {syncing ? 'Sincronizando...' : 'Partidos pendientes de sincronizar'}
+              {syncing ? t('home.syncing') : t('home.pendingSync')}
             </Text>
           </TouchableOpacity>
         )}
@@ -245,7 +245,7 @@ export default function Index() {
       <View style={styles.content}>
         {/* Partidos en curso */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Partidos en Curso</Text>
+          <Text style={styles.sectionTitle}>{t('home.matchesInProgress')}</Text>
         </View>
 
         {activeMatches.length > 0 ? (
@@ -263,10 +263,33 @@ export default function Index() {
               style={styles.emptyLogo}
               resizeMode="contain"
             />
-            <Text style={styles.emptyText}>No hay partidos en curso</Text>
+            <Text style={styles.emptyText}>{t('home.noMatches')}</Text>
             <Text style={styles.emptySubtext}>
-              Comienza un nuevo partido para empezar a analizar
+              {t('home.startMatch')}
             </Text>
+            
+            {/* Selector de idioma */}
+            <View style={styles.languageSelector}>
+              <Text style={styles.languageLabel}>{t('home.selectLanguage')}</Text>
+              <View style={styles.languageButtons}>
+                <TouchableOpacity
+                  style={[styles.langButton, language === 'es' && styles.langButtonActive]}
+                  onPress={() => setLang('es')}
+                >
+                  <Text style={[styles.langButtonText, language === 'es' && styles.langButtonTextActive]}>
+                    Español
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.langButton, language === 'en' && styles.langButtonActive]}
+                  onPress={() => setLang('en')}
+                >
+                  <Text style={[styles.langButtonText, language === 'en' && styles.langButtonTextActive]}>
+                    English
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         )}
       </View>
@@ -279,7 +302,7 @@ export default function Index() {
             onPress={() => router.push('/history')}
           >
             <Ionicons name="time-outline" size={22} color="#1E3A5F" />
-            <Text style={styles.historyButtonText}>Historial</Text>
+            <Text style={styles.historyButtonText}>{t('home.history')}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity
@@ -287,7 +310,7 @@ export default function Index() {
             onPress={() => router.push('/analysis')}
           >
             <Ionicons name="analytics" size={22} color="#1E3A5F" />
-            <Text style={styles.analysisButtonText}>Análisis</Text>
+            <Text style={styles.analysisButtonText}>{t('home.analysis')}</Text>
           </TouchableOpacity>
           
           {isAuthenticated && (
@@ -296,7 +319,7 @@ export default function Index() {
               onPress={() => router.push('/cloud-matches')}
             >
               <Ionicons name="cloud-outline" size={22} color="#1E3A5F" />
-              <Text style={styles.cloudButtonText}>Nube</Text>
+              <Text style={styles.cloudButtonText}>{t('home.cloud')}</Text>
             </TouchableOpacity>
           )}
         </View>
