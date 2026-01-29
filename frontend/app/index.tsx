@@ -716,4 +716,47 @@ const styles = StyleSheet.create({
     color: '#FFF',
     marginLeft: 8,
   },
+  // Modal de idioma
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 24,
+    width: '80%',
+    maxWidth: 300,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1E3A5F',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  modalLangButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
+    marginBottom: 12,
+  },
+  modalLangButtonActive: {
+    backgroundColor: '#1E3A5F',
+    borderColor: '#1E3A5F',
+  },
+  modalLangText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  modalLangTextActive: {
+    color: '#FFF',
+  },
 });
