@@ -61,7 +61,8 @@
     "add": "Add",
     "selectBothPlayers": "Select both players",
     "selectMyPlayer": "Select which is your player",
-    "differentPlayers": "Players must be different"
+    "differentPlayers": "Players must be different",
+    "playerExists": "Player already registered"
   },
   "matchPlay": {
     "game": "Game",
