@@ -36,7 +36,8 @@ export default function NewMatch() {
   
   // Nuevos campos
   const [tournamentName, setTournamentName] = useState('');
-  const [matchDate, setMatchDate] = useState(new Date().toISOString().split('T')[0]);
+  const [matchDate, setMatchDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [myPlayerId, setMyPlayerId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function NewMatch() {
     try {
       const db = await getDatabase();
       const result = await db.getAllAsync(
-        'SELECT id, nickname FROM players ORDER BY nickname ASC'
+        'SELECT id, COALESCE(nickname, name) as nickname FROM players ORDER BY nickname ASC'
       );
       setPlayers(result as Player[]);
     } catch (error) {
