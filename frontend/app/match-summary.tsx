@@ -162,7 +162,7 @@ export default function MatchSummary() {
   if (loading || !matchData) {
     return (
       <View style={styles.loadingContainer}>
-        <Text>Cargando...</Text>
+        <Text>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -178,7 +178,7 @@ export default function MatchSummary() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={22} color="#FFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Análisis</Text>
+        <Text style={styles.headerTitle}>{t('summary.title')}</Text>
         <TouchableOpacity onPress={() => router.push('/')} style={styles.homeButton}>
           <Ionicons name="home" size={22} color="#FFF" />
         </TouchableOpacity>
@@ -211,7 +211,7 @@ export default function MatchSummary() {
             onPress={() => setSelectedGame('all')}
           >
             <Text style={[styles.gameSelectorText, selectedGame === 'all' && styles.gameSelectorTextActive]}>
-              Todos
+              {t('common.all')}
             </Text>
           </TouchableOpacity>
           {availableGames.map(game => (
