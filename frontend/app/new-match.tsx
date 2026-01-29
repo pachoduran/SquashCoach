@@ -263,7 +263,7 @@ export default function NewMatch() {
           onPress={startMatch}
           disabled={!selectedPlayer1Id || !selectedPlayer2Id}
         >
-          <Text style={styles.startButtonText}>Comenzar Partido</Text>
+          <Text style={styles.startButtonText}>{t('newMatch.startMatch')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -276,20 +276,16 @@ export default function NewMatch() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Nuevo Jugador</Text>
+            <Text style={styles.modalTitle}>{t('newMatch.newPlayer')}</Text>
             
             <TextInput
               style={styles.input}
-              placeholder="Apodo / Nickname *"
+              placeholder={t('newMatch.nicknamePlaceholder')}
               value={newPlayerNickname}
               onChangeText={setNewPlayerNickname}
               placeholderTextColor="#999"
               autoCapitalize="words"
             />
-            
-            <Text style={styles.helperText}>
-              Ingresa el nombre o apodo con el que identificarás al jugador
-            </Text>
             
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -299,14 +295,14 @@ export default function NewMatch() {
                   setNewPlayerNickname('');
                 }}
               >
-                <Text style={styles.modalButtonText}>Cancelar</Text>
+                <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonPrimary]}
                 onPress={addPlayer}
               >
                 <Text style={[styles.modalButtonText, styles.modalButtonTextPrimary]}>
-                  Agregar
+                  {t('newMatch.add')}
                 </Text>
               </TouchableOpacity>
             </View>
