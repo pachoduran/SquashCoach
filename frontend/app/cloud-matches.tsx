@@ -137,19 +137,19 @@ export default function CloudMatchesScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={22} color="#FFF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Partidos en la Nube</Text>
+          <Text style={styles.headerTitle}>{t('cloud.title')}</Text>
           <View style={{ width: 30 }} />
         </View>
         
         <View style={styles.notAuthContainer}>
           <Ionicons name="cloud-offline-outline" size={80} color="#CCC" />
-          <Text style={styles.notAuthTitle}>No has iniciado sesión</Text>
+          <Text style={styles.notAuthTitle}>{t('home.loginRequired')}</Text>
           <Text style={styles.notAuthText}>
-            Inicia sesión para ver tus partidos sincronizados en la nube
+            {t('cloud.syncFirst')}
           </Text>
           <TouchableOpacity style={styles.loginButton} onPress={login}>
             <Ionicons name="log-in-outline" size={20} color="#FFF" />
-            <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+            <Text style={styles.loginButtonText}>{t('home.login')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -162,7 +162,7 @@ export default function CloudMatchesScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={22} color="#FFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Partidos en la Nube</Text>
+        <Text style={styles.headerTitle}>{t('cloud.title')}</Text>
         <TouchableOpacity onPress={handleRefresh} style={styles.refreshButton}>
           <Ionicons name="refresh" size={22} color="#FFF" />
         </TouchableOpacity>
@@ -171,7 +171,7 @@ export default function CloudMatchesScreen() {
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#2196F3" />
-          <Text style={styles.loadingText}>Cargando partidos...</Text>
+          <Text style={styles.loadingText}>{t('common.loading')}</Text>
         </View>
       ) : matches.length > 0 ? (
         <FlatList
@@ -186,9 +186,9 @@ export default function CloudMatchesScreen() {
       ) : (
         <View style={styles.emptyContainer}>
           <Ionicons name="cloud-outline" size={80} color="#CCC" />
-          <Text style={styles.emptyTitle}>No hay partidos en la nube</Text>
+          <Text style={styles.emptyTitle}>{t('cloud.noMatches')}</Text>
           <Text style={styles.emptyText}>
-            Los partidos que termines se sincronizarán automáticamente
+            {t('cloud.syncFirst')}
           </Text>
         </View>
       )}
