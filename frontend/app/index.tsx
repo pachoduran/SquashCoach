@@ -279,29 +279,6 @@ export default function Index() {
             <Text style={styles.emptySubtext}>
               {t('home.startMatch')}
             </Text>
-            
-            {/* Selector de idioma */}
-            <View style={styles.languageSelector}>
-              <Text style={styles.languageLabel}>{t('home.selectLanguage')}</Text>
-              <View style={styles.languageButtons}>
-                <TouchableOpacity
-                  style={[styles.langButton, language === 'es' && styles.langButtonActive]}
-                  onPress={() => setLang('es')}
-                >
-                  <Text style={[styles.langButtonText, language === 'es' && styles.langButtonTextActive]}>
-                    Español
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.langButton, language === 'en' && styles.langButtonActive]}
-                  onPress={() => setLang('en')}
-                >
-                  <Text style={[styles.langButtonText, language === 'en' && styles.langButtonTextActive]}>
-                    English
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
           </View>
         )}
       </View>
