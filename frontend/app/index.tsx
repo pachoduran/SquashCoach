@@ -211,7 +211,17 @@ export default function Index() {
       {/* Header con usuario */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
+          {/* Botón de idioma */}
+          <TouchableOpacity 
+            style={styles.langMenuButton} 
+            onPress={() => setShowLanguageModal(true)}
+          >
+            <Ionicons name="globe-outline" size={22} color="#FFF" />
+            <Text style={styles.langMenuText}>{language.toUpperCase()}</Text>
+          </TouchableOpacity>
+          
           <Text style={styles.title}>{t('home.title')}</Text>
+          
           {isAuthenticated && user ? (
             <TouchableOpacity style={styles.userInfo} onPress={handleLogout}>
               {user.picture ? (
