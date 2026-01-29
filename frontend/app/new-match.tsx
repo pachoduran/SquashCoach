@@ -591,6 +591,66 @@ const styles = StyleSheet.create({
     height: 50,
     color: '#333',
   },
+  // Estilos para iOS Picker Button
+  pickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  pickerButtonText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  pickerButtonPlaceholder: {
+    color: '#999',
+  },
+  // Modal de Picker para iOS
+  pickerModalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  pickerModalContent: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 30,
+  },
+  pickerModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  pickerModalTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#333',
+  },
+  pickerModalCancel: {
+    fontSize: 17,
+    color: '#999',
+  },
+  pickerModalDone: {
+    fontSize: 17,
+    color: '#2196F3',
+    fontWeight: '600',
+  },
+  iosPicker: {
+    height: 200,
+  },
   addPlayerButtonSmall: {
     flexDirection: 'row',
     alignItems: 'center',
