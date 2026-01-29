@@ -628,7 +628,7 @@ export default function MatchPlay() {
               </View>
             </ScrollView>
 
-            {/* Posiciones */}
+            {/* Posiciones - OCULTO para futura actualización
             <Text style={styles.modalLabel}>{t('matchPlay.pointLocation')}</Text>
             <View style={styles.positionButtons}>
               <TouchableOpacity
@@ -652,6 +652,7 @@ export default function MatchPlay() {
                 <Text style={styles.positionButtonText}>{t('history.opponent')}</Text>
               </TouchableOpacity>
             </View>
+            */}
 
             <View style={styles.modalButtons}>
               <TouchableOpacity
