@@ -131,12 +131,12 @@ export default function Index() {
 
   const deleteMatch = async (matchId: number) => {
     Alert.alert(
-      'Eliminar Partido',
-      '¿Estás seguro de que quieres eliminar este partido? Esta acción no se puede deshacer.',
+      t('home.deleteMatch'),
+      t('home.deleteConfirm'),
       [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Eliminar',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -150,10 +150,10 @@ export default function Index() {
               
               // Recargar la lista
               await loadActiveMatches();
-              Alert.alert('Eliminado', 'El partido ha sido eliminado');
+              Alert.alert(t('home.deleted'), t('home.matchDeleted'));
             } catch (error) {
               console.error('Error eliminando partido:', error);
-              Alert.alert('Error', 'No se pudo eliminar el partido');
+              Alert.alert(t('common.error'), t('home.deleteError'));
             }
           }
         }
