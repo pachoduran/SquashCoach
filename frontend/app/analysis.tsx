@@ -264,7 +264,7 @@ export default function AnalysisScreen() {
             >
               <Ionicons name="calendar-outline" size={20} color="#2196F3" />
               <Text style={styles.dateButtonText}>
-                {dateTo ? format(dateTo, 'dd/MM/yyyy') : 'Hasta'}
+                {dateTo ? format(dateTo, 'dd/MM/yyyy') : t('common.to')}
               </Text>
               {dateTo && (
                 <TouchableOpacity onPress={clearDateTo} style={styles.clearDateBtn}>
@@ -303,7 +303,7 @@ export default function AnalysisScreen() {
           >
             <Ionicons name="analytics" size={20} color="#FFF" />
             <Text style={styles.analyzeButtonText}>
-              {loading ? 'Analizando...' : 'Analizar'}
+              {loading ? t('common.loading') : t('analysis.analyze')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -314,7 +314,7 @@ export default function AnalysisScreen() {
             {/* Estadísticas resumen */}
             <View style={styles.statsCard}>
               <Text style={styles.matchCountText}>
-                {matchCount} partido{matchCount !== 1 ? 's' : ''} • {points.length} puntos
+                {matchCount} {t('analysis.matchesAnalyzed')} • {points.length} {t('analysis.totalPoints')}
               </Text>
               
               <View style={styles.statsRow}>
