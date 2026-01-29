@@ -361,11 +361,11 @@ export default function MatchPlay() {
           // Mostrar alerta
           setTimeout(() => {
             Alert.alert(
-              'Partido Finalizado',
-              `¡${newPlayer1Games > newPlayer2Games ? match.player1.nickname : match.player2.nickname} ganó el partido!`,
+              t('matchPlay.matchFinished'),
+              `¡${newPlayer1Games > newPlayer2Games ? match.player1.nickname : match.player2.nickname} ${t('matchPlay.won')}!`,
               [
                 {
-                  text: 'Ver Resumen',
+                  text: t('matchPlay.viewSummary'),
                   onPress: () => {
                     router.replace({
                       pathname: '/match-summary',
