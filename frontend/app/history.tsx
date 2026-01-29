@@ -328,11 +328,11 @@ export default function HistoryScreen() {
             {hasActiveFilters && (
               <TouchableOpacity style={styles.clearButton} onPress={clearFilters}>
                 <Ionicons name="trash-outline" size={16} color="#F44336" />
-                <Text style={styles.clearButtonText}>Limpiar</Text>
+                <Text style={styles.clearButtonText}>{t('common.clear')}</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity style={styles.applyButton} onPress={loadMatches}>
-              <Text style={styles.applyButtonText}>Buscar</Text>
+              <Text style={styles.applyButtonText}>{t('common.search')}</Text>
             </TouchableOpacity>
           </View>
           
@@ -368,7 +368,7 @@ export default function HistoryScreen() {
         <>
           <View style={styles.resultsHeader}>
             <Text style={styles.resultsCount}>
-              {matches.length} partido{matches.length !== 1 ? 's' : ''}
+              {matches.length} {matches.length !== 1 ? t('history.matches') : t('history.match')}
             </Text>
           </View>
           <FlatList
