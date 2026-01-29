@@ -119,7 +119,7 @@ export default function NewMatch() {
       });
     } catch (error) {
       console.error('Error creando partido:', error);
-      Alert.alert('Error', 'No se pudo crear el partido');
+      Alert.alert(t('common.error'), t('newMatch.selectBothPlayers'));
     }
   };
 
@@ -134,18 +134,18 @@ export default function NewMatch() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Nuevo Partido</Text>
+        <Text style={styles.headerTitle}>{t('newMatch.title')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView style={styles.content}>
         {/* Información del Torneo */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Información del Partido</Text>
+          <Text style={styles.sectionTitle}>{t('newMatch.tournament')}</Text>
           
           <TextInput
             style={styles.textInput}
-            placeholder="Nombre del Torneo (opcional)"
+            placeholder={t('newMatch.tournamentPlaceholder')}
             value={tournamentName}
             onChangeText={setTournamentName}
             placeholderTextColor="#999"
@@ -166,7 +166,7 @@ export default function NewMatch() {
 
         {/* Mi Jugador */}
         <View style={styles.selectorContainer}>
-          <Text style={styles.selectorTitle}>Mi Jugador</Text>
+          <Text style={styles.selectorTitle}>{t('newMatch.myPlayer')}</Text>
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={selectedPlayer1Id}
@@ -174,7 +174,7 @@ export default function NewMatch() {
               style={styles.picker}
               dropdownIconColor="#333"
             >
-              <Picker.Item label="Selecciona tu jugador" value={null} />
+              <Picker.Item label={t('newMatch.selectPlayer')} value={null} />
               {players.map((player) => (
                 <Picker.Item
                   key={player.id}
@@ -189,13 +189,13 @@ export default function NewMatch() {
             onPress={() => setShowAddPlayer(true)}
           >
             <Ionicons name="add-circle-outline" size={20} color="#2196F3" />
-            <Text style={styles.addPlayerText}>Agregar nuevo jugador</Text>
+            <Text style={styles.addPlayerText}>{t('newMatch.addPlayer')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Oponente */}
         <View style={styles.selectorContainer}>
-          <Text style={styles.selectorTitle}>Oponente</Text>
+          <Text style={styles.selectorTitle}>{t('history.opponent')}</Text>
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={selectedPlayer2Id}
@@ -203,7 +203,7 @@ export default function NewMatch() {
               style={styles.picker}
               dropdownIconColor="#333"
             >
-              <Picker.Item label="Selecciona oponente" value={null} />
+              <Picker.Item label={t('newMatch.selectPlayer')} value={null} />
               {players.map((player) => (
                 <Picker.Item
                   key={player.id}
@@ -216,7 +216,7 @@ export default function NewMatch() {
         </View>
 
         <View style={styles.bestOfContainer}>
-          <Text style={styles.selectorTitle}>Formato del Partido</Text>
+          <Text style={styles.selectorTitle}>{t('newMatch.bestOf')}</Text>
           <View style={styles.bestOfButtons}>
             <TouchableOpacity
               style={[
@@ -231,7 +231,7 @@ export default function NewMatch() {
                   bestOf === 3 && styles.bestOfButtonTextSelected,
                 ]}
               >
-                Mejor de 3
+                {t('newMatch.bestOf')} 3
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -247,7 +247,7 @@ export default function NewMatch() {
                   bestOf === 5 && styles.bestOfButtonTextSelected,
                 ]}
               >
-                Mejor de 5
+                {t('newMatch.bestOf')} 5
               </Text>
             </TouchableOpacity>
           </View>
