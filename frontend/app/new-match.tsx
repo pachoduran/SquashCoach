@@ -411,6 +411,78 @@ export default function NewMatch() {
           </View>
         </View>
       </Modal>
+
+      {/* Modal para seleccionar Jugador 1 (iOS) */}
+      <Modal
+        visible={showPlayer1Picker}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowPlayer1Picker(false)}
+      >
+        <View style={styles.pickerModalOverlay}>
+          <View style={styles.pickerModalContent}>
+            <View style={styles.pickerModalHeader}>
+              <TouchableOpacity onPress={() => setShowPlayer1Picker(false)}>
+                <Text style={styles.pickerModalCancel}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <Text style={styles.pickerModalTitle}>{t('newMatch.myPlayer')}</Text>
+              <TouchableOpacity onPress={() => setShowPlayer1Picker(false)}>
+                <Text style={styles.pickerModalDone}>OK</Text>
+              </TouchableOpacity>
+            </View>
+            <Picker
+              selectedValue={selectedPlayer1Id}
+              onValueChange={(itemValue) => setSelectedPlayer1Id(itemValue)}
+              style={styles.iosPicker}
+            >
+              <Picker.Item label={t('newMatch.selectPlayer')} value={null} />
+              {players.map((player) => (
+                <Picker.Item
+                  key={player.id}
+                  label={player.nickname}
+                  value={player.id}
+                />
+              ))}
+            </Picker>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal para seleccionar Jugador 2 (iOS) */}
+      <Modal
+        visible={showPlayer2Picker}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowPlayer2Picker(false)}
+      >
+        <View style={styles.pickerModalOverlay}>
+          <View style={styles.pickerModalContent}>
+            <View style={styles.pickerModalHeader}>
+              <TouchableOpacity onPress={() => setShowPlayer2Picker(false)}>
+                <Text style={styles.pickerModalCancel}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <Text style={styles.pickerModalTitle}>{t('history.opponent')}</Text>
+              <TouchableOpacity onPress={() => setShowPlayer2Picker(false)}>
+                <Text style={styles.pickerModalDone}>OK</Text>
+              </TouchableOpacity>
+            </View>
+            <Picker
+              selectedValue={selectedPlayer2Id}
+              onValueChange={(itemValue) => setSelectedPlayer2Id(itemValue)}
+              style={styles.iosPicker}
+            >
+              <Picker.Item label={t('newMatch.selectPlayer')} value={null} />
+              {players.map((player) => (
+                <Picker.Item
+                  key={player.id}
+                  label={player.nickname}
+                  value={player.id}
+                />
+              ))}
+            </Picker>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
