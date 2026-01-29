@@ -17,6 +17,7 @@ import { getDatabase } from '@/src/store/database';
 import { SquashCourt } from '@/src/components/SquashCourt';
 import { ScoreBoard } from '@/src/components/ScoreBoard';
 import { syncService } from '@/src/store/syncService';
+import { useLanguage } from '@/src/context/LanguageContext';
 
 interface Player {
   id: number;
