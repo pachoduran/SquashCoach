@@ -287,6 +287,7 @@ export const SquashCourt: React.FC<SquashCourtProps> = ({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
+    width: '100%',
   },
   courtContainer: {
     backgroundColor: '#F5E6D3',
@@ -298,6 +299,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
     overflow: 'hidden',
+    alignSelf: 'center',
   },
   courtContainerCompact: {
     padding: 6,
