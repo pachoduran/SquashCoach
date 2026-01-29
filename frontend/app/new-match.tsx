@@ -94,6 +94,19 @@ export default function NewMatch() {
       const db = await getDatabase();
       const nickname = newPlayerNickname.trim();
       
+      // Verificar si ya existe un jugador con ese nombre
+      const existingPlayer = players.find(
+        p => p.nickname.toLowerCase() === nickname.toLowerCase()
+      );
+      
+      if (existingPlayer) {
+        Alert.alert(
+          t('common.error'), 
+          t('newMatch.playerExists') || 'Ya existe un jugador con ese nombre'
+        );
+        return;
+      }
+      
       // Verificar estructura de la tabla para saber qué columnas usar
       let tableInfo: any[] = [];
       try {
