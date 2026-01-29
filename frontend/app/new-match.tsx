@@ -55,29 +55,58 @@ export default function NewMatch() {
 
   const addPlayer = async () => {
     if (!newPlayerNickname.trim()) {
-      Alert.alert('Error', 'Por favor ingresa un apodo');
+      Alert.alert(t('common.error'), t('newMatch.nicknamePlaceholder'));
       return;
     }
 
     try {
       const db = await getDatabase();
-      const result = await db.runAsync(
-        'INSERT INTO players (nickname, created_at) VALUES (?, ?)',
-        [newPlayerNickname.trim(), new Date().toISOString()]
-      );
+      const nickname = newPlayerNickname.trim();
+      
+      // Verificar estructura de la tabla para saber qué columnas usar
+      let tableInfo: any[] = [];
+      try {
+        tableInfo = await db.getAllAsync("PRAGMA table_info(players)");
+      } catch (e) {
+        tableInfo = [];
+      }
+      
+      const hasName = tableInfo.some((col: any) => col.name === 'name');
+      const hasNickname = tableInfo.some((col: any) => col.name === 'nickname');
+      
+      let result;
+      if (hasName && hasNickname) {
+        // Tabla con ambas columnas (versión intermedia)
+        result = await db.runAsync(
+          'INSERT INTO players (name, nickname, created_at) VALUES (?, ?, ?)',
+          [nickname, nickname, new Date().toISOString()]
+        );
+      } else if (hasName && !hasNickname) {
+        // Tabla antigua solo con name
+        result = await db.runAsync(
+          'INSERT INTO players (name, created_at) VALUES (?, ?)',
+          [nickname, new Date().toISOString()]
+        );
+      } else {
+        // Tabla nueva solo con nickname
+        result = await db.runAsync(
+          'INSERT INTO players (nickname, created_at) VALUES (?, ?)',
+          [nickname, new Date().toISOString()]
+        );
+      }
       
       const newPlayer: Player = {
         id: result.lastInsertRowId,
-        nickname: newPlayerNickname.trim(),
+        nickname: nickname,
       };
 
       setPlayers([...players, newPlayer].sort((a, b) => a.nickname.localeCompare(b.nickname)));
       setNewPlayerNickname('');
       setShowAddPlayer(false);
-      Alert.alert('Éxito', 'Jugador agregado correctamente');
+      Alert.alert(t('common.success'), t('newMatch.addPlayer'));
     } catch (error) {
       console.error('Error agregando jugador:', error);
-      Alert.alert('Error', 'No se pudo agregar el jugador');
+      Alert.alert(t('common.error'), t('home.deleteError'));
     }
   };
 
