@@ -59,6 +59,7 @@ export default function MatchPlay() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const matchId = parseInt(params.matchId as string);
+  const { t } = useLanguage();
 
   const [match, setMatch] = useState<Match | null>(null);
   const [currentPoint, setCurrentPoint] = useState<Point | null>(null);
