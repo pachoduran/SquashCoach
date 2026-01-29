@@ -382,10 +382,10 @@ export default function HistoryScreen() {
       ) : (
         <View style={styles.emptyState}>
           <Ionicons name="document-text-outline" size={64} color="#CCC" />
-          <Text style={styles.emptyText}>No se encontraron partidos</Text>
+          <Text style={styles.emptyText}>{t('history.noMatches')}</Text>
           {hasActiveFilters && (
             <TouchableOpacity style={styles.clearFiltersButton} onPress={clearFilters}>
-              <Text style={styles.clearFiltersText}>Limpiar filtros</Text>
+              <Text style={styles.clearFiltersText}>{t('history.clearFilters')}</Text>
             </TouchableOpacity>
           )}
         </View>
