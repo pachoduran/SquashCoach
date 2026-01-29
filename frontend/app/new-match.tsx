@@ -39,6 +39,10 @@ export default function NewMatch() {
   const [matchDate, setMatchDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [myPlayerId, setMyPlayerId] = useState<number | null>(null);
+  
+  // Para iOS - modales de selección
+  const [showPlayer1Picker, setShowPlayer1Picker] = useState(false);
+  const [showPlayer2Picker, setShowPlayer2Picker] = useState(false);
 
   useEffect(() => {
     loadPlayers();
