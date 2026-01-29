@@ -465,12 +465,81 @@ export default function MatchPlay() {
       setShowPointModal(false);
       setCurrentPoint(null);
       setSelectingPosition(null);
+      setIsEditing(false);
+      setEditingPointId(null);
       console.log('[MatchPlay] Guardado completado exitosamente');
     } catch (error) {
       console.error('[MatchPlay] Error guardando punto:', error);
       Alert.alert('Error', 'No se pudo guardar el punto. Por favor intenta de nuevo.');
     } finally {
       setIsSaving(false); // Habilitar guardado nuevamente
+    }
+  };
+
+  // Función para editar el último punto
+  const editLastPoint = async () => {
+    try {
+      const db = await getDatabase();
+      
+      // Obtener el último punto del partido
+      const lastPoint = await db.getFirstAsync(
+        `SELECT p.*, 
+                CASE WHEN p.winner_id = ? THEN 'player1' ELSE 'player2' END as winner_type
+         FROM points p 
+         WHERE p.match_id = ? 
+         ORDER BY p.id DESC 
+         LIMIT 1`,
+        [match!.player1.id, matchId]
+      ) as any;
+      
+      if (!lastPoint) {
+        Alert.alert(t('common.error'), t('matchPlay.noPointsToEdit'));
+        return;
+      }
+      
+      // Cargar los datos del punto en el modal
+      setCurrentPoint({
+        positionX: lastPoint.position_x || 0.5,
+        positionY: lastPoint.position_y || 0.5,
+        winnerPlayerId: lastPoint.winner_id,
+        reason: lastPoint.reason,
+      });
+      setIsEditing(true);
+      setEditingPointId(lastPoint.id);
+      setShowPointModal(true);
+    } catch (error) {
+      console.error('Error cargando último punto:', error);
+      Alert.alert(t('common.error'), t('matchPlay.noPointsToEdit'));
+    }
+  };
+
+  // Función para actualizar el punto editado
+  const updatePoint = async () => {
+    if (!currentPoint?.winnerPlayerId || !currentPoint?.reason || !editingPointId) return;
+    
+    setIsSaving(true);
+    try {
+      const db = await getDatabase();
+      
+      await db.runAsync(
+        `UPDATE points SET winner_id = ?, reason = ? WHERE id = ?`,
+        [currentPoint.winnerPlayerId, currentPoint.reason, editingPointId]
+      );
+      
+      // Recargar el partido para actualizar los marcadores
+      await loadMatch();
+      
+      setShowPointModal(false);
+      setCurrentPoint(null);
+      setIsEditing(false);
+      setEditingPointId(null);
+      
+      Alert.alert(t('common.success'), t('matchPlay.pointUpdated'));
+    } catch (error) {
+      console.error('Error actualizando punto:', error);
+      Alert.alert(t('common.error'), 'Error al actualizar el punto');
+    } finally {
+      setIsSaving(false);
     }
   };
 
