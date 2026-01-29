@@ -141,7 +141,7 @@ export default function NewMatch() {
           0,
           0,
           tournamentName.trim() || null,
-          matchDate,
+          matchDate.toISOString().split('T')[0],
         ]
       );
 
@@ -155,9 +155,11 @@ export default function NewMatch() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const [year, month, day] = dateString.split('-');
-    return `${day}/${month}/${year}`;
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setMatchDate(selectedDate);
+    }
   };
 
   return (
