@@ -185,17 +185,26 @@ export default function NewMatch() {
             placeholderTextColor="#999"
           />
           
-          <View style={styles.dateContainer}>
-            <Ionicons name="calendar-outline" size={20} color="#666" />
-            <TextInput
-              style={styles.dateInput}
-              placeholder="YYYY-MM-DD"
+          <TouchableOpacity 
+            style={styles.dateContainer}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Ionicons name="calendar-outline" size={20} color="#2196F3" />
+            <Text style={styles.dateText}>
+              {format(matchDate, 'dd/MM/yyyy')}
+            </Text>
+            <Ionicons name="chevron-down" size={18} color="#666" />
+          </TouchableOpacity>
+          
+          {showDatePicker && (
+            <DateTimePicker
               value={matchDate}
-              onChangeText={setMatchDate}
-              placeholderTextColor="#999"
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleDateChange}
+              maximumDate={new Date()}
             />
-            <Text style={styles.dateFormatted}>{formatDate(matchDate)}</Text>
-          </View>
+          )}
         </View>
 
         {/* Mi Jugador */}
