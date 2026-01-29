@@ -64,28 +64,44 @@ const initializeDatabase = async (): Promise<void> => {
       db = SQLite.openDatabaseSync('squash_analyzer.db');
       console.log('[DB] Base de datos abierta');
       
-      // Tabla de jugadores - SOLO nickname (sin nombre)
-      db.execSync(`
-        CREATE TABLE IF NOT EXISTS players (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          nickname TEXT NOT NULL,
-          created_at TEXT NOT NULL
-        );
-      `);
-      
-      // Migrar datos antiguos: si existe columna 'name', copiar a nickname
+      // Verificar estructura de tabla players y migrar si es necesario
       try {
         const tableInfo = db.getAllSync("PRAGMA table_info(players)");
         const hasName = tableInfo.some((col: any) => col.name === 'name');
         const hasNickname = tableInfo.some((col: any) => col.name === 'nickname');
         
-        if (hasName && hasNickname) {
-          // Migrar name a nickname donde nickname está vacío
+        if (hasName && !hasNickname) {
+          // Tabla antigua: tiene 'name' pero no 'nickname'
+          // Agregar columna nickname
+          console.log('[DB] Migrando tabla players: agregando columna nickname...');
+          db.runSync("ALTER TABLE players ADD COLUMN nickname TEXT");
+          db.runSync("UPDATE players SET nickname = name");
+          console.log('[DB] Migración de columna completada');
+        } else if (!hasName && !hasNickname) {
+          // Tabla no existe, crearla
+          db.execSync(`
+            CREATE TABLE IF NOT EXISTS players (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              nickname TEXT NOT NULL,
+              created_at TEXT NOT NULL
+            );
+          `);
+          console.log('[DB] Tabla players creada');
+        } else if (hasName && hasNickname) {
+          // Ambas columnas existen, asegurar que nickname tenga datos
           db.runSync("UPDATE players SET nickname = name WHERE nickname IS NULL OR nickname = ''");
-          console.log('[DB] Migración de nombres completada');
+          console.log('[DB] Migración de datos completada');
         }
+        // Si solo tiene nickname (tabla nueva), no hacer nada
       } catch (e) {
-        console.log('[DB] No se requiere migración');
+        console.log('[DB] Creando tabla players nueva...');
+        db.execSync(`
+          CREATE TABLE IF NOT EXISTS players (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nickname TEXT NOT NULL,
+            created_at TEXT NOT NULL
+          );
+        `);
       }
       
       // Tabla de partidos - con campos de torneo y fecha
