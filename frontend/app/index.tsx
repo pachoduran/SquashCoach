@@ -35,6 +35,7 @@ interface Match {
 export default function Index() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading, login, logout } = useAuth();
+  const { language, setLang, t } = useLanguage();
   const [activeMatches, setActiveMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
