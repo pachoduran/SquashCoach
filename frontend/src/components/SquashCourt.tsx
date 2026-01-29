@@ -146,10 +146,20 @@ export const SquashCourt: React.FC<SquashCourtProps> = ({
   const selectedPoint = selectedPointIndex !== undefined ? points[selectedPointIndex] : null;
   const pointSize = compact ? 12 : 16;
   const fontSize = compact ? 8 : 10;
+  
+  // Padding para el contenedor
+  const containerPadding = compact ? 8 : 12;
+  // Tamaño total del contenedor incluyendo padding
+  const containerWidth = COURT_WIDTH + (containerPadding * 2);
+  const containerHeight = COURT_HEIGHT + (containerPadding * 2);
 
   return (
     <View style={styles.container}>
-      <View style={[styles.courtContainer, compact && styles.courtContainerCompact, { width: COURT_WIDTH, height: COURT_HEIGHT }]}>
+      <View style={[
+        styles.courtContainer, 
+        compact && styles.courtContainerCompact, 
+        { width: containerWidth, height: containerHeight, padding: containerPadding }
+      ]}>
         <Pressable onPress={handlePress} style={{ width: COURT_WIDTH, height: COURT_HEIGHT }}>
           <Image
             source={require('../../assets/squash-court.png')}
@@ -158,7 +168,7 @@ export const SquashCourt: React.FC<SquashCourtProps> = ({
               height: COURT_HEIGHT,
               position: 'absolute',
             }}
-            resizeMode="cover"
+            resizeMode="contain"
           />
           
           <Svg width={COURT_WIDTH} height={COURT_HEIGHT} style={{ position: 'absolute' }}>
