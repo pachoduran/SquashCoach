@@ -402,10 +402,25 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  langMenuButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    padding: 6,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 8,
+  },
+  langMenuText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#FFF',
+    flex: 1,
+    textAlign: 'center',
   },
   userButton: {
     padding: 4,
