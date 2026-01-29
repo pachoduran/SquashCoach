@@ -15,6 +15,7 @@ import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '@/src/store/database';
+import { useLanguage } from '@/src/context/LanguageContext';
 
 interface Player {
   id: number;
@@ -23,6 +24,7 @@ interface Player {
 
 export default function NewMatch() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayer1Id, setSelectedPlayer1Id] = useState<number | null>(null);
   const [selectedPlayer2Id, setSelectedPlayer2Id] = useState<number | null>(null);
@@ -33,6 +35,7 @@ export default function NewMatch() {
   // Nuevos campos
   const [tournamentName, setTournamentName] = useState('');
   const [matchDate, setMatchDate] = useState(new Date().toISOString().split('T')[0]);
+  const [myPlayerId, setMyPlayerId] = useState<number | null>(null);
 
   useEffect(() => {
     loadPlayers();
