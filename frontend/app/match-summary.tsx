@@ -12,6 +12,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '@/src/store/database';
+import { useLanguage } from '@/src/context/LanguageContext';
 import { SquashCourt } from '@/src/components/SquashCourt';
 import { format } from 'date-fns';
 
