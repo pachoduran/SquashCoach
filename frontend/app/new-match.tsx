@@ -47,9 +47,33 @@ export default function NewMatch() {
   const loadPlayers = async () => {
     try {
       const db = await getDatabase();
-      const result = await db.getAllAsync(
-        'SELECT id, COALESCE(nickname, name) as nickname FROM players ORDER BY nickname ASC'
-      );
+      
+      // Primero verificar qué columnas tiene la tabla
+      let hasName = false;
+      let hasNickname = false;
+      try {
+        const tableInfo = await db.getAllAsync("PRAGMA table_info(players)");
+        hasName = (tableInfo as any[]).some((col: any) => col.name === 'name');
+        hasNickname = (tableInfo as any[]).some((col: any) => col.name === 'nickname');
+      } catch (e) {
+        // Si falla, asumir tabla nueva
+        hasNickname = true;
+      }
+      
+      // Construir consulta según estructura
+      let query = 'SELECT id, ';
+      if (hasNickname && hasName) {
+        query += 'COALESCE(nickname, name) as nickname';
+      } else if (hasNickname) {
+        query += 'nickname';
+      } else if (hasName) {
+        query += 'name as nickname';
+      } else {
+        query += 'nickname'; // fallback
+      }
+      query += ' FROM players ORDER BY nickname ASC';
+      
+      const result = await db.getAllAsync(query);
       setPlayers(result as Player[]);
     } catch (error) {
       console.error('Error cargando jugadores:', error);
