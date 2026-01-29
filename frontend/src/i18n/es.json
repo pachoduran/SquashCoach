@@ -61,7 +61,8 @@
     "add": "Agregar",
     "selectBothPlayers": "Selecciona ambos jugadores",
     "selectMyPlayer": "Selecciona cuál es tu jugador",
-    "differentPlayers": "Los jugadores deben ser diferentes"
+    "differentPlayers": "Los jugadores deben ser diferentes",
+    "playerExists": "Jugador ya registrado"
   },
   "matchPlay": {
     "game": "Game",
