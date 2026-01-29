@@ -88,7 +88,11 @@
     "undoConfirm": "Undo the last point?",
     "undo": "Undo",
     "noPointsToUndo": "No points to undo",
-    "pointUndone": "Point undone"
+    "pointUndone": "Point undone",
+    "editLastPoint": "Edit last point",
+    "editPoint": "Edit Point",
+    "noPointsToEdit": "No points to edit",
+    "pointUpdated": "Point updated"
   },
   "history": {
     "title": "Finished Matches",
