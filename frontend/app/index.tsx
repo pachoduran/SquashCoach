@@ -103,9 +103,9 @@ export default function Index() {
 
   const handleSync = async () => {
     if (!isAuthenticated) {
-      Alert.alert('Iniciar Sesión', 'Debes iniciar sesión para sincronizar', [
-        { text: 'Cancelar' },
-        { text: 'Iniciar Sesión', onPress: login }
+      Alert.alert(t('home.loginRequired'), t('home.loginRequiredMsg'), [
+        { text: t('common.cancel') },
+        { text: t('home.login'), onPress: login }
       ]);
       return;
     }
@@ -117,15 +117,15 @@ export default function Index() {
     if (result.success) {
       setHasPendingSync(false);
       if (result.message !== 'Nada que sincronizar') {
-        Alert.alert('Sincronización', result.message);
+        Alert.alert(t('home.sync'), result.message);
       }
     }
   };
 
   const handleLogout = () => {
-    Alert.alert('Cerrar Sesión', '¿Estás seguro?', [
-      { text: 'Cancelar' },
-      { text: 'Cerrar Sesión', onPress: logout, style: 'destructive' }
+    Alert.alert(t('home.logout'), t('home.logoutConfirm'), [
+      { text: t('common.cancel') },
+      { text: t('home.logout'), onPress: logout, style: 'destructive' }
     ]);
   };
 
