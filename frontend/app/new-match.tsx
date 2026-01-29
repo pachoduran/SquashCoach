@@ -283,23 +283,38 @@ export default function NewMatch() {
         {/* Oponente */}
         <View style={styles.selectorContainer}>
           <Text style={styles.selectorTitle}>{t('history.opponent')}</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={selectedPlayer2Id}
-              onValueChange={(itemValue) => setSelectedPlayer2Id(itemValue)}
-              style={styles.picker}
-              dropdownIconColor="#333"
+          
+          {Platform.OS === 'ios' ? (
+            <TouchableOpacity 
+              style={styles.pickerButton}
+              onPress={() => setShowPlayer2Picker(true)}
             >
-              <Picker.Item label={t('newMatch.selectPlayer')} value={null} />
-              {players.map((player) => (
-                <Picker.Item
-                  key={player.id}
-                  label={player.nickname}
-                  value={player.id}
-                />
-              ))}
-            </Picker>
-          </View>
+              <Text style={[styles.pickerButtonText, !selectedPlayer2Id && styles.pickerButtonPlaceholder]}>
+                {selectedPlayer2Id 
+                  ? players.find(p => p.id === selectedPlayer2Id)?.nickname 
+                  : t('newMatch.selectPlayer')}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color="#666" />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={selectedPlayer2Id}
+                onValueChange={(itemValue) => setSelectedPlayer2Id(itemValue)}
+                style={styles.picker}
+                dropdownIconColor="#333"
+              >
+                <Picker.Item label={t('newMatch.selectPlayer')} value={null} />
+                {players.map((player) => (
+                  <Picker.Item
+                    key={player.id}
+                    label={player.nickname}
+                    value={player.id}
+                  />
+                ))}
+              </Picker>
+            </View>
+          )}
         </View>
 
         <View style={styles.bestOfContainer}>
