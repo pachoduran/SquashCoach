@@ -128,8 +128,10 @@ export const SquashCourt: React.FC<SquashCourtProps> = ({
   showSelectedHighlight = false,
   compact = false,
 }) => {
-  // Ajustar tamaño según modo compacto
-  const COURT_WIDTH = compact ? SCREEN_WIDTH - 60 : SCREEN_WIDTH - 40;
+  // Limitar ancho máximo para tablets (max 400px para la cancha)
+  const MAX_COURT_WIDTH = 400;
+  const baseWidth = compact ? SCREEN_WIDTH - 60 : SCREEN_WIDTH - 40;
+  const COURT_WIDTH = Math.min(baseWidth, MAX_COURT_WIDTH);
   const COURT_HEIGHT = compact ? COURT_WIDTH * 1.2 : COURT_WIDTH * 1.5;
   
   const handlePress = (event: any) => {
@@ -147,7 +149,7 @@ export const SquashCourt: React.FC<SquashCourtProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={[styles.courtContainer, compact && styles.courtContainerCompact]}>
+      <View style={[styles.courtContainer, compact && styles.courtContainerCompact, { width: COURT_WIDTH, height: COURT_HEIGHT }]}>
         <Pressable onPress={handlePress} style={{ width: COURT_WIDTH, height: COURT_HEIGHT }}>
           <Image
             source={require('../../assets/squash-court.png')}
