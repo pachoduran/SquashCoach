@@ -238,23 +238,39 @@ export default function NewMatch() {
         {/* Mi Jugador */}
         <View style={styles.selectorContainer}>
           <Text style={styles.selectorTitle}>{t('newMatch.myPlayer')}</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={selectedPlayer1Id}
-              onValueChange={(itemValue) => setSelectedPlayer1Id(itemValue)}
-              style={styles.picker}
-              dropdownIconColor="#333"
+          
+          {Platform.OS === 'ios' ? (
+            <TouchableOpacity 
+              style={styles.pickerButton}
+              onPress={() => setShowPlayer1Picker(true)}
             >
-              <Picker.Item label={t('newMatch.selectPlayer')} value={null} />
-              {players.map((player) => (
-                <Picker.Item
-                  key={player.id}
-                  label={player.nickname}
-                  value={player.id}
-                />
-              ))}
-            </Picker>
-          </View>
+              <Text style={[styles.pickerButtonText, !selectedPlayer1Id && styles.pickerButtonPlaceholder]}>
+                {selectedPlayer1Id 
+                  ? players.find(p => p.id === selectedPlayer1Id)?.nickname 
+                  : t('newMatch.selectPlayer')}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color="#666" />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={selectedPlayer1Id}
+                onValueChange={(itemValue) => setSelectedPlayer1Id(itemValue)}
+                style={styles.picker}
+                dropdownIconColor="#333"
+              >
+                <Picker.Item label={t('newMatch.selectPlayer')} value={null} />
+                {players.map((player) => (
+                  <Picker.Item
+                    key={player.id}
+                    label={player.nickname}
+                    value={player.id}
+                  />
+                ))}
+              </Picker>
+            </View>
+          )}
+          
           <TouchableOpacity
             style={styles.addPlayerButtonSmall}
             onPress={() => setShowAddPlayer(true)}
