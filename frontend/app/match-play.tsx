@@ -629,7 +629,7 @@ export default function MatchPlay() {
             </ScrollView>
 
             {/* Posiciones */}
-            <Text style={styles.modalLabel}>Posiciones (Opcional)</Text>
+            <Text style={styles.modalLabel}>{t('matchPlay.pointLocation')}</Text>
             <View style={styles.positionButtons}>
               <TouchableOpacity
                 style={styles.positionButton}
@@ -639,7 +639,7 @@ export default function MatchPlay() {
                 }}
               >
                 <Ionicons name="navigate" size={20} color="#2196F3" />
-                <Text style={styles.positionButtonText}>Mi Posición</Text>
+                <Text style={styles.positionButtonText}>{t('newMatch.myPlayer')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.positionButton}
@@ -649,7 +649,7 @@ export default function MatchPlay() {
                 }}
               >
                 <Ionicons name="navigate" size={20} color="#FF9800" />
-                <Text style={styles.positionButtonText}>Oponente</Text>
+                <Text style={styles.positionButtonText}>{t('history.opponent')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -662,7 +662,7 @@ export default function MatchPlay() {
                   setSelectingPosition(null);
                 }}
               >
-                <Text style={styles.modalButtonText}>Cancelar</Text>
+                <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
@@ -681,7 +681,7 @@ export default function MatchPlay() {
                     styles.modalButtonTextPrimary,
                     (!currentPoint?.winnerPlayerId || !currentPoint?.reason) && styles.modalButtonTextDisabled
                   ]}>
-                    Guardar
+                    {t('common.save')}
                   </Text>
                 )}
               </TouchableOpacity>
