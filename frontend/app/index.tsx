@@ -543,6 +543,38 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 40,
   },
+  languageSelector: {
+    marginTop: 30,
+    alignItems: 'center',
+  },
+  languageLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+  },
+  languageButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  langButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#1E3A5F',
+    backgroundColor: 'transparent',
+  },
+  langButtonActive: {
+    backgroundColor: '#1E3A5F',
+  },
+  langButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E3A5F',
+  },
+  langButtonTextActive: {
+    color: '#FFF',
+  },
   bottomButtons: {
     paddingHorizontal: 20,
     paddingVertical: 16,
