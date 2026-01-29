@@ -41,6 +41,7 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [hasPendingSync, setHasPendingSync] = useState(false);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
 
   useEffect(() => {
     initializeApp();
