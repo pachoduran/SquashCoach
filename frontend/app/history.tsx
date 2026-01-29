@@ -223,7 +223,7 @@ export default function HistoryScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={22} color="#FFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Partidos Finalizados</Text>
+        <Text style={styles.headerTitle}>{t('history.title')}</Text>
         <TouchableOpacity 
           onPress={() => setShowFilters(!showFilters)} 
           style={[styles.filterToggle, hasActiveFilters && styles.filterToggleActive]}
