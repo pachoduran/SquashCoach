@@ -329,7 +329,7 @@ export default function Index() {
           onPress={() => router.push('/new-match')}
         >
           <Ionicons name="add-circle" size={24} color="#FFF" />
-          <Text style={styles.newMatchText}>Nuevo Partido</Text>
+          <Text style={styles.newMatchText}>{t('home.newMatch')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
