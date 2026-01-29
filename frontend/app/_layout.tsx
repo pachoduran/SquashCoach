@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, View, Image, Animated } from 'react-native';
 import { AuthProvider } from '@/src/context/AuthContext';
+import { LanguageProvider } from '@/src/context/LanguageContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 
