@@ -411,20 +411,16 @@ const styles = StyleSheet.create({
   dateContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: '#F5F7FA',
     borderRadius: 8,
     padding: 14,
   },
-  dateInput: {
+  dateText: {
     flex: 1,
     fontSize: 16,
     color: '#333',
     marginLeft: 10,
-  },
-  dateFormatted: {
-    fontSize: 14,
-    color: '#2196F3',
-    fontWeight: '500',
   },
   selectorContainer: {
     marginBottom: 24,
