@@ -53,6 +53,7 @@ export default function MatchSummary() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const matchId = parseInt(params.matchId as string);
+  const { t } = useLanguage();
 
   const [matchData, setMatchData] = useState<MatchData | null>(null);
   const [allPoints, setAllPoints] = useState<PointData[]>([]);
