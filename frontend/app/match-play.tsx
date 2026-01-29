@@ -555,10 +555,10 @@ export default function MatchPlay() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Detalles del Punto</Text>
+            <Text style={styles.modalTitle}>{t('matchPlay.pointLocation')}</Text>
 
             {/* Ganador */}
-            <Text style={styles.modalLabel}>¿Quién ganó el punto?</Text>
+            <Text style={styles.modalLabel}>{t('matchPlay.whoWon')}</Text>
             <View style={styles.winnerButtons}>
               <TouchableOpacity
                 style={[
@@ -603,7 +603,7 @@ export default function MatchPlay() {
             </View>
 
             {/* Motivo */}
-            <Text style={styles.modalLabel}>Motivo</Text>
+            <Text style={styles.modalLabel}>{t('matchPlay.selectReason')}</Text>
             <ScrollView style={styles.reasonsScroll} nestedScrollEnabled>
               <View style={styles.reasonsGrid}>
                 {reasons.map((reason) => (
