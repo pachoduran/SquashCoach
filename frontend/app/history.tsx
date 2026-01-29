@@ -238,7 +238,7 @@ export default function HistoryScreen() {
         <View style={styles.filtersPanel}>
           {/* Mi Jugador */}
           <View style={styles.filterSection}>
-            <Text style={styles.filterLabel}>Mi Jugador</Text>
+            <Text style={styles.filterLabel}>{t('history.myPlayer')}</Text>
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={myPlayer}
@@ -246,7 +246,7 @@ export default function HistoryScreen() {
                 style={styles.picker}
                 itemStyle={styles.pickerItem}
               >
-                <Picker.Item label="Todos" value={null} />
+                <Picker.Item label={t('common.all')} value={null} />
                 {players.map((player) => (
                   <Picker.Item key={player.id} label={player.nickname} value={player.id} />
                 ))}
@@ -256,7 +256,7 @@ export default function HistoryScreen() {
           
           {/* Contrincante */}
           <View style={styles.filterSection}>
-            <Text style={styles.filterLabel}>Contrincante</Text>
+            <Text style={styles.filterLabel}>{t('history.opponent')}</Text>
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={opponent}
@@ -264,7 +264,7 @@ export default function HistoryScreen() {
                 style={styles.picker}
                 itemStyle={styles.pickerItem}
               >
-                <Picker.Item label="Todos" value={null} />
+                <Picker.Item label={t('common.all')} value={null} />
                 {players.filter(p => p.id !== myPlayer).map((player) => (
                   <Picker.Item key={player.id} label={player.nickname} value={player.id} />
                 ))}
@@ -274,7 +274,7 @@ export default function HistoryScreen() {
           
           {/* Torneo */}
           <View style={styles.filterSection}>
-            <Text style={styles.filterLabel}>Torneo</Text>
+            <Text style={styles.filterLabel}>{t('history.tournament')}</Text>
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={selectedTournament}
@@ -282,7 +282,7 @@ export default function HistoryScreen() {
                 style={styles.picker}
                 itemStyle={styles.pickerItem}
               >
-                <Picker.Item label="Todos" value={null} />
+                <Picker.Item label={t('common.all')} value={null} />
                 {tournaments.map((t, index) => (
                   <Picker.Item key={index} label={t.name} value={t.name} />
                 ))}
@@ -298,7 +298,7 @@ export default function HistoryScreen() {
             >
               <Ionicons name="calendar-outline" size={18} color="#2196F3" />
               <Text style={styles.dateButtonText}>
-                {dateFrom ? format(dateFrom, 'dd/MM/yy') : 'Desde'}
+                {dateFrom ? format(dateFrom, 'dd/MM/yy') : t('common.from')}
               </Text>
               {dateFrom && (
                 <TouchableOpacity onPress={() => setDateFrom(null)}>
@@ -313,7 +313,7 @@ export default function HistoryScreen() {
             >
               <Ionicons name="calendar-outline" size={18} color="#2196F3" />
               <Text style={styles.dateButtonText}>
-                {dateTo ? format(dateTo, 'dd/MM/yy') : 'Hasta'}
+                {dateTo ? format(dateTo, 'dd/MM/yy') : t('common.to')}
               </Text>
               {dateTo && (
                 <TouchableOpacity onPress={() => setDateTo(null)}>
