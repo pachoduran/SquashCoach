@@ -158,6 +158,7 @@ export default function LoginScreen() {
                   value={name}
                   onChangeText={setName}
                   autoCapitalize="words"
+                  returnKeyType="next"
                 />
                 {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
               </View>
@@ -173,6 +174,7 @@ export default function LoginScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
+                returnKeyType="next"
               />
               {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
             </View>
@@ -187,6 +189,8 @@ export default function LoginScreen() {
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
+                  returnKeyType={mode === 'login' ? 'done' : 'next'}
+                  onSubmitEditing={mode === 'login' ? handleEmailAuth : undefined}
                 />
                 <TouchableOpacity
                   style={styles.eyeButton}
@@ -213,6 +217,7 @@ export default function LoginScreen() {
                     onChangeText={setConfirmPassword}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
+                    returnKeyType="next"
                   />
                   {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
                 </View>
