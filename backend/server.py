@@ -383,8 +383,403 @@ async def logout(request: Request, response: Response):
     return {"message": "Sesión cerrada"}
 
 # =============================================================================
-# PLAYERS ENDPOINTS
+# EMAIL AUTHENTICATION
 # =============================================================================
+
+@api_router.post("/auth/register")
+async def register_email(data: EmailRegisterRequest, response: Response):
+    """Register with email and password"""
+    # Validate email
+    if not validate_email(data.email):
+        raise HTTPException(status_code=400, detail="Email inválido")
+    
+    # Validate password
+    if len(data.password) < 6:
+        raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 6 caracteres")
+    
+    # Validate phone if provided
+    if data.phone and not validate_phone(data.phone):
+        raise HTTPException(status_code=400, detail="Número de teléfono inválido")
+    
+    # Check if email already exists
+    existing = await db.users.find_one({"email": data.email.lower()})
+    if existing:
+        raise HTTPException(status_code=400, detail="Este email ya está registrado")
+    
+    # Check if phone already exists (if provided)
+    if data.phone:
+        phone_cleaned = re.sub(r'[\s\-\(\)]', '', data.phone)
+        existing_phone = await db.users.find_one({"phone": phone_cleaned})
+        if existing_phone:
+            raise HTTPException(status_code=400, detail="Este teléfono ya está registrado")
+    
+    # Create user
+    user_id = f"user_{uuid.uuid4().hex[:12]}"
+    password_hash = hash_password(data.password)
+    
+    new_user = {
+        "user_id": user_id,
+        "email": data.email.lower(),
+        "name": data.name,
+        "phone": re.sub(r'[\s\-\(\)]', '', data.phone) if data.phone else None,
+        "picture": None,
+        "auth_type": "email",
+        "password_hash": password_hash,
+        "created_at": datetime.now(timezone.utc)
+    }
+    
+    await db.users.insert_one(new_user)
+    logger.info(f"New email user created: {user_id}")
+    
+    # Create session
+    session_token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+    
+    session = {
+        "user_id": user_id,
+        "session_token": session_token,
+        "expires_at": expires_at,
+        "created_at": datetime.now(timezone.utc)
+    }
+    
+    await db.user_sessions.insert_one(session)
+    
+    # Set cookie
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        path="/",
+        max_age=7 * 24 * 60 * 60
+    )
+    
+    return {
+        "user_id": user_id,
+        "email": data.email.lower(),
+        "name": data.name,
+        "phone": new_user["phone"],
+        "session_token": session_token
+    }
+
+@api_router.post("/auth/login")
+async def login_email(data: EmailLoginRequest, response: Response):
+    """Login with email and password"""
+    # Find user
+    user = await db.users.find_one({"email": data.email.lower()})
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Email o contraseña incorrectos")
+    
+    # Check if user registered with email
+    if user.get("auth_type") != "email":
+        raise HTTPException(status_code=400, detail="Esta cuenta fue creada con Google. Usa 'Continuar con Google'")
+    
+    # Verify password
+    if not verify_password(data.password, user.get("password_hash", "")):
+        raise HTTPException(status_code=401, detail="Email o contraseña incorrectos")
+    
+    # Create session
+    session_token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+    
+    session = {
+        "user_id": user["user_id"],
+        "session_token": session_token,
+        "expires_at": expires_at,
+        "created_at": datetime.now(timezone.utc)
+    }
+    
+    # Remove old sessions
+    await db.user_sessions.delete_many({"user_id": user["user_id"]})
+    await db.user_sessions.insert_one(session)
+    
+    # Set cookie
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        path="/",
+        max_age=7 * 24 * 60 * 60
+    )
+    
+    return {
+        "user_id": user["user_id"],
+        "email": user["email"],
+        "name": user["name"],
+        "phone": user.get("phone"),
+        "picture": user.get("picture"),
+        "session_token": session_token
+    }
+
+@api_router.put("/auth/profile")
+async def update_profile(
+    data: UpdateProfileRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Update user profile"""
+    update_data = {}
+    
+    if data.name:
+        update_data["name"] = data.name
+    
+    if data.phone:
+        if not validate_phone(data.phone):
+            raise HTTPException(status_code=400, detail="Número de teléfono inválido")
+        phone_cleaned = re.sub(r'[\s\-\(\)]', '', data.phone)
+        # Check if phone is used by another user
+        existing = await db.users.find_one({
+            "phone": phone_cleaned,
+            "user_id": {"$ne": current_user.user_id}
+        })
+        if existing:
+            raise HTTPException(status_code=400, detail="Este teléfono ya está registrado")
+        update_data["phone"] = phone_cleaned
+    
+    if update_data:
+        await db.users.update_one(
+            {"user_id": current_user.user_id},
+            {"$set": update_data}
+        )
+    
+    # Return updated user
+    updated_user = await db.users.find_one(
+        {"user_id": current_user.user_id},
+        {"_id": 0, "password_hash": 0}
+    )
+    return updated_user
+
+# =============================================================================
+# SHARING ENDPOINTS
+# =============================================================================
+
+@api_router.post("/share")
+async def share_with_user(
+    data: ShareRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Share all matches with another user"""
+    identifier = data.identifier.lower().strip()
+    
+    # Find user by email or phone
+    target_user = await db.users.find_one({
+        "$or": [
+            {"email": identifier},
+            {"phone": re.sub(r'[\s\-\(\)]', '', identifier)}
+        ]
+    })
+    
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    if target_user["user_id"] == current_user.user_id:
+        raise HTTPException(status_code=400, detail="No puedes compartir contigo mismo")
+    
+    # Check if already shared
+    existing = await db.share_permissions.find_one({
+        "owner_user_id": current_user.user_id,
+        "viewer_user_id": target_user["user_id"]
+    })
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Ya compartes con este usuario")
+    
+    # Create share permission
+    permission = {
+        "permission_id": f"perm_{uuid.uuid4().hex[:12]}",
+        "owner_user_id": current_user.user_id,
+        "viewer_user_id": target_user["user_id"],
+        "created_at": datetime.now(timezone.utc)
+    }
+    
+    await db.share_permissions.insert_one(permission)
+    logger.info(f"Share created: {current_user.user_id} -> {target_user['user_id']}")
+    
+    return {
+        "message": "Partidos compartidos exitosamente",
+        "shared_with": {
+            "user_id": target_user["user_id"],
+            "name": target_user["name"],
+            "email": target_user["email"]
+        }
+    }
+
+@api_router.delete("/share/{user_id}")
+async def unshare_with_user(
+    user_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Stop sharing with a user"""
+    result = await db.share_permissions.delete_one({
+        "owner_user_id": current_user.user_id,
+        "viewer_user_id": user_id
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Permiso no encontrado")
+    
+    return {"message": "Permiso eliminado"}
+
+@api_router.get("/share/my-shares")
+async def get_my_shares(current_user: User = Depends(get_current_user)):
+    """Get list of users I share with"""
+    permissions = await db.share_permissions.find(
+        {"owner_user_id": current_user.user_id},
+        {"_id": 0}
+    ).to_list(100)
+    
+    # Get user details
+    viewer_ids = [p["viewer_user_id"] for p in permissions]
+    users = await db.users.find(
+        {"user_id": {"$in": viewer_ids}},
+        {"_id": 0, "password_hash": 0}
+    ).to_list(100)
+    
+    users_dict = {u["user_id"]: u for u in users}
+    
+    result = []
+    for p in permissions:
+        user_data = users_dict.get(p["viewer_user_id"], {})
+        result.append({
+            "permission_id": p["permission_id"],
+            "user_id": p["viewer_user_id"],
+            "name": user_data.get("name", "Usuario"),
+            "email": user_data.get("email", ""),
+            "created_at": p["created_at"].isoformat() if isinstance(p["created_at"], datetime) else p["created_at"]
+        })
+    
+    return result
+
+@api_router.get("/share/shared-with-me")
+async def get_shared_with_me(current_user: User = Depends(get_current_user)):
+    """Get list of users who share with me"""
+    permissions = await db.share_permissions.find(
+        {"viewer_user_id": current_user.user_id},
+        {"_id": 0}
+    ).to_list(100)
+    
+    # Get user details
+    owner_ids = [p["owner_user_id"] for p in permissions]
+    users = await db.users.find(
+        {"user_id": {"$in": owner_ids}},
+        {"_id": 0, "password_hash": 0}
+    ).to_list(100)
+    
+    users_dict = {u["user_id"]: u for u in users}
+    
+    result = []
+    for p in permissions:
+        user_data = users_dict.get(p["owner_user_id"], {})
+        result.append({
+            "permission_id": p["permission_id"],
+            "user_id": p["owner_user_id"],
+            "name": user_data.get("name", "Usuario"),
+            "email": user_data.get("email", ""),
+            "created_at": p["created_at"].isoformat() if isinstance(p["created_at"], datetime) else p["created_at"]
+        })
+    
+    return result
+
+@api_router.get("/share/user/{user_id}/matches")
+async def get_shared_user_matches(
+    user_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get matches from a user who shared with me"""
+    # Check if user shared with me
+    permission = await db.share_permissions.find_one({
+        "owner_user_id": user_id,
+        "viewer_user_id": current_user.user_id
+    })
+    
+    if not permission:
+        raise HTTPException(status_code=403, detail="Este usuario no ha compartido contigo")
+    
+    # Get matches
+    matches = await db.matches.find(
+        {"user_id": user_id, "status": "finished"},
+        {"_id": 0}
+    ).sort("date", -1).to_list(1000)
+    
+    return matches
+
+@api_router.get("/share/user/{user_id}/matches/{match_id}")
+async def get_shared_match_detail(
+    user_id: str,
+    match_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get detailed match data from a shared user"""
+    # Check if user shared with me
+    permission = await db.share_permissions.find_one({
+        "owner_user_id": user_id,
+        "viewer_user_id": current_user.user_id
+    })
+    
+    if not permission:
+        raise HTTPException(status_code=403, detail="Este usuario no ha compartido contigo")
+    
+    # Get match
+    match = await db.matches.find_one(
+        {"match_id": match_id, "user_id": user_id},
+        {"_id": 0}
+    )
+    
+    if not match:
+        raise HTTPException(status_code=404, detail="Partido no encontrado")
+    
+    # Get points
+    points = await db.points.find(
+        {"match_id": match_id},
+        {"_id": 0}
+    ).sort("game_number", 1).sort("point_number", 1).to_list(1000)
+    
+    # Get game results
+    game_results = await db.game_results.find(
+        {"match_id": match_id},
+        {"_id": 0}
+    ).sort("game_number", 1).to_list(100)
+    
+    # Get players info
+    player_ids = [match["player1_id"], match["player2_id"]]
+    players = await db.players.find(
+        {"player_id": {"$in": player_ids}},
+        {"_id": 0}
+    ).to_list(10)
+    
+    return {
+        "match": match,
+        "points": points,
+        "game_results": game_results,
+        "players": players
+    }
+
+@api_router.get("/users/search")
+async def search_users(
+    q: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Search users by email or phone"""
+    if len(q) < 3:
+        raise HTTPException(status_code=400, detail="Busca con al menos 3 caracteres")
+    
+    query = q.lower().strip()
+    
+    users = await db.users.find(
+        {
+            "$or": [
+                {"email": {"$regex": query, "$options": "i"}},
+                {"phone": {"$regex": re.sub(r'[\s\-\(\)]', '', query)}}
+            ],
+            "user_id": {"$ne": current_user.user_id}
+        },
+        {"_id": 0, "password_hash": 0}
+    ).limit(10).to_list(10)
+    
+    return users
 
 @api_router.get("/players")
 async def get_players(current_user: User = Depends(get_current_user)):
