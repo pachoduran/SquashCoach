@@ -42,9 +42,14 @@ export default function AnalysisScreen() {
   const [selectedPlayer1, setSelectedPlayer1] = useState<number | null>(null);
   const [selectedPlayer2, setSelectedPlayer2] = useState<number | null>(null);
   
-  // Fechas
-  const [dateFrom, setDateFrom] = useState<Date | null>(null);
-  const [dateTo, setDateTo] = useState<Date | null>(null);
+  // Fechas - por defecto: hace 1 mes hasta hoy
+  const getDefaultDateFrom = () => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - 1);
+    return date;
+  };
+  const [dateFrom, setDateFrom] = useState<Date | null>(getDefaultDateFrom());
+  const [dateTo, setDateTo] = useState<Date | null>(new Date());
   const [showDateFromPicker, setShowDateFromPicker] = useState(false);
   const [showDateToPicker, setShowDateToPicker] = useState(false);
   
