@@ -99,6 +99,7 @@ export default function HistoryScreen() {
     setLoading(true);
     try {
       const db = await getDatabase();
+      const userId = user?.user_id || '';
       
       let query = `
         SELECT 
@@ -117,10 +118,10 @@ export default function HistoryScreen() {
         JOIN players p1 ON m.player1_id = p1.id
         JOIN players p2 ON m.player2_id = p2.id
         LEFT JOIN players pw ON m.winner_id = pw.id
-        WHERE m.status = 'finished'
+        WHERE m.status = 'finished' AND (m.user_id = ? OR m.user_id IS NULL)
       `;
       
-      const params: any[] = [];
+      const params: any[] = [userId];
       
       // Filtro por Mi Jugador
       if (myPlayer) {
