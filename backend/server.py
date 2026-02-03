@@ -75,7 +75,10 @@ class User(BaseModel):
     user_id: str
     email: str
     name: str
+    phone: Optional[str] = None
     picture: Optional[str] = None
+    auth_type: str = "google"  # "google", "email"
+    password_hash: Optional[str] = None
     created_at: datetime
 
 class UserSession(BaseModel):
@@ -90,6 +93,31 @@ class SessionDataResponse(BaseModel):
     name: str
     picture: Optional[str] = None
     session_token: str
+
+# Modelo para compartir partidos
+class SharePermission(BaseModel):
+    permission_id: str = Field(default_factory=lambda: f"perm_{uuid.uuid4().hex[:12]}")
+    owner_user_id: str  # Usuario que comparte
+    viewer_user_id: str  # Usuario que puede ver
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# Request Models para autenticación con email
+class EmailRegisterRequest(BaseModel):
+    email: str
+    password: str
+    name: str
+    phone: Optional[str] = None
+
+class EmailLoginRequest(BaseModel):
+    email: str
+    password: str
+
+class UpdateProfileRequest(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+
+class ShareRequest(BaseModel):
+    identifier: str  # email o teléfono del usuario a compartir
 
 class Player(BaseModel):
     player_id: str = Field(default_factory=lambda: f"player_{uuid.uuid4().hex[:12]}")
