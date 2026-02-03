@@ -582,13 +582,23 @@ const styles = StyleSheet.create({
   matchCard: {
     backgroundColor: '#FFF',
     borderRadius: 10,
-    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2,
+  },
+  matchContent: {
+    flex: 1,
+    padding: 12,
+  },
+  deleteMatchButton: {
+    padding: 12,
+    borderLeftWidth: 1,
+    borderLeftColor: '#F0F0F0',
   },
   matchHeader: {
     flexDirection: 'row',
