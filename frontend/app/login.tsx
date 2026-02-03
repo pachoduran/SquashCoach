@@ -230,6 +230,8 @@ export default function LoginScreen() {
                     value={phone}
                     onChangeText={setPhone}
                     keyboardType="phone-pad"
+                    returnKeyType="done"
+                    onSubmitEditing={handleEmailAuth}
                   />
                   {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
                   <Text style={styles.helperText}>{t('login.phoneHelper')}</Text>
