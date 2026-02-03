@@ -17,6 +17,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '@/src/store/database';
 import { useLanguage } from '@/src/context/LanguageContext';
+import { useAuth } from '@/src/context/AuthContext';
 import { format } from 'date-fns';
 
 interface Player {
@@ -27,6 +28,7 @@ interface Player {
 export default function NewMatch() {
   const router = useRouter();
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayer1Id, setSelectedPlayer1Id] = useState<number | null>(null);
   const [selectedPlayer2Id, setSelectedPlayer2Id] = useState<number | null>(null);
