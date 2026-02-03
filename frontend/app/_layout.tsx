@@ -63,6 +63,9 @@ export default function RootLayout() {
               <Stack.Screen name="settings" />
               <Stack.Screen name="analysis" />
               <Stack.Screen name="cloud-matches" />
+              <Stack.Screen name="share" />
+              <Stack.Screen name="shared-with-me" />
+              <Stack.Screen name="shared-match-detail" />
             </Stack>
           </GestureHandlerRootView>
         </AuthProvider>
