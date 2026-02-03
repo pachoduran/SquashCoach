@@ -66,7 +66,7 @@ export default function NewMatch() {
         hasNickname = true;
       }
       
-      // Construir consulta según estructura
+      // Construir consulta según estructura - filtrar por user_id
       let query = 'SELECT id, ';
       if (hasNickname && hasName) {
         query += 'COALESCE(nickname, name) as nickname';
@@ -77,9 +77,9 @@ export default function NewMatch() {
       } else {
         query += 'nickname'; // fallback
       }
-      query += ' FROM players ORDER BY nickname ASC';
+      query += ' FROM players WHERE user_id = ? OR user_id IS NULL ORDER BY nickname ASC';
       
-      const result = await db.getAllAsync(query);
+      const result = await db.getAllAsync(query, [user?.user_id || '']);
       setPlayers(result as Player[]);
     } catch (error) {
       console.error('Error cargando jugadores:', error);
