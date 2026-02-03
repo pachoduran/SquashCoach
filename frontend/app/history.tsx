@@ -188,41 +188,81 @@ export default function HistoryScreen() {
     }
   };
 
+  const deleteMatch = async (matchId: number) => {
+    Alert.alert(
+      t('home.deleteMatch'),
+      t('home.deleteConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const db = await getDatabase();
+              // Eliminar puntos del partido
+              await db.runAsync('DELETE FROM points WHERE match_id = ?', [matchId]);
+              // Eliminar resultados de games
+              await db.runAsync('DELETE FROM game_results WHERE match_id = ?', [matchId]);
+              // Eliminar el partido
+              await db.runAsync('DELETE FROM matches WHERE id = ?', [matchId]);
+              
+              Alert.alert(t('home.deleted'), t('home.matchDeleted'));
+              loadMatches();
+            } catch (error) {
+              console.error('Error eliminando partido:', error);
+              Alert.alert(t('common.error'), t('home.deleteError'));
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const renderMatch = ({ item }: { item: Match }) => (
-    <TouchableOpacity
-      style={styles.matchCard}
-      onPress={() => router.push({
-        pathname: '/match-summary',
-        params: { matchId: item.id },
-      })}
-    >
-      <View style={styles.matchHeader}>
-        <Text style={styles.matchPlayers} numberOfLines={1}>
-          {item.player1_nickname} vs {item.player2_nickname}
-        </Text>
-        <Text style={styles.matchScore}>
-          {item.player1_games}-{item.player2_games}
-        </Text>
-      </View>
-      
-      <View style={styles.matchDetails}>
-        <Text style={styles.matchDate}>
-          {format(new Date(item.date), "dd/MM/yyyy")}
-        </Text>
-        {item.tournament_name && (
-          <View style={styles.tournamentBadge}>
-            <Ionicons name="trophy-outline" size={11} color="#FF9800" />
-            <Text style={styles.tournamentText}>{item.tournament_name}</Text>
-          </View>
+    <View style={styles.matchCard}>
+      <TouchableOpacity
+        style={styles.matchContent}
+        onPress={() => router.push({
+          pathname: '/match-summary',
+          params: { matchId: item.id },
+        })}
+      >
+        <View style={styles.matchHeader}>
+          <Text style={styles.matchPlayers} numberOfLines={1}>
+            {item.player1_nickname} vs {item.player2_nickname}
+          </Text>
+          <Text style={styles.matchScore}>
+            {item.player1_games}-{item.player2_games}
+          </Text>
+        </View>
+        
+        <View style={styles.matchDetails}>
+          <Text style={styles.matchDate}>
+            {format(new Date(item.date), "dd/MM/yyyy")}
+          </Text>
+          {item.tournament_name && (
+            <View style={styles.tournamentBadge}>
+              <Ionicons name="trophy-outline" size={11} color="#FF9800" />
+              <Text style={styles.tournamentText}>{item.tournament_name}</Text>
+            </View>
+          )}
+        </View>
+        
+        {item.winner_nickname && (
+          <Text style={styles.winnerText}>
+            <Ionicons name="checkmark-circle" size={12} color="#4CAF50" /> {item.winner_nickname}
+          </Text>
         )}
-      </View>
+      </TouchableOpacity>
       
-      {item.winner_nickname && (
-        <Text style={styles.winnerText}>
-          <Ionicons name="checkmark-circle" size={12} color="#4CAF50" /> {item.winner_nickname}
-        </Text>
-      )}
-    </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.deleteMatchButton}
+        onPress={() => deleteMatch(item.id)}
+      >
+        <Ionicons name="trash-outline" size={18} color="#F44336" />
+      </TouchableOpacity>
+    </View>
   );
 
   return (
