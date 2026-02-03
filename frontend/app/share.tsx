@@ -358,13 +358,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 12,
   },
   backButton: {
     padding: 4,
   },
   title: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
     color: '#FFF',
   },
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     width: 32,
   },
   searchContainer: {
-    padding: 16,
+    padding: 12,
     backgroundColor: '#FFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F7FA',
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 8,
     gap: 8,
   },
   searchInput: {
