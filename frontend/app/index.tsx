@@ -383,9 +383,9 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#1E3A5F',
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 16,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 12,
   },
   headerTop: {
     flexDirection: 'row',
