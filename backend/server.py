@@ -781,6 +781,10 @@ async def search_users(
     
     return users
 
+# =============================================================================
+# PLAYERS ENDPOINTS
+# =============================================================================
+
 @api_router.get("/players")
 async def get_players(current_user: User = Depends(get_current_user)):
     """Get all players for current user"""
