@@ -184,10 +184,12 @@ export default function NewMatch() {
 
     try {
       const db = await getDatabase();
+      const userId = user?.user_id || null;
+      
       const result = await db.runAsync(
         `INSERT INTO matches 
-        (player1_id, player2_id, my_player_id, best_of, date, status, current_game, player1_games, player2_games, tournament_name, match_date) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (player1_id, player2_id, my_player_id, best_of, date, status, current_game, player1_games, player2_games, tournament_name, match_date, user_id) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           selectedPlayer1Id,
           selectedPlayer2Id,
@@ -200,6 +202,7 @@ export default function NewMatch() {
           0,
           tournamentName.trim() || null,
           matchDate.toISOString().split('T')[0],
+          userId,
         ]
       );
 
