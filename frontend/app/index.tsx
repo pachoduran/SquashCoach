@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#FFF',
     flex: 1,
@@ -415,13 +415,29 @@ const styles = StyleSheet.create({
   userButton: {
     padding: 4,
   },
-  userInfo: {
+  userArea: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     backgroundColor: 'rgba(255,255,255,0.15)',
     paddingHorizontal: 10,
     paddingVertical: 6,
+    borderRadius: 20,
+  },
+  userNameShort: {
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: '600',
+    maxWidth: 80,
+  },
+  logoutButton: {
+    backgroundColor: 'rgba(244,67,54,0.8)',
+    padding: 8,
     borderRadius: 20,
   },
   userDetails: {
@@ -438,9 +454,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
   userAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     borderWidth: 2,
     borderColor: '#FFF',
   },
