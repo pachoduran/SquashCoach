@@ -287,52 +287,63 @@ export default function Index() {
 
       {/* Botones inferiores */}
       <View style={styles.bottomButtons}>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={styles.historyButton}
-            onPress={() => router.push('/history')}
-          >
-            <Ionicons name="time-outline" size={22} color="#1E3A5F" />
-            <Text style={styles.historyButtonText}>{t('home.history')}</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={styles.analysisButton}
-            onPress={() => router.push('/analysis')}
-          >
-            <Ionicons name="analytics" size={22} color="#1E3A5F" />
-            <Text style={styles.analysisButtonText}>{t('home.analysis')}</Text>
-          </TouchableOpacity>
-          
-          {isAuthenticated && (
+        {isAuthenticated ? (
+          <>
+            {/* Primera fila: Historial y Análisis */}
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={styles.historyButton}
+                onPress={() => router.push('/history')}
+              >
+                <Ionicons name="time-outline" size={20} color="#1E3A5F" />
+                <Text style={styles.historyButtonText}>{t('home.history')}</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.analysisButton}
+                onPress={() => router.push('/analysis')}
+              >
+                <Ionicons name="analytics" size={20} color="#1E3A5F" />
+                <Text style={styles.analysisButtonText}>{t('home.analysis')}</Text>
+              </TouchableOpacity>
+            </View>
+            
+            {/* Segunda fila: Compartir y Nube */}
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={styles.shareButton}
+                onPress={() => router.push('/share')}
+              >
+                <Ionicons name="share-social-outline" size={20} color="#1E3A5F" />
+                <Text style={styles.shareButtonText}>{t('home.sharing')}</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.cloudButton}
+                onPress={() => router.push('/cloud-matches')}
+              >
+                <Ionicons name="cloud-outline" size={20} color="#1E3A5F" />
+                <Text style={styles.cloudButtonText}>{t('home.cloud')}</Text>
+              </TouchableOpacity>
+            </View>
+            
             <TouchableOpacity
-              style={styles.cloudButton}
-              onPress={() => router.push('/cloud-matches')}
+              style={styles.newMatchButton}
+              onPress={() => router.push('/new-match')}
             >
-              <Ionicons name="cloud-outline" size={22} color="#1E3A5F" />
-              <Text style={styles.cloudButtonText}>{t('home.cloud')}</Text>
+              <Ionicons name="add-circle" size={22} color="#FFF" />
+              <Text style={styles.newMatchText}>{t('home.newMatch')}</Text>
             </TouchableOpacity>
-          )}
-        </View>
-        
-        {/* Botón de compartir */}
-        {isAuthenticated && (
+          </>
+        ) : (
           <TouchableOpacity
-            style={styles.shareButton}
-            onPress={() => router.push('/share')}
+            style={styles.loginRequiredButton}
+            onPress={() => router.push('/login')}
           >
-            <Ionicons name="share-social-outline" size={22} color="#1E3A5F" />
-            <Text style={styles.shareButtonText}>{t('home.sharing')}</Text>
+            <Ionicons name="log-in-outline" size={22} color="#FFF" />
+            <Text style={styles.loginRequiredText}>{t('home.loginRequired')}</Text>
           </TouchableOpacity>
         )}
-        
-        <TouchableOpacity
-          style={styles.newMatchButton}
-          onPress={() => router.push('/new-match')}
-        >
-          <Ionicons name="add-circle" size={24} color="#FFF" />
-          <Text style={styles.newMatchText}>{t('home.newMatch')}</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Modal de selección de idioma */}
