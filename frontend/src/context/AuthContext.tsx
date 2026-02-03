@@ -9,7 +9,9 @@ interface User {
   user_id: string;
   email: string;
   name: string;
+  phone?: string;
   picture?: string;
+  auth_type?: string;
 }
 
 interface AuthContextType {
@@ -17,7 +19,10 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: () => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (email: string, password: string, name: string, phone?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
+  updateProfile: (data: { name?: string; phone?: string }) => Promise<{ success: boolean; error?: string }>;
   sessionToken: string | null;
 }
 
@@ -149,7 +154,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           user_id: data.user_id,
           email: data.email,
           name: data.name,
-          picture: data.picture
+          phone: data.phone,
+          picture: data.picture,
+          auth_type: 'google'
         });
         setSessionToken(data.session_token);
         
@@ -159,7 +166,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             user_id: data.user_id,
             email: data.email,
             name: data.name,
-            picture: data.picture
+            phone: data.phone,
+            picture: data.picture,
+            auth_type: 'google'
           },
           sessionToken: data.session_token
         }));
@@ -200,6 +209,135 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const loginWithEmail = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: data.detail || 'Error al iniciar sesión' };
+      }
+
+      setUser({
+        user_id: data.user_id,
+        email: data.email,
+        name: data.name,
+        phone: data.phone,
+        picture: data.picture,
+        auth_type: 'email'
+      });
+      setSessionToken(data.session_token);
+
+      // Store session
+      await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
+        user: {
+          user_id: data.user_id,
+          email: data.email,
+          name: data.name,
+          phone: data.phone,
+          picture: data.picture,
+          auth_type: 'email'
+        },
+        sessionToken: data.session_token
+      }));
+
+      return { success: true };
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false, error: 'Error de conexión' };
+    }
+  };
+
+  const register = async (email: string, password: string, name: string, phone?: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password, name, phone: phone || null })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: data.detail || 'Error al registrarse' };
+      }
+
+      setUser({
+        user_id: data.user_id,
+        email: data.email,
+        name: data.name,
+        phone: data.phone,
+        auth_type: 'email'
+      });
+      setSessionToken(data.session_token);
+
+      // Store session
+      await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
+        user: {
+          user_id: data.user_id,
+          email: data.email,
+          name: data.name,
+          phone: data.phone,
+          auth_type: 'email'
+        },
+        sessionToken: data.session_token
+      }));
+
+      return { success: true };
+    } catch (error) {
+      console.error('Register error:', error);
+      return { success: false, error: 'Error de conexión' };
+    }
+  };
+
+  const updateProfile = async (data: { name?: string; phone?: string }): Promise<{ success: boolean; error?: string }> => {
+    if (!sessionToken) {
+      return { success: false, error: 'No autenticado' };
+    }
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionToken}`
+        },
+        body: JSON.stringify(data)
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: responseData.detail || 'Error al actualizar perfil' };
+      }
+
+      // Update local user
+      setUser(prev => prev ? { ...prev, ...responseData } : null);
+
+      // Update stored session
+      const stored = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
+      if (stored) {
+        const storedData = JSON.parse(stored);
+        storedData.user = { ...storedData.user, ...responseData };
+        await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(storedData));
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Update profile error:', error);
+      return { success: false, error: 'Error de conexión' };
+    }
+  };
+
   const logout = async () => {
     try {
       if (sessionToken) {
@@ -226,7 +364,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isLoading,
         isAuthenticated: !!user,
         login,
+        loginWithEmail,
+        register,
         logout,
+        updateProfile,
         sessionToken
       }}
     >
