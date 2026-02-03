@@ -135,6 +135,18 @@ const initializeDatabase = async (): Promise<void> => {
         db.runSync("ALTER TABLE matches ADD COLUMN match_date TEXT");
       } catch (e) { /* ya existe */ }
       
+      // Agregar user_id a matches para asociar partidos por usuario
+      try {
+        db.runSync("ALTER TABLE matches ADD COLUMN user_id TEXT");
+        console.log('[DB] Columna user_id agregada a matches');
+      } catch (e) { /* ya existe */ }
+      
+      // Agregar user_id a players para asociar jugadores por usuario
+      try {
+        db.runSync("ALTER TABLE players ADD COLUMN user_id TEXT");
+        console.log('[DB] Columna user_id agregada a players');
+      } catch (e) { /* ya existe */ }
+      
       // Tabla de puntos
       db.execSync(`
         CREATE TABLE IF NOT EXISTS points (
