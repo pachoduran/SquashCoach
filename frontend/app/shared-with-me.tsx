@@ -310,13 +310,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 12,
   },
   backButton: {
     padding: 4,
   },
   title: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
     color: '#FFF',
   },
@@ -328,20 +328,20 @@ const styles = StyleSheet.create({
   },
   usersSection: {
     backgroundColor: '#FFF',
-    paddingTop: 16,
+    paddingTop: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: '#666',
     paddingHorizontal: 16,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   usersList: {
     paddingHorizontal: 12,
-    paddingBottom: 16,
+    paddingBottom: 12,
   },
   userItem: {
     flexDirection: 'row',
