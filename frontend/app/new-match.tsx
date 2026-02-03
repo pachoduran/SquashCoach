@@ -5,12 +5,12 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  SafeAreaView,
   ScrollView,
   Modal,
   Alert,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
