@@ -1,389 +1,394 @@
 diff --git a/model.patch b/model.patch
-index 4442b2d..e69de29 100644
+index a05d10d..e69de29 100644
 --- a/model.patch
 +++ b/model.patch
-@@ -1,384 +0,0 @@
--diff --git a/frontend/src/components/HeatmapCourt.tsx b/frontend/src/components/HeatmapCourt.tsx
--index 126505c..9c31469 100644
----- a/frontend/src/components/HeatmapCourt.tsx
--+++ b/frontend/src/components/HeatmapCourt.tsx
--@@ -1,5 +1,5 @@
-- import React from 'react';
---import { View, StyleSheet, Dimensions, Image, Text } from 'react-native';
--+import { View, Text, StyleSheet, Dimensions, Image } from 'react-native';
-- import Svg, { Rect, Text as SvgText } from 'react-native-svg';
-- 
-- const { width: SCREEN_WIDTH } = Dimensions.get('window');
+@@ -1,389 +0,0 @@
 -diff --git a/model.patch b/model.patch
--index 88008c6..e69de29 100644
+-index 4442b2d..e69de29 100644
 ---- a/model.patch
 -+++ b/model.patch
--@@ -1,368 +0,0 @@
+-@@ -1,384 +0,0 @@
 --diff --git a/frontend/src/components/HeatmapCourt.tsx b/frontend/src/components/HeatmapCourt.tsx
---index 7cccaa0..126505c 100644
+--index 126505c..9c31469 100644
 ----- a/frontend/src/components/HeatmapCourt.tsx
 --+++ b/frontend/src/components/HeatmapCourt.tsx
 --@@ -1,5 +1,5 @@
 -- import React from 'react';
----import { View, StyleSheet, Dimensions, Image } from 'react-native';
---+import { View, StyleSheet, Dimensions, Image, Text } from 'react-native';
+---import { View, StyleSheet, Dimensions, Image, Text } from 'react-native';
+--+import { View, Text, StyleSheet, Dimensions, Image } from 'react-native';
 -- import Svg, { Rect, Text as SvgText } from 'react-native-svg';
 -- 
 -- const { width: SCREEN_WIDTH } = Dimensions.get('window');
---@@ -117,8 +117,8 @@ export const HeatmapCourt: React.FC<HeatmapCourtProps> = ({
---           <View style={[styles.legendBlock, { backgroundColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.8)` }]} />
---         </View>
---         <View style={styles.legendLabels}>
----          <SvgText style={styles.legendText}>Menos</SvgText>
----          <SvgText style={styles.legendText}>Más</SvgText>
---+          <Text style={styles.legendText}>Menos</Text>
---+          <Text style={styles.legendText}>Más</Text>
---         </View>
---       </View>
---     </View>
 --diff --git a/model.patch b/model.patch
---index 8c54972..e69de29 100644
+--index 88008c6..e69de29 100644
 ----- a/model.patch
 --+++ b/model.patch
---@@ -1,341 +0,0 @@
+--@@ -1,368 +0,0 @@
+---diff --git a/frontend/src/components/HeatmapCourt.tsx b/frontend/src/components/HeatmapCourt.tsx
+---index 7cccaa0..126505c 100644
+------ a/frontend/src/components/HeatmapCourt.tsx
+---+++ b/frontend/src/components/HeatmapCourt.tsx
+---@@ -1,5 +1,5 @@
+--- import React from 'react';
+----import { View, StyleSheet, Dimensions, Image } from 'react-native';
+---+import { View, StyleSheet, Dimensions, Image, Text } from 'react-native';
+--- import Svg, { Rect, Text as SvgText } from 'react-native-svg';
+--- 
+--- const { width: SCREEN_WIDTH } = Dimensions.get('window');
+---@@ -117,8 +117,8 @@ export const HeatmapCourt: React.FC<HeatmapCourtProps> = ({
+---           <View style={[styles.legendBlock, { backgroundColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.8)` }]} />
+---         </View>
+---         <View style={styles.legendLabels}>
+----          <SvgText style={styles.legendText}>Menos</SvgText>
+----          <SvgText style={styles.legendText}>Más</SvgText>
+---+          <Text style={styles.legendText}>Menos</Text>
+---+          <Text style={styles.legendText}>Más</Text>
+---         </View>
+---       </View>
+---     </View>
 ---diff --git a/model.patch b/model.patch
----index 38eddcb..e69de29 100644
+---index 8c54972..e69de29 100644
 ------ a/model.patch
 ---+++ b/model.patch
----@@ -1,336 +0,0 @@
-----diff --git a/frontend/app/new-match.tsx b/frontend/app/new-match.tsx
-----index 2451f57..e89dbee 100644
-------- a/frontend/app/new-match.tsx
-----+++ b/frontend/app/new-match.tsx
-----@@ -117,55 +117,6 @@ export default function NewMatch() {
-----     }
-----   };
----- 
------  const PlayerSelector = ({
------    title,
------    selectedPlayer,
------    onSelect,
------  }: {
------    title: string;
------    selectedPlayer: Player | null;
------    onSelect: (player: Player) => void;
------  }) => (
------    <View style={styles.selectorContainer}>
------      <Text style={styles.selectorTitle}>{title}</Text>
------      {selectedPlayer ? (
------        <View style={styles.selectedPlayer}>
------          <Text style={styles.selectedPlayerName}>{selectedPlayer.name}</Text>
------          {selectedPlayer.nickname && (
------            <Text style={styles.selectedPlayerNick}>({selectedPlayer.nickname})</Text>
------          )}
------          <TouchableOpacity
------            style={styles.changeButton}
------            onPress={() => onSelect(null as any)}
------          >
------            <Text style={styles.changeButtonText}>Cambiar</Text>
------          </TouchableOpacity>
------        </View>
------      ) : (
------        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
------          {players.map((player) => (
------            <TouchableOpacity
------              key={player.id}
------              style={styles.playerButton}
------              onPress={() => onSelect(player)}
------            >
------              <Text style={styles.playerButtonText}>{player.name}</Text>
------              {player.nickname && (
------                <Text style={styles.playerButtonNick}>({player.nickname})</Text>
------              )}
------            </TouchableOpacity>
------          ))}
------          <TouchableOpacity
------            style={styles.addPlayerButton}
------            onPress={() => setShowAddPlayer(true)}
------          >
------            <Ionicons name="add-circle-outline" size={24} color="#2196F3" />
------          </TouchableOpacity>
------        </ScrollView>
------      )}
------    </View>
------  );
------
-----   return (
-----     <SafeAreaView style={styles.container}>
-----       <View style={styles.header}>
-----@@ -177,39 +128,54 @@ export default function NewMatch() {
-----       </View>
----- 
-----       <ScrollView style={styles.content}>
------        <PlayerSelector
------          title="Jugador 1"
------          selectedPlayer={selectedPlayer1}
------          onSelect={setSelectedPlayer1}
------        />
------
------        <PlayerSelector
------          title="Jugador 2"
------          selectedPlayer={selectedPlayer2}
------          onSelect={setSelectedPlayer2}
------        />
-----+        {/* Mi Jugador */}
-----+        <View style={styles.selectorContainer}>
-----+          <Text style={styles.selectorTitle}>Mi Jugador</Text>
-----+          <View style={styles.pickerContainer}>
-----+            <Picker
-----+              selectedValue={selectedPlayer1Id}
-----+              onValueChange={(itemValue) => setSelectedPlayer1Id(itemValue)}
-----+              style={styles.picker}
-----+            >
-----+              <Picker.Item label="Selecciona tu jugador" value={null} />
-----+              {players.map((player) => (
-----+                <Picker.Item
-----+                  key={player.id}
-----+                  label={player.nickname ? `${player.name} (${player.nickname})` : player.name}
-----+                  value={player.id}
-----+                />
-----+              ))}
-----+            </Picker>
-----+          </View>
-----+          <TouchableOpacity
-----+            style={styles.addPlayerButtonSmall}
-----+            onPress={() => setShowAddPlayer(true)}
-----+          >
-----+            <Ionicons name="add-circle-outline" size={20} color="#2196F3" />
-----+            <Text style={styles.addPlayerText}>Agregar nuevo jugador</Text>
-----+          </TouchableOpacity>
-----+        </View>
----- 
------        {selectedPlayer1 && selectedPlayer2 && (
------          <View style={styles.myPlayerContainer}>
------            <Text style={styles.selectorTitle}>Mi jugador</Text>
------            <View style={styles.pickerContainer}>
------              <Picker
------                selectedValue={myPlayer?.id || ''}
------                onValueChange={(itemValue) => {
------                  if (itemValue) {
------                    const player = itemValue === selectedPlayer1.id ? selectedPlayer1 : selectedPlayer2;
------                    setMyPlayer(player);
------                  }
------                }}
------                style={styles.picker}
------              >
------                <Picker.Item label="Selecciona tu jugador" value="" />
------                <Picker.Item label={selectedPlayer1.name} value={selectedPlayer1.id} />
------                <Picker.Item label={selectedPlayer2.name} value={selectedPlayer2.id} />
------              </Picker>
------            </View>
-----+        {/* Oponente */}
-----+        <View style={styles.selectorContainer}>
-----+          <Text style={styles.selectorTitle}>Oponente</Text>
-----+          <View style={styles.pickerContainer}>
-----+            <Picker
-----+              selectedValue={selectedPlayer2Id}
-----+              onValueChange={(itemValue) => setSelectedPlayer2Id(itemValue)}
-----+              style={styles.picker}
-----+            >
-----+              <Picker.Item label="Selecciona oponente" value={null} />
-----+              {players.map((player) => (
-----+                <Picker.Item
-----+                  key={player.id}
-----+                  label={player.nickname ? `${player.name} (${player.nickname})` : player.name}
-----+                  value={player.id}
-----+                />
-----+              ))}
-----+            </Picker>
-----           </View>
------        )}
-----+        </View>
----- 
-----         <View style={styles.bestOfContainer}>
-----           <Text style={styles.selectorTitle}>Formato del Partido</Text>
-----@@ -254,10 +220,10 @@ export default function NewMatch() {
-----         <TouchableOpacity
-----           style={[
-----             styles.startButton,
------            (!selectedPlayer1 || !selectedPlayer2 || !myPlayer) && styles.startButtonDisabled,
-----+            (!selectedPlayer1Id || !selectedPlayer2Id) && styles.startButtonDisabled,
-----           ]}
-----           onPress={startMatch}
------          disabled={!selectedPlayer1 || !selectedPlayer2 || !myPlayer}
-----+          disabled={!selectedPlayer1Id || !selectedPlayer2Id}
-----         >
-----           <Text style={styles.startButtonText}>Comenzar Partido</Text>
-----         </TouchableOpacity>
-----@@ -382,44 +348,6 @@ const styles = StyleSheet.create({
-----     color: '#2196F3',
-----     fontWeight: '500',
-----   },
------  playerButton: {
------    backgroundColor: '#FFF',
------    borderRadius: 12,
------    padding: 16,
------    marginRight: 12,
------    minWidth: 120,
------    shadowColor: '#000',
------    shadowOffset: { width: 0, height: 2 },
------    shadowOpacity: 0.1,
------    shadowRadius: 4,
------    elevation: 3,
------  },
------  playerButtonText: {
------    fontSize: 16,
------    fontWeight: '600',
------    color: '#333',
------  },
------  playerButtonNick: {
------    fontSize: 12,
------    color: '#666',
------    marginTop: 4,
------  },
------  addPlayerButton: {
------    backgroundColor: '#FFF',
------    borderRadius: 12,
------    padding: 16,
------    justifyContent: 'center',
------    alignItems: 'center',
------    minWidth: 80,
------    shadowColor: '#000',
------    shadowOffset: { width: 0, height: 2 },
------    shadowOpacity: 0.1,
------    shadowRadius: 4,
------    elevation: 3,
------  },
------  myPlayerContainer: {
------    marginBottom: 24,
------  },
-----   pickerContainer: {
-----     backgroundColor: '#FFF',
-----     borderRadius: 12,
-----@@ -542,4 +470,16 @@ const styles = StyleSheet.create({
-----   modalButtonTextPrimary: {
-----     color: '#FFF',
-----   },
-----+  addPlayerButtonSmall: {
-----+    flexDirection: 'row',
-----+    alignItems: 'center',
-----+    marginTop: 8,
-----+    paddingVertical: 8,
-----+  },
-----+  addPlayerText: {
-----+    fontSize: 14,
-----+    color: '#2196F3',
-----+    marginLeft: 6,
-----+    fontWeight: '500',
-----+  },
----- });
-----\ No newline at end of file
+---@@ -1,341 +0,0 @@
 ----diff --git a/model.patch b/model.patch
-----index 3f5f92a..d4d8e1a 100644
+----index 38eddcb..e69de29 100644
 ------- a/model.patch
 ----+++ b/model.patch
-----@@ -1,109 +0,0 @@
+----@@ -1,336 +0,0 @@
 -----diff --git a/frontend/app/new-match.tsx b/frontend/app/new-match.tsx
------index 8656a0e..ae25a72 100644
+-----index 2451f57..e89dbee 100644
 -------- a/frontend/app/new-match.tsx
 -----+++ b/frontend/app/new-match.tsx
------@@ -10,6 +10,7 @@ import {
------   Modal,
------   Alert,
------ } from 'react-native';
------+import { Picker } from '@react-native-picker/picker';
------ import { useRouter } from 'expo-router';
------ import { Ionicons } from '@expo/vector-icons';
------ import { getDatabase } from '@/src/store/database';
------@@ -196,40 +197,22 @@ export default function NewMatch() {
+-----@@ -117,55 +117,6 @@ export default function NewMatch() {
+-----     }
+-----   };
 ----- 
------         {selectedPlayer1 && selectedPlayer2 && (
------           <View style={styles.myPlayerContainer}>
-------            <Text style={styles.selectorTitle}>¿Cuál es tu jugador?</Text>
-------            <View style={styles.myPlayerButtons}>
-------              <TouchableOpacity
-------                style={[
-------                  styles.myPlayerButton,
-------                  myPlayer?.id === selectedPlayer1.id && styles.myPlayerButtonSelected,
-------                ]}
-------                onPress={() => setMyPlayer(selectedPlayer1)}
+------  const PlayerSelector = ({
+------    title,
+------    selectedPlayer,
+------    onSelect,
+------  }: {
+------    title: string;
+------    selectedPlayer: Player | null;
+------    onSelect: (player: Player) => void;
+------  }) => (
+------    <View style={styles.selectorContainer}>
+------      <Text style={styles.selectorTitle}>{title}</Text>
+------      {selectedPlayer ? (
+------        <View style={styles.selectedPlayer}>
+------          <Text style={styles.selectedPlayerName}>{selectedPlayer.name}</Text>
+------          {selectedPlayer.nickname && (
+------            <Text style={styles.selectedPlayerNick}>({selectedPlayer.nickname})</Text>
+------          )}
+------          <TouchableOpacity
+------            style={styles.changeButton}
+------            onPress={() => onSelect(null as any)}
+------          >
+------            <Text style={styles.changeButtonText}>Cambiar</Text>
+------          </TouchableOpacity>
+------        </View>
+------      ) : (
+------        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+------          {players.map((player) => (
+------            <TouchableOpacity
+------              key={player.id}
+------              style={styles.playerButton}
+------              onPress={() => onSelect(player)}
+------            >
+------              <Text style={styles.playerButtonText}>{player.name}</Text>
+------              {player.nickname && (
+------                <Text style={styles.playerButtonNick}>({player.nickname})</Text>
+------              )}
+------            </TouchableOpacity>
+------          ))}
+------          <TouchableOpacity
+------            style={styles.addPlayerButton}
+------            onPress={() => setShowAddPlayer(true)}
+------          >
+------            <Ionicons name="add-circle-outline" size={24} color="#2196F3" />
+------          </TouchableOpacity>
+------        </ScrollView>
+------      )}
+------    </View>
+------  );
+------
+-----   return (
+-----     <SafeAreaView style={styles.container}>
+-----       <View style={styles.header}>
+-----@@ -177,39 +128,54 @@ export default function NewMatch() {
+-----       </View>
+----- 
+-----       <ScrollView style={styles.content}>
+------        <PlayerSelector
+------          title="Jugador 1"
+------          selectedPlayer={selectedPlayer1}
+------          onSelect={setSelectedPlayer1}
+------        />
+------
+------        <PlayerSelector
+------          title="Jugador 2"
+------          selectedPlayer={selectedPlayer2}
+------          onSelect={setSelectedPlayer2}
+------        />
+-----+        {/* Mi Jugador */}
+-----+        <View style={styles.selectorContainer}>
+-----+          <Text style={styles.selectorTitle}>Mi Jugador</Text>
+-----+          <View style={styles.pickerContainer}>
+-----+            <Picker
+-----+              selectedValue={selectedPlayer1Id}
+-----+              onValueChange={(itemValue) => setSelectedPlayer1Id(itemValue)}
+-----+              style={styles.picker}
+-----+            >
+-----+              <Picker.Item label="Selecciona tu jugador" value={null} />
+-----+              {players.map((player) => (
+-----+                <Picker.Item
+-----+                  key={player.id}
+-----+                  label={player.nickname ? `${player.name} (${player.nickname})` : player.name}
+-----+                  value={player.id}
+-----+                />
+-----+              ))}
+-----+            </Picker>
+-----+          </View>
+-----+          <TouchableOpacity
+-----+            style={styles.addPlayerButtonSmall}
+-----+            onPress={() => setShowAddPlayer(true)}
+-----+          >
+-----+            <Ionicons name="add-circle-outline" size={20} color="#2196F3" />
+-----+            <Text style={styles.addPlayerText}>Agregar nuevo jugador</Text>
+-----+          </TouchableOpacity>
+-----+        </View>
+----- 
+------        {selectedPlayer1 && selectedPlayer2 && (
+------          <View style={styles.myPlayerContainer}>
+------            <Text style={styles.selectorTitle}>Mi jugador</Text>
+------            <View style={styles.pickerContainer}>
+------              <Picker
+------                selectedValue={myPlayer?.id || ''}
+------                onValueChange={(itemValue) => {
+------                  if (itemValue) {
+------                    const player = itemValue === selectedPlayer1.id ? selectedPlayer1 : selectedPlayer2;
+------                    setMyPlayer(player);
+------                  }
+------                }}
+------                style={styles.picker}
 ------              >
-------                <Text
-------                  style={[
-------                    styles.myPlayerButtonText,
-------                    myPlayer?.id === selectedPlayer1.id && styles.myPlayerButtonTextSelected,
-------                  ]}
-------                >
-------                  {selectedPlayer1.name}
-------                </Text>
-------              </TouchableOpacity>
-------              <TouchableOpacity
-------                style={[
-------                  styles.myPlayerButton,
-------                  myPlayer?.id === selectedPlayer2.id && styles.myPlayerButtonSelected,
-------                ]}
-------                onPress={() => setMyPlayer(selectedPlayer2)}
------+            <Text style={styles.selectorTitle}>Mi jugador</Text>
------+            <View style={styles.pickerContainer}>
------+              <Picker
------+                selectedValue={myPlayer?.id || ''}
------+                onValueChange={(itemValue) => {
------+                  if (itemValue) {
------+                    const player = itemValue === selectedPlayer1.id ? selectedPlayer1 : selectedPlayer2;
------+                    setMyPlayer(player);
------+                  }
------+                }}
------+                style={styles.picker}
------               >
-------                <Text
-------                  style={[
-------                    styles.myPlayerButtonText,
-------                    myPlayer?.id === selectedPlayer2.id && styles.myPlayerButtonTextSelected,
-------                  ]}
-------                >
-------                  {selectedPlayer2.name}
-------                </Text>
-------              </TouchableOpacity>
------+                <Picker.Item label="Selecciona tu jugador" value="" />
------+                <Picker.Item label={selectedPlayer1.name} value={selectedPlayer1.id} />
------+                <Picker.Item label={selectedPlayer2.name} value={selectedPlayer2.id} />
------+              </Picker>
------             </View>
+------                <Picker.Item label="Selecciona tu jugador" value="" />
+------                <Picker.Item label={selectedPlayer1.name} value={selectedPlayer1.id} />
+------                <Picker.Item label={selectedPlayer2.name} value={selectedPlayer2.id} />
+------              </Picker>
+------            </View>
+-----+        {/* Oponente */}
+-----+        <View style={styles.selectorContainer}>
+-----+          <Text style={styles.selectorTitle}>Oponente</Text>
+-----+          <View style={styles.pickerContainer}>
+-----+            <Picker
+-----+              selectedValue={selectedPlayer2Id}
+-----+              onValueChange={(itemValue) => setSelectedPlayer2Id(itemValue)}
+-----+              style={styles.picker}
+-----+            >
+-----+              <Picker.Item label="Selecciona oponente" value={null} />
+-----+              {players.map((player) => (
+-----+                <Picker.Item
+-----+                  key={player.id}
+-----+                  label={player.nickname ? `${player.name} (${player.nickname})` : player.name}
+-----+                  value={player.id}
+-----+                />
+-----+              ))}
+-----+            </Picker>
 -----           </View>
------         )}
------@@ -443,30 +426,20 @@ const styles = StyleSheet.create({
------   myPlayerContainer: {
------     marginBottom: 24,
+------        )}
+-----+        </View>
+----- 
+-----         <View style={styles.bestOfContainer}>
+-----           <Text style={styles.selectorTitle}>Formato del Partido</Text>
+-----@@ -254,10 +220,10 @@ export default function NewMatch() {
+-----         <TouchableOpacity
+-----           style={[
+-----             styles.startButton,
+------            (!selectedPlayer1 || !selectedPlayer2 || !myPlayer) && styles.startButtonDisabled,
+-----+            (!selectedPlayer1Id || !selectedPlayer2Id) && styles.startButtonDisabled,
+-----           ]}
+-----           onPress={startMatch}
+------          disabled={!selectedPlayer1 || !selectedPlayer2 || !myPlayer}
+-----+          disabled={!selectedPlayer1Id || !selectedPlayer2Id}
+-----         >
+-----           <Text style={styles.startButtonText}>Comenzar Partido</Text>
+-----         </TouchableOpacity>
+-----@@ -382,44 +348,6 @@ const styles = StyleSheet.create({
+-----     color: '#2196F3',
+-----     fontWeight: '500',
 -----   },
-------  myPlayerButtons: {
-------    flexDirection: 'row',
-------    gap: 12,
-------  },
-------  myPlayerButton: {
-------    flex: 1,
------+  pickerContainer: {
------     backgroundColor: '#FFF',
------     borderRadius: 12,
+------  playerButton: {
+------    backgroundColor: '#FFF',
+------    borderRadius: 12,
 ------    padding: 16,
-------    alignItems: 'center',
-------    borderWidth: 2,
------+    borderWidth: 1,
------     borderColor: '#E0E0E0',
------+    shadowColor: '#000',
------+    shadowOffset: { width: 0, height: 2 },
------+    shadowOpacity: 0.1,
------+    shadowRadius: 4,
------+    elevation: 3,
------   },
-------  myPlayerButtonSelected: {
-------    backgroundColor: '#E3F2FD',
-------    borderColor: '#2196F3',
+------    marginRight: 12,
+------    minWidth: 120,
+------    shadowColor: '#000',
+------    shadowOffset: { width: 0, height: 2 },
+------    shadowOpacity: 0.1,
+------    shadowRadius: 4,
+------    elevation: 3,
 ------  },
-------  myPlayerButtonText: {
+------  playerButtonText: {
 ------    fontSize: 16,
 ------    fontWeight: '600',
-------    color: '#666',
+------    color: '#333',
 ------  },
-------  myPlayerButtonTextSelected: {
-------    color: '#2196F3',
------+  picker: {
------+    height: 50,
------+    color: '#333',
+------  playerButtonNick: {
+------    fontSize: 12,
+------    color: '#666',
+------    marginTop: 4,
+------  },
+------  addPlayerButton: {
+------    backgroundColor: '#FFF',
+------    borderRadius: 12,
+------    padding: 16,
+------    justifyContent: 'center',
+------    alignItems: 'center',
+------    minWidth: 80,
+------    shadowColor: '#000',
+------    shadowOffset: { width: 0, height: 2 },
+------    shadowOpacity: 0.1,
+------    shadowRadius: 4,
+------    elevation: 3,
+------  },
+------  myPlayerContainer: {
+------    marginBottom: 24,
+------  },
+-----   pickerContainer: {
+-----     backgroundColor: '#FFF',
+-----     borderRadius: 12,
+-----@@ -542,4 +470,16 @@ const styles = StyleSheet.create({
+-----   modalButtonTextPrimary: {
+-----     color: '#FFF',
 -----   },
------   bestOfContainer: {
------     marginBottom: 24,
+-----+  addPlayerButtonSmall: {
+-----+    flexDirection: 'row',
+-----+    alignItems: 'center',
+-----+    marginTop: 8,
+-----+    paddingVertical: 8,
+-----+  },
+-----+  addPlayerText: {
+-----+    fontSize: 14,
+-----+    color: '#2196F3',
+-----+    marginLeft: 6,
+-----+    fontWeight: '500',
+-----+  },
+----- });
+-----\ No newline at end of file
+-----diff --git a/model.patch b/model.patch
+-----index 3f5f92a..d4d8e1a 100644
+-------- a/model.patch
+-----+++ b/model.patch
+-----@@ -1,109 +0,0 @@
+------diff --git a/frontend/app/new-match.tsx b/frontend/app/new-match.tsx
+------index 8656a0e..ae25a72 100644
+--------- a/frontend/app/new-match.tsx
+------+++ b/frontend/app/new-match.tsx
+------@@ -10,6 +10,7 @@ import {
+------   Modal,
+------   Alert,
+------ } from 'react-native';
+------+import { Picker } from '@react-native-picker/picker';
+------ import { useRouter } from 'expo-router';
+------ import { Ionicons } from '@expo/vector-icons';
+------ import { getDatabase } from '@/src/store/database';
+------@@ -196,40 +197,22 @@ export default function NewMatch() {
+------ 
+------         {selectedPlayer1 && selectedPlayer2 && (
+------           <View style={styles.myPlayerContainer}>
+-------            <Text style={styles.selectorTitle}>¿Cuál es tu jugador?</Text>
+-------            <View style={styles.myPlayerButtons}>
+-------              <TouchableOpacity
+-------                style={[
+-------                  styles.myPlayerButton,
+-------                  myPlayer?.id === selectedPlayer1.id && styles.myPlayerButtonSelected,
+-------                ]}
+-------                onPress={() => setMyPlayer(selectedPlayer1)}
+-------              >
+-------                <Text
+-------                  style={[
+-------                    styles.myPlayerButtonText,
+-------                    myPlayer?.id === selectedPlayer1.id && styles.myPlayerButtonTextSelected,
+-------                  ]}
+-------                >
+-------                  {selectedPlayer1.name}
+-------                </Text>
+-------              </TouchableOpacity>
+-------              <TouchableOpacity
+-------                style={[
+-------                  styles.myPlayerButton,
+-------                  myPlayer?.id === selectedPlayer2.id && styles.myPlayerButtonSelected,
+-------                ]}
+-------                onPress={() => setMyPlayer(selectedPlayer2)}
+------+            <Text style={styles.selectorTitle}>Mi jugador</Text>
+------+            <View style={styles.pickerContainer}>
+------+              <Picker
+------+                selectedValue={myPlayer?.id || ''}
+------+                onValueChange={(itemValue) => {
+------+                  if (itemValue) {
+------+                    const player = itemValue === selectedPlayer1.id ? selectedPlayer1 : selectedPlayer2;
+------+                    setMyPlayer(player);
+------+                  }
+------+                }}
+------+                style={styles.picker}
+------               >
+-------                <Text
+-------                  style={[
+-------                    styles.myPlayerButtonText,
+-------                    myPlayer?.id === selectedPlayer2.id && styles.myPlayerButtonTextSelected,
+-------                  ]}
+-------                >
+-------                  {selectedPlayer2.name}
+-------                </Text>
+-------              </TouchableOpacity>
+------+                <Picker.Item label="Selecciona tu jugador" value="" />
+------+                <Picker.Item label={selectedPlayer1.name} value={selectedPlayer1.id} />
+------+                <Picker.Item label={selectedPlayer2.name} value={selectedPlayer2.id} />
+------+              </Picker>
+------             </View>
+------           </View>
+------         )}
+------@@ -443,30 +426,20 @@ const styles = StyleSheet.create({
+------   myPlayerContainer: {
+------     marginBottom: 24,
+------   },
+-------  myPlayerButtons: {
+-------    flexDirection: 'row',
+-------    gap: 12,
+-------  },
+-------  myPlayerButton: {
+-------    flex: 1,
+------+  pickerContainer: {
+------     backgroundColor: '#FFF',
+------     borderRadius: 12,
+-------    padding: 16,
+-------    alignItems: 'center',
+-------    borderWidth: 2,
+------+    borderWidth: 1,
+------     borderColor: '#E0E0E0',
+------+    shadowColor: '#000',
+------+    shadowOffset: { width: 0, height: 2 },
+------+    shadowOpacity: 0.1,
+------+    shadowRadius: 4,
+------+    elevation: 3,
+------   },
+-------  myPlayerButtonSelected: {
+-------    backgroundColor: '#E3F2FD',
+-------    borderColor: '#2196F3',
+-------  },
+-------  myPlayerButtonText: {
+-------    fontSize: 16,
+-------    fontWeight: '600',
+-------    color: '#666',
+-------  },
+-------  myPlayerButtonTextSelected: {
+-------    color: '#2196F3',
+------+  picker: {
+------+    height: 50,
+------+    color: '#333',
+------   },
+------   bestOfContainer: {
+------     marginBottom: 24,
