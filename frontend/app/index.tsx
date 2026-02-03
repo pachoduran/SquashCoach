@@ -716,14 +716,14 @@ const styles = StyleSheet.create({
     color: '#1E3A5F',
   },
   shareButton: {
+    flex: 1,
     backgroundColor: '#FFF3E0',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
     borderRadius: 10,
-    gap: 6,
-    marginBottom: 10,
+    gap: 4,
   },
   shareButtonText: {
     fontSize: 13,
@@ -744,10 +744,24 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   newMatchText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
     color: '#FFF',
     marginLeft: 8,
+  },
+  loginRequiredButton: {
+    backgroundColor: '#4CAF50',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  loginRequiredText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFF',
   },
   // Modal de idioma
   modalOverlay: {
