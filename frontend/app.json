@@ -35,7 +35,10 @@
           "resizeMode": "contain",
           "backgroundColor": "#4848A0"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker",
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
