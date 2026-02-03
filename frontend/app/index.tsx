@@ -74,6 +74,12 @@ export default function Index() {
 
   const loadActiveMatches = async () => {
     try {
+      // Si no hay usuario autenticado, no cargar partidos
+      if (!user?.user_id) {
+        setActiveMatches([]);
+        return;
+      }
+      
       const db = await getDatabase();
       const result = await db.getAllAsync(`
         SELECT 
@@ -89,14 +95,23 @@ export default function Index() {
         FROM matches m
         JOIN players p1 ON m.player1_id = p1.id
         JOIN players p2 ON m.player2_id = p2.id
-        WHERE m.status = 'playing'
+        WHERE m.status = 'playing' AND (m.user_id = ? OR m.user_id IS NULL)
         ORDER BY m.date DESC
-      `);
+      `, [user.user_id]);
       setActiveMatches(result as Match[]);
     } catch (error) {
       console.error('Error cargando partidos activos:', error);
     }
   };
+
+  // Recargar partidos cuando cambia el usuario
+  useEffect(() => {
+    if (isAuthenticated && user?.user_id) {
+      loadActiveMatches();
+    } else {
+      setActiveMatches([]);
+    }
+  }, [user?.user_id]);
 
   const checkPendingSync = async () => {
     const pending = await syncService.hasPendingSync();
