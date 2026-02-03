@@ -10,7 +10,10 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+import hashlib
+import secrets
+import re
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -32,6 +35,37 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# =============================================================================
+# HELPER FUNCTIONS
+# =============================================================================
+
+def hash_password(password: str) -> str:
+    """Hash password with salt"""
+    salt = secrets.token_hex(16)
+    hashed = hashlib.sha256((password + salt).encode()).hexdigest()
+    return f"{salt}:{hashed}"
+
+def verify_password(password: str, stored_hash: str) -> bool:
+    """Verify password against stored hash"""
+    try:
+        salt, hashed = stored_hash.split(':')
+        return hashlib.sha256((password + salt).encode()).hexdigest() == hashed
+    except:
+        return False
+
+def validate_email(email: str) -> bool:
+    """Validate email format"""
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(pattern, email) is not None
+
+def validate_phone(phone: str) -> bool:
+    """Validate phone format (basic)"""
+    # Remove spaces and dashes
+    cleaned = re.sub(r'[\s\-\(\)]', '', phone)
+    # Should be 10-15 digits, optionally starting with +
+    pattern = r'^\+?\d{10,15}$'
+    return re.match(pattern, cleaned) is not None
 
 # =============================================================================
 # MODELS
