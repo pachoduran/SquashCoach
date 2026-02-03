@@ -223,19 +223,21 @@ export default function Index() {
           <Text style={styles.title}>{t('home.title')}</Text>
           
           {isAuthenticated && user ? (
-            <TouchableOpacity style={styles.userInfo} onPress={handleLogout}>
-              {user.picture ? (
-                <Image source={{ uri: user.picture }} style={styles.userAvatar} />
-              ) : (
-                <Ionicons name="person-circle" size={32} color="#FFF" />
-              )}
-              <View style={styles.userDetails}>
-                <Text style={styles.userName} numberOfLines={1}>{user.name}</Text>
-                <Text style={styles.userStatus}>
-                  <Ionicons name="cloud-done" size={10} color="#4CAF50" /> {t('home.connected')}
+            <View style={styles.userArea}>
+              <TouchableOpacity style={styles.userInfo} onPress={() => {}}>
+                {user.picture ? (
+                  <Image source={{ uri: user.picture }} style={styles.userAvatar} />
+                ) : (
+                  <Ionicons name="person-circle" size={28} color="#FFF" />
+                )}
+                <Text style={styles.userNameShort} numberOfLines={1}>
+                  {user.name.split(' ')[0]}
                 </Text>
-              </View>
-            </TouchableOpacity>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                <Ionicons name="log-out-outline" size={20} color="#FFF" />
+              </TouchableOpacity>
+            </View>
           ) : (
             <TouchableOpacity style={styles.loginButton} onPress={login}>
               <Ionicons name="log-in-outline" size={20} color="#FFF" />
