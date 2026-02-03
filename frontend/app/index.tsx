@@ -313,6 +313,17 @@ export default function Index() {
           )}
         </View>
         
+        {/* Botón de compartir */}
+        {isAuthenticated && (
+          <TouchableOpacity
+            style={styles.shareButton}
+            onPress={() => router.push('/share')}
+          >
+            <Ionicons name="share-social-outline" size={22} color="#1E3A5F" />
+            <Text style={styles.shareButtonText}>{t('home.sharing')}</Text>
+          </TouchableOpacity>
+        )}
+        
         <TouchableOpacity
           style={styles.newMatchButton}
           onPress={() => router.push('/new-match')}
