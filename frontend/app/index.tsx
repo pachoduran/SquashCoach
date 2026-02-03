@@ -254,7 +254,7 @@ export default function Index() {
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity style={styles.loginButton} onPress={login}>
+            <TouchableOpacity style={styles.loginButton} onPress={() => router.push('/login')}>
               <Ionicons name="log-in-outline" size={20} color="#FFF" />
               <Text style={styles.loginButtonText}>{t('home.login')}</Text>
             </TouchableOpacity>
