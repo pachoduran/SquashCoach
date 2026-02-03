@@ -96,7 +96,7 @@ export default function NewMatch() {
       const db = await getDatabase();
       const nickname = newPlayerNickname.trim();
       
-      // Verificar si ya existe un jugador con ese nombre
+      // Verificar si ya existe un jugador con ese nombre para este usuario
       const existingPlayer = players.find(
         p => p.nickname.toLowerCase() === nickname.toLowerCase()
       );
@@ -119,9 +119,24 @@ export default function NewMatch() {
       
       const hasName = tableInfo.some((col: any) => col.name === 'name');
       const hasNickname = tableInfo.some((col: any) => col.name === 'nickname');
+      const hasUserId = tableInfo.some((col: any) => col.name === 'user_id');
       
       let result;
-      if (hasName && hasNickname) {
+      const userId = user?.user_id || null;
+      
+      if (hasName && hasNickname && hasUserId) {
+        // Tabla con todas las columnas
+        result = await db.runAsync(
+          'INSERT INTO players (name, nickname, created_at, user_id) VALUES (?, ?, ?, ?)',
+          [nickname, nickname, new Date().toISOString(), userId]
+        );
+      } else if (hasNickname && hasUserId) {
+        // Tabla nueva con nickname y user_id
+        result = await db.runAsync(
+          'INSERT INTO players (nickname, created_at, user_id) VALUES (?, ?, ?)',
+          [nickname, new Date().toISOString(), userId]
+        );
+      } else if (hasName && hasNickname) {
         // Tabla con ambas columnas (versión intermedia)
         result = await db.runAsync(
           'INSERT INTO players (name, nickname, created_at) VALUES (?, ?, ?)',
