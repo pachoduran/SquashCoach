@@ -685,6 +685,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1E3A5F',
   },
+  shareButton: {
+    backgroundColor: '#FFF3E0',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+    gap: 6,
+    marginBottom: 12,
+  },
+  shareButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E3A5F',
+  },
   newMatchButton: {
     backgroundColor: '#2196F3',
     flexDirection: 'row',
