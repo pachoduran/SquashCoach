@@ -48,12 +48,17 @@ export default function HistoryScreen() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   
-  // Filtros
+  // Filtros - fechas por defecto: hace 1 mes hasta hoy
+  const getDefaultDateFrom = () => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - 1);
+    return date;
+  };
   const [myPlayer, setMyPlayer] = useState<number | null>(null);
   const [opponent, setOpponent] = useState<number | null>(null);
   const [selectedTournament, setSelectedTournament] = useState<string | null>(null);
-  const [dateFrom, setDateFrom] = useState<Date | null>(null);
-  const [dateTo, setDateTo] = useState<Date | null>(null);
+  const [dateFrom, setDateFrom] = useState<Date | null>(getDefaultDateFrom());
+  const [dateTo, setDateTo] = useState<Date | null>(new Date());
   const [showDateFromPicker, setShowDateFromPicker] = useState(false);
   const [showDateToPicker, setShowDateToPicker] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
