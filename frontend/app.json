@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "squash-coach",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.squashcoach.app"
@@ -15,9 +14,8 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#4848A0"
+        "backgroundColor": "#FFFFFF"
       },
-      "edgeToEdgeEnabled": true,
       "package": "com.squashcoach.app"
     },
     "web": {
@@ -26,19 +24,7 @@
       "favicon": "./assets/images/icon.png"
     },
     "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 300,
-          "resizeMode": "contain",
-          "backgroundColor": "#4848A0"
-        }
-      ],
-      "@react-native-community/datetimepicker",
-      "expo-font",
-      "expo-web-browser"
+      "expo-router"
     ],
     "experiments": {
       "typedRoutes": true
@@ -46,7 +32,7 @@
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#4848A0"
+      "backgroundColor": "#FFFFFF"
     }
   }
 }
