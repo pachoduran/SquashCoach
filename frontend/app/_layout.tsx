@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
   },
   splashContainer: {
     flex: 1,
-    backgroundColor: '#4848A0',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
