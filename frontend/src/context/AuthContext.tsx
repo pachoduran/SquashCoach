@@ -28,25 +28,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Get backend URL
+// Get backend URL - HARDCODED para APK
 const getBackendUrl = () => {
-  if (Platform.OS === 'web') {
-    // Check if window is available (client-side)
-    if (typeof window !== 'undefined') {
-      return window.location.origin;
-    }
-    // Fallback for SSR
-    return '';
-  }
-  // For mobile, use environment variable
-  // EXPO_PUBLIC_ prefix makes it available in client code
-  const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
-  if (backendUrl) {
-    return backendUrl;
-  }
-  // Fallback to Constants if env var not available
-  const expoConfig = Constants.expoConfig as any;
-  return expoConfig?.extra?.EXPO_BACKEND_URL || expoConfig?.hostUri?.split(':')[0] || '';
+  return 'https://lev.jsb.mybluehost.me:8001';
 };
 
 const BACKEND_URL = getBackendUrl();
