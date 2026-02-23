@@ -90,20 +90,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (stored) {
         const data = JSON.parse(stored);
         
-        // Verify session is still valid
-        const response = await fetch(`${BACKEND_URL}/api/auth/me`, {
-          headers: {
-            'Authorization': `Bearer ${data.sessionToken}`
-          }
-        });
-        
-        if (response.ok) {
-          const userData = await response.json();
-          setUser(userData);
+        // Restaurar sesión inmediatamente desde almacenamiento local
+        if (data.user && data.sessionToken) {
+          setUser(data.user);
           setSessionToken(data.sessionToken);
-        } else {
-          // Session expired, clear storage
-          await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
+          console.log('[AUTH] Sesión restaurada desde almacenamiento local');
+        }
+        
+        // Verificar con servidor en segundo plano (opcional)
+        try {
+          const response = await fetch(`${BACKEND_URL}/api/auth/me`, {
+            headers: {
+              'Authorization': `Bearer ${data.sessionToken}`
+            }
+          });
+          
+          if (response.ok) {
+            const userData = await response.json();
+            // Actualizar datos del usuario si el servidor responde
+            setUser(userData);
+            console.log('[AUTH] Sesión verificada con servidor');
+          } else if (response.status === 401 || response.status === 403) {
+            // Solo invalidar si el servidor dice explícitamente que la sesión expiró
+            console.log('[AUTH] Sesión expirada según servidor');
+            setUser(null);
+            setSessionToken(null);
+            await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
+          }
+          // Si hay otro error (500, timeout, etc), mantener la sesión local
+        } catch (networkError) {
+          // Error de red - mantener sesión local sin invalidar
+          console.log('[AUTH] No se pudo verificar con servidor, manteniendo sesión local');
         }
       }
     } catch (error) {
@@ -194,15 +211,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const loginWithEmail = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    const url = `${BACKEND_URL}/api/auth/login`;
+    console.log('[LOGIN] Intentando conectar a:', url);
+    
     try {
-      const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify({ email, password })
       });
 
+      console.log('[LOGIN] Response status:', response.status);
       const data = await response.json();
 
       if (!response.ok) {
@@ -233,20 +255,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }));
 
       return { success: true };
-    } catch (error) {
-      console.error('Login error:', error);
-      return { success: false, error: 'Error de conexión' };
+    } catch (error: any) {
+      const errorMessage = error?.message || String(error);
+      console.error('[LOGIN] Error completo:', errorMessage);
+      return { success: false, error: `Error de red: ${errorMessage}` };
     }
   };
 
   const register = async (email: string, password: string, name: string, phone?: string): Promise<{ success: boolean; error?: string }> => {
+    const url = `${BACKEND_URL}/api/auth/register`;
+    
     try {
-      const response = await fetch(`${BACKEND_URL}/api/auth/register`, {
+      const bodyData = { email, password, name, phone: phone || null };
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
-        body: JSON.stringify({ email, password, name, phone: phone || null })
+        body: JSON.stringify(bodyData)
       });
 
       const data = await response.json();
@@ -264,7 +292,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       setSessionToken(data.session_token);
 
-      // Store session
       await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
         user: {
           user_id: data.user_id,
@@ -277,9 +304,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }));
 
       return { success: true };
-    } catch (error) {
-      console.error('Register error:', error);
-      return { success: false, error: 'Error de conexión' };
+    } catch (error: any) {
+      const errorMsg = error?.message || error?.toString() || 'Error desconocido';
+      console.error('Register error:', errorMsg);
+      return { success: false, error: `Error de red: ${errorMsg}` };
     }
   };
 
