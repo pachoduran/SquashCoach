@@ -114,7 +114,8 @@
     "selectBothPlayers": "Selecciona ambos jugadores",
     "selectMyPlayer": "Selecciona cuál es tu jugador",
     "differentPlayers": "Los jugadores deben ser diferentes",
-    "playerExists": "Jugador ya registrado"
+    "playerExists": "Jugador ya registrado",
+    "addPlayerError": "Error al agregar jugador"
   },
   "matchPlay": {
     "game": "Game",
@@ -144,7 +145,8 @@
     "editLastPoint": "Editar último punto",
     "editPoint": "Editar Punto",
     "noPointsToEdit": "No hay puntos para editar",
-    "pointUpdated": "Punto actualizado"
+    "pointUpdated": "Punto actualizado",
+    "matchInProgress": "Partido en Curso"
   },
   "history": {
     "title": "Partidos Finalizados",

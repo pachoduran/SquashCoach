@@ -254,21 +254,6 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
 
-            {/* Divider */}
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>{t('login.or')}</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Google Button */}
-            <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
-              <Image
-                source={{ uri: 'https://www.google.com/favicon.ico' }}
-                style={styles.googleIcon}
-              />
-              <Text style={styles.googleButtonText}>{t('login.continueGoogle')}</Text>
-            </TouchableOpacity>
           </View>
 
           {/* Skip for now */}
@@ -314,21 +299,21 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   iconCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 16,
-    backgroundColor: '#000000',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#1E3A5F',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: '#1E3A5F',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 8,
   },
   logoImage: {
-    width: 110,
-    height: 110,
+    width: 55,
+    height: 55,
   },
   appName: {
     fontSize: 24,

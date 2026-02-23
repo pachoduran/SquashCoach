@@ -128,14 +128,15 @@ export default function Index() {
     }
 
     setSyncing(true);
+    Alert.alert('Sync', 'Iniciando sincronización...');
     const result = await syncService.syncPendingMatches();
     setSyncing(false);
 
+    // Siempre mostrar resultado
+    Alert.alert('Sync Resultado', `${result.success ? 'OK' : 'Error'}: ${result.message}`);
+    
     if (result.success) {
       setHasPendingSync(false);
-      if (result.message !== 'Nada que sincronizar') {
-        Alert.alert(t('home.sync'), result.message);
-      }
     }
   };
 
@@ -626,7 +627,6 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     marginBottom: 8,
-    borderRadius: 12,
   },
   emptyText: {
     fontSize: 18,

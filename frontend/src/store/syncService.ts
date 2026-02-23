@@ -1,29 +1,12 @@
 import { getDatabase } from './database';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
-import Constants from 'expo-constants';
 
 const PENDING_SYNC_KEY = '@squash_coach_pending_sync';
 const AUTH_STORAGE_KEY = '@squash_coach_auth';
 
-// Get backend URL
-const getBackendUrl = () => {
-  if (Platform.OS === 'web') {
-    return typeof window !== 'undefined' ? window.location.origin : '';
-  }
-  // Use environment variable for mobile
-  const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
-  if (backendUrl) {
-    console.log('[Sync] Using BACKEND_URL:', backendUrl);
-    return backendUrl;
-  }
-  // Fallback
-  const expoConfig = Constants.expoConfig as any;
-  return expoConfig?.extra?.EXPO_BACKEND_URL || '';
-};
-
-const BACKEND_URL = getBackendUrl();
+// HARDCODED URL para APK - igual que en AuthContext
+const BACKEND_URL = 'https://lev.jsb.mybluehost.me:8001';
 
 interface SyncData {
   players: any[];
@@ -92,15 +75,19 @@ class SyncService {
 
     const sessionToken = await this.getSessionToken();
     if (!sessionToken) {
+      console.log('[Sync] No hay token de sesión');
       return { success: false, message: 'No autenticado' };
     }
 
     const isOnline = await this.isOnline();
     if (!isOnline) {
+      console.log('[Sync] Sin conexión');
       return { success: false, message: 'Sin conexión a internet' };
     }
 
     this.isSyncing = true;
+    console.log('[Sync] ===== INICIANDO SINCRONIZACIÓN =====');
+    console.log('[Sync] URL:', BACKEND_URL);
 
     try {
       const pendingStr = await AsyncStorage.getItem(PENDING_SYNC_KEY);
@@ -199,7 +186,8 @@ class SyncService {
 
       // Send to server
       console.log('[Sync] Enviando datos al servidor:', BACKEND_URL);
-      console.log('[Sync] Token:', sessionToken?.substring(0, 20) + '...');
+      console.log('[Sync] Token completo:', sessionToken);
+      console.log('[Sync] Datos:', JSON.stringify(syncData).substring(0, 200));
       
       const response = await fetch(`${BACKEND_URL}/api/sync`, {
         method: 'POST',
@@ -211,9 +199,11 @@ class SyncService {
       });
 
       console.log('[Sync] Response status:', response.status);
+      const responseText = await response.text();
+      console.log('[Sync] Response body:', responseText);
 
       if (response.ok) {
-        const result = await response.json();
+        const result = JSON.parse(responseText);
         console.log('[Sync] Resultado:', result);
 
         // Clear pending
@@ -224,9 +214,8 @@ class SyncService {
           message: `Sincronizado: ${result.matches_synced} partidos, ${result.points_synced} puntos`
         };
       } else {
-        const error = await response.text();
-        console.error('[Sync] Error response:', error);
-        return { success: false, message: 'Error del servidor' };
+        console.error('[Sync] Error response:', responseText);
+        return { success: false, message: `Error: ${responseText}` };
       }
     } catch (error) {
       console.error('[Sync] Error:', error);

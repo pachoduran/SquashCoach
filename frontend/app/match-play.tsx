@@ -481,19 +481,17 @@ export default function MatchPlay() {
     try {
       const db = await getDatabase();
       
-      // Obtener el último punto del partido
+      // Obtener el último punto del game actual
       const lastPoint = await db.getFirstAsync(
-        `SELECT p.*, 
-                CASE WHEN p.winner_id = ? THEN 'player1' ELSE 'player2' END as winner_type
-         FROM points p 
-         WHERE p.match_id = ? 
-         ORDER BY p.id DESC 
+        `SELECT * FROM points 
+         WHERE match_id = ? AND game_number = ?
+         ORDER BY id DESC 
          LIMIT 1`,
-        [match!.player1.id, matchId]
+        [matchId, match!.currentGame]
       ) as any;
       
       if (!lastPoint) {
-        Alert.alert(t('common.error'), t('matchPlay.noPointsToEdit'));
+        Alert.alert(t('common.error'), t('matchPlay.noPointsToEdit') || 'No hay puntos para editar');
         return;
       }
       
@@ -501,7 +499,7 @@ export default function MatchPlay() {
       setCurrentPoint({
         positionX: lastPoint.position_x || 0.5,
         positionY: lastPoint.position_y || 0.5,
-        winnerPlayerId: lastPoint.winner_id,
+        winnerPlayerId: lastPoint.winner_player_id,
         reason: lastPoint.reason,
       });
       setIsEditing(true);
@@ -509,7 +507,7 @@ export default function MatchPlay() {
       setShowPointModal(true);
     } catch (error) {
       console.error('Error cargando último punto:', error);
-      Alert.alert(t('common.error'), t('matchPlay.noPointsToEdit'));
+      Alert.alert(t('common.error'), t('matchPlay.noPointsToEdit') || 'No hay puntos para editar');
     }
   };
 
@@ -522,7 +520,7 @@ export default function MatchPlay() {
       const db = await getDatabase();
       
       await db.runAsync(
-        `UPDATE points SET winner_id = ?, reason = ? WHERE id = ?`,
+        `UPDATE points SET winner_player_id = ?, reason = ? WHERE id = ?`,
         [currentPoint.winnerPlayerId, currentPoint.reason, editingPointId]
       );
       
@@ -534,7 +532,7 @@ export default function MatchPlay() {
       setIsEditing(false);
       setEditingPointId(null);
       
-      Alert.alert(t('common.success'), t('matchPlay.pointUpdated'));
+      Alert.alert(t('common.success'), t('matchPlay.pointUpdated') || 'Punto actualizado');
     } catch (error) {
       console.error('Error actualizando punto:', error);
       Alert.alert(t('common.error'), 'Error al actualizar el punto');
@@ -557,23 +555,13 @@ export default function MatchPlay() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Partido en Curso</Text>
+        <Text style={styles.headerTitle}>{t('matchPlay.matchInProgress') || 'Partido en Curso'}</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity
             style={styles.headerButton}
             onPress={editLastPoint}
           >
             <Ionicons name="pencil" size={22} color="#FFF" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => setShowAllPositions(!showAllPositions)}
-          >
-            <Ionicons 
-              name={showAllPositions ? 'eye-off' : 'eye'} 
-              size={22} 
-              color="#FFF" 
-            />
           </TouchableOpacity>
         </View>
       </View>
@@ -593,13 +581,11 @@ export default function MatchPlay() {
             tournamentName={match.tournamentName}
           />
           
-          <View style={styles.instruction}>
-            <Text style={styles.instructionText}>
-              {selectingPosition === 'myPlayer' && 'Toca tu posición'}
-              {selectingPosition === 'opponent' && 'Toca posición oponente'}
-              {!selectingPosition && 'Toca donde terminó el punto'}
-            </Text>
-          </View>
+          <Text style={styles.smallInstruction}>
+            {selectingPosition === 'myPlayer' && 'Toca tu posición'}
+            {selectingPosition === 'opponent' && 'Toca posición oponente'}
+            {!selectingPosition && 'Toca donde terminó el punto'}
+          </Text>
         </View>
 
         <SquashCourt
@@ -808,6 +794,13 @@ const styles = StyleSheet.create({
   compactHeader: {
     paddingHorizontal: 15,
     paddingTop: 10,
+  },
+  smallInstruction: {
+    fontSize: 11,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 2,
   },
   actionRow: {
     flexDirection: 'row',

@@ -114,7 +114,8 @@
     "selectBothPlayers": "Select both players",
     "selectMyPlayer": "Select which is your player",
     "differentPlayers": "Players must be different",
-    "playerExists": "Player already registered"
+    "playerExists": "Player already registered",
+    "addPlayerError": "Error adding player"
   },
   "matchPlay": {
     "game": "Game",
@@ -144,7 +145,8 @@
     "editLastPoint": "Edit last point",
     "editPoint": "Edit Point",
     "noPointsToEdit": "No points to edit",
-    "pointUpdated": "Point updated"
+    "pointUpdated": "Point updated",
+    "matchInProgress": "Match in Progress"
   },
   "history": {
     "title": "Finished Matches",

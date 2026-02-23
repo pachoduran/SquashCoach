@@ -16,20 +16,20 @@ export default function RootLayout() {
 
   useEffect(() => {
     async function prepare() {
-      // Wait 2 seconds to show splash
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Ocultar splash nativo inmediatamente
+      await SplashScreen.hideAsync();
+      
+      // Mostrar splash custom por 1.5 segundos
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Fade out animation
       Animated.timing(fadeAnim, {
         toValue: 0,
-        duration: 500,
+        duration: 300,
         useNativeDriver: true,
       }).start(() => {
         setIsReady(true);
       });
-      
-      // Hide native splash
-      await SplashScreen.hideAsync();
     }
     
     prepare();

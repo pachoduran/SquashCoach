@@ -19,6 +19,7 @@ import { getDatabase } from '@/src/store/database';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { useAuth } from '@/src/context/AuthContext';
 import { format } from 'date-fns';
+import { adService } from '@/src/services/adService';
 
 interface Player {
   id: number;
@@ -165,9 +166,10 @@ export default function NewMatch() {
       setNewPlayerNickname('');
       setShowAddPlayer(false);
       Alert.alert(t('common.success'), t('newMatch.addPlayer'));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error agregando jugador:', error);
-      Alert.alert(t('common.error'), t('home.deleteError'));
+      const errorMsg = error?.message || error?.toString() || 'Error desconocido';
+      Alert.alert(t('common.error'), `${t('newMatch.addPlayerError')}: ${errorMsg}`);
     }
   };
 
@@ -183,6 +185,9 @@ export default function NewMatch() {
     }
 
     try {
+      // Mostrar anuncio antes de iniciar el partido
+      await adService.showInterstitialAd();
+      
       const db = await getDatabase();
       const userId = user?.user_id || null;
       
