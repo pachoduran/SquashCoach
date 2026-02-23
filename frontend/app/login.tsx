@@ -312,8 +312,8 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   logoImage: {
-    width: 55,
-    height: 55,
+    width: 110,
+    height: 110,
   },
   appName: {
     fontSize: 24,
