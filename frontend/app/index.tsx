@@ -627,6 +627,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     marginBottom: 8,
+    borderRadius: 12,
   },
   emptyText: {
     fontSize: 18,
