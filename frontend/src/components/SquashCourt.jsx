@@ -195,6 +195,9 @@ export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPla
           );
         })}
         
+        {/* TEST BALL - hardcoded position */}
+        <circle cx="320" cy="400" r="20" fill="#FF0000" stroke="#FFFFFF" strokeWidth="3" />
+        
         {/* Squash Balls */}
         {ballData.map((ball) => {
           const size = ball.isHighlighted ? 18 : 15;
