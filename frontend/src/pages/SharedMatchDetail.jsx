@@ -83,9 +83,7 @@ export const SharedMatchDetail = () => {
     ? format(new Date(match.date), "EEEE, d 'de' MMMM yyyy", { locale: es })
     : 'Fecha no disponible';
 
-  const gamePoints = points
-    ?.filter(p => p.game_number === selectedGame)
-    ?.map(p => ({ ...p, my_player_id: match.my_player_id || match.player1_id })) || [];
+  const gamePoints = points?.filter(p => p.game_number === selectedGame) || [];
 
   const gameNumbers = [...new Set(points?.map(p => p.game_number) || [])].sort();
 

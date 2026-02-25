@@ -89,10 +89,8 @@ export const MatchDetail = () => {
     ? format(new Date(match.date), "EEEE, d 'de' MMMM yyyy", { locale: es })
     : 'Fecha no disponible';
 
-  // Points for selected game with my_player_id added
-  const gamePoints = points
-    ?.filter(p => p.game_number === selectedGame)
-    ?.map(p => ({ ...p, my_player_id: match.my_player_id })) || [];
+  // Points for selected game
+  const gamePoints = points?.filter(p => p.game_number === selectedGame) || [];
 
   // Get unique game numbers
   const gameNumbers = [...new Set(points?.map(p => p.game_number) || [])].sort();
