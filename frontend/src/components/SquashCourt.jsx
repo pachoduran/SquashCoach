@@ -198,27 +198,95 @@ export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPla
         {/* TEST BALL - hardcoded position */}
         <circle cx="320" cy="400" r="20" fill="#FF0000" stroke="#FFFFFF" strokeWidth="3" />
         
-        {/* Squash Balls - RENDERED LAST FOR Z-INDEX */}
-        {ballData.map((ball) => {
-          const size = ball.isHighlighted ? 18 : 15;
-          const borderColor = ball.isWinner ? '#22C55E' : '#EF4444';
-          
-          return (
-            <g key={ball.point_id || `ball-${ball.index}`} 
-               onClick={() => onPointClick && onPointClick(ball)}
-               style={{ cursor: 'pointer' }}>
-              {/* Ball outer - BRIGHT CYAN FOR DEBUG */}
-              <circle cx={ball.x} cy={ball.y} r={size} fill="#00FFFF" 
-                stroke="#FFFFFF" strokeWidth="3" />
-              
-              {/* Point number */}
-              <text x={ball.x} y={ball.y + 5} textAnchor="middle" fill="#000000" fontSize="14" fontWeight="bold"
-                fontFamily="Arial, sans-serif">
-                {ball.point_number || ball.index + 1}
-              </text>
-            </g>
-          );
-        })}
+        {/* Squash Balls - each ball rendered individually */}
+        {ballData.length > 0 && ballData[0] && (
+          <g key="ball-0">
+            <circle cx={ballData[0].x} cy={ballData[0].y} r={ballData[0].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[0].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
+            <circle cx={ballData[0].x - 5} cy={ballData[0].y - 3} r={3} fill="#FFDA00" />
+            <circle cx={ballData[0].x + 4} cy={ballData[0].y + 4} r={3} fill="#FFDA00" />
+            <text x={ballData[0].x} y={ballData[0].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">1</text>
+          </g>
+        )}
+        {ballData.length > 1 && ballData[1] && (
+          <g key="ball-1">
+            <circle cx={ballData[1].x} cy={ballData[1].y} r={ballData[1].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[1].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
+            <circle cx={ballData[1].x - 5} cy={ballData[1].y - 3} r={3} fill="#FFDA00" />
+            <circle cx={ballData[1].x + 4} cy={ballData[1].y + 4} r={3} fill="#FFDA00" />
+            <text x={ballData[1].x} y={ballData[1].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">2</text>
+          </g>
+        )}
+        {ballData.length > 2 && ballData[2] && (
+          <g key="ball-2">
+            <circle cx={ballData[2].x} cy={ballData[2].y} r={ballData[2].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[2].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
+            <circle cx={ballData[2].x - 5} cy={ballData[2].y - 3} r={3} fill="#FFDA00" />
+            <circle cx={ballData[2].x + 4} cy={ballData[2].y + 4} r={3} fill="#FFDA00" />
+            <text x={ballData[2].x} y={ballData[2].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">3</text>
+          </g>
+        )}
+        {ballData.length > 3 && ballData[3] && (
+          <g key="ball-3">
+            <circle cx={ballData[3].x} cy={ballData[3].y} r={ballData[3].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[3].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
+            <circle cx={ballData[3].x - 5} cy={ballData[3].y - 3} r={3} fill="#FFDA00" />
+            <circle cx={ballData[3].x + 4} cy={ballData[3].y + 4} r={3} fill="#FFDA00" />
+            <text x={ballData[3].x} y={ballData[3].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">4</text>
+          </g>
+        )}
+        {ballData.length > 4 && ballData[4] && (
+          <g key="ball-4">
+            <circle cx={ballData[4].x} cy={ballData[4].y} r={ballData[4].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[4].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
+            <circle cx={ballData[4].x - 5} cy={ballData[4].y - 3} r={3} fill="#FFDA00" />
+            <circle cx={ballData[4].x + 4} cy={ballData[4].y + 4} r={3} fill="#FFDA00" />
+            <text x={ballData[4].x} y={ballData[4].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">5</text>
+          </g>
+        )}
+        {ballData.length > 5 && ballData[5] && (
+          <g key="ball-5">
+            <circle cx={ballData[5].x} cy={ballData[5].y} r={ballData[5].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[5].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
+            <circle cx={ballData[5].x - 5} cy={ballData[5].y - 3} r={3} fill="#FFDA00" />
+            <circle cx={ballData[5].x + 4} cy={ballData[5].y + 4} r={3} fill="#FFDA00" />
+            <text x={ballData[5].x} y={ballData[5].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">6</text>
+          </g>
+        )}
+        {ballData.length > 6 && ballData[6] && (
+          <g key="ball-6">
+            <circle cx={ballData[6].x} cy={ballData[6].y} r={ballData[6].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[6].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
+            <circle cx={ballData[6].x - 5} cy={ballData[6].y - 3} r={3} fill="#FFDA00" />
+            <circle cx={ballData[6].x + 4} cy={ballData[6].y + 4} r={3} fill="#FFDA00" />
+            <text x={ballData[6].x} y={ballData[6].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">7</text>
+          </g>
+        )}
+        {ballData.length > 7 && ballData[7] && (
+          <g key="ball-7">
+            <circle cx={ballData[7].x} cy={ballData[7].y} r={ballData[7].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[7].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
+            <circle cx={ballData[7].x - 5} cy={ballData[7].y - 3} r={3} fill="#FFDA00" />
+            <circle cx={ballData[7].x + 4} cy={ballData[7].y + 4} r={3} fill="#FFDA00" />
+            <text x={ballData[7].x} y={ballData[7].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">8</text>
+          </g>
+        )}
+        {ballData.length > 8 && ballData[8] && (
+          <g key="ball-8">
+            <circle cx={ballData[8].x} cy={ballData[8].y} r={ballData[8].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[8].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
+            <circle cx={ballData[8].x - 5} cy={ballData[8].y - 3} r={3} fill="#FFDA00" />
+            <circle cx={ballData[8].x + 4} cy={ballData[8].y + 4} r={3} fill="#FFDA00" />
+            <text x={ballData[8].x} y={ballData[8].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">9</text>
+          </g>
+        )}
+        {ballData.length > 9 && ballData[9] && (
+          <g key="ball-9">
+            <circle cx={ballData[9].x} cy={ballData[9].y} r={ballData[9].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[9].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
+            <circle cx={ballData[9].x - 5} cy={ballData[9].y - 3} r={3} fill="#FFDA00" />
+            <circle cx={ballData[9].x + 4} cy={ballData[9].y + 4} r={3} fill="#FFDA00" />
+            <text x={ballData[9].x} y={ballData[9].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">10</text>
+          </g>
+        )}
+        {ballData.length > 10 && ballData[10] && (
+          <g key="ball-10">
+            <circle cx={ballData[10].x} cy={ballData[10].y} r={ballData[10].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[10].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
+            <circle cx={ballData[10].x - 5} cy={ballData[10].y - 3} r={3} fill="#FFDA00" />
+            <circle cx={ballData[10].x + 4} cy={ballData[10].y + 4} r={3} fill="#FFDA00" />
+            <text x={ballData[10].x} y={ballData[10].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">11</text>
+          </g>
+        )}
       </svg>
       
       {/* Legend */}
