@@ -3,102 +3,10 @@ import { Play, Pause, SkipBack, SkipForward, RotateCcw } from 'lucide-react';
 import { Button } from './ui/button';
 import { Slider } from './ui/slider';
 
-// Squash Ball Component - realistic with two yellow dots
-const SquashBall = ({ x, y, number, isWinner, isHighlighted, isVisible, onClick, reason }) => {
-  if (!isVisible) return null;
-  
-  const ballSize = isHighlighted ? 28 : 22;
-  const halfSize = ballSize / 2;
-  
-  return (
-    <g
-      onClick={onClick}
-      style={{ cursor: 'pointer' }}
-      className="transition-all duration-300"
-    >
-      {/* Shadow */}
-      <ellipse
-        cx={x + 2}
-        cy={y + ballSize - 4}
-        rx={halfSize * 0.8}
-        ry={4}
-        fill="rgba(0,0,0,0.3)"
-      />
-      
-      {/* Ball base - dark gray like real squash ball */}
-      <circle
-        cx={x}
-        cy={y}
-        r={halfSize}
-        fill="#2A2A2A"
-        stroke={isHighlighted ? '#FFFFFF' : (isWinner ? '#22C55E' : '#EF4444')}
-        strokeWidth={isHighlighted ? 3 : 2}
-      />
-      
-      {/* Ball gradient for 3D effect */}
-      <defs>
-        <radialGradient id={`ballGradient-${number}`} cx="30%" cy="30%">
-          <stop offset="0%" stopColor="#4A4A4A" />
-          <stop offset="50%" stopColor="#2A2A2A" />
-          <stop offset="100%" stopColor="#1A1A1A" />
-        </radialGradient>
-      </defs>
-      <circle
-        cx={x}
-        cy={y}
-        r={halfSize - 1}
-        fill={`url(#ballGradient-${number})`}
-      />
-      
-      {/* Two yellow dots - characteristic of squash balls */}
-      <circle
-        cx={x - halfSize * 0.35}
-        cy={y - halfSize * 0.25}
-        r={3}
-        fill="#FFDA00"
-      />
-      <circle
-        cx={x + halfSize * 0.25}
-        cy={y + halfSize * 0.3}
-        r={3}
-        fill="#FFDA00"
-      />
-      
-      {/* Point number */}
-      <text
-        x={x}
-        y={y + 4}
-        textAnchor="middle"
-        fill="#FFFFFF"
-        fontSize="10"
-        fontFamily="Barlow Condensed"
-        fontWeight="bold"
-      >
-        {number}
-      </text>
-      
-      {/* Highlight ring animation */}
-      {isHighlighted && (
-        <circle
-          cx={x}
-          cy={y}
-          r={halfSize + 6}
-          fill="none"
-          stroke={isWinner ? '#22C55E' : '#EF4444'}
-          strokeWidth="2"
-          strokeDasharray="4,4"
-          className="animate-spin-slow"
-          style={{ transformOrigin: `${x}px ${y}px` }}
-        />
-      )}
-    </g>
-  );
-};
-
 export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPlayerId }) => {
-  const [currentStep, setCurrentStep] = useState(points.length); // Show all by default
+  const [currentStep, setCurrentStep] = useState(points.length);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playSpeed, setPlaySpeed] = useState(1000); // ms per point
+  const [playSpeed, setPlaySpeed] = useState(1000);
   
   const courtWidth = 640;
   const courtHeight = 970;
@@ -166,6 +74,7 @@ export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPla
   };
 
   const score = getCurrentScore();
+  const visiblePoints = points.slice(0, currentStep);
   
   return (
     <div className="relative w-full max-w-lg mx-auto">
@@ -286,15 +195,21 @@ export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPla
         style={{ backgroundColor: '#0A0A0A' }}
         data-testid="squash-court-svg"
       >
-        {/* Court floor with subtle texture */}
+        {/* Definitions for gradients */}
         <defs>
           <pattern id="courtPattern" patternUnits="userSpaceOnUse" width="20" height="20">
             <rect width="20" height="20" fill="#1A1A1A"/>
             <rect width="10" height="10" fill="#1C1C1C"/>
             <rect x="10" y="10" width="10" height="10" fill="#1C1C1C"/>
           </pattern>
+          <radialGradient id="ballGradient" cx="30%" cy="30%">
+            <stop offset="0%" stopColor="#4A4A4A" />
+            <stop offset="50%" stopColor="#2A2A2A" />
+            <stop offset="100%" stopColor="#1A1A1A" />
+          </radialGradient>
         </defs>
         
+        {/* Court floor */}
         <rect
           x="4"
           y="4"
@@ -463,36 +378,14 @@ export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPla
           PARED TRASERA
         </text>
         
-        {/* Points/Balls on court */}
-        {points.slice(0, currentStep).map((point, index) => {
-          const x = point.position_x * (courtWidth - 40) + 20;
-          const y = (1 - point.position_y) * (courtHeight - tinHeight - 40) + 20;
-          const isWinner = point.winner_player_id === myPlayerId;
-          const isHighlighted = highlightedPoint === point.point_id || index === currentStep - 1;
-          
-          return (
-            <SquashBall
-              key={point.point_id || index}
-              x={x}
-              y={y}
-              number={point.point_number || index + 1}
-              isWinner={isWinner}
-              isHighlighted={isHighlighted}
-              isVisible={true}
-              onClick={() => onPointClick && onPointClick(point)}
-              reason={point.reason}
-            />
-          );
-        })}
-        
         {/* Trail lines connecting points */}
-        {currentStep > 1 && points.slice(0, currentStep).map((point, index) => {
+        {visiblePoints.length > 1 && visiblePoints.map((point, index) => {
           if (index === 0) return null;
-          const prevPoint = points[index - 1];
-          const x1 = prevPoint.position_x * (courtWidth - 40) + 20;
-          const y1 = (1 - prevPoint.position_y) * (courtHeight - tinHeight - 40) + 20;
-          const x2 = point.position_x * (courtWidth - 40) + 20;
-          const y2 = (1 - point.position_y) * (courtHeight - tinHeight - 40) + 20;
+          const prevPoint = visiblePoints[index - 1];
+          const x1 = prevPoint.position_x * (courtWidth - 60) + 30;
+          const y1 = (1 - prevPoint.position_y) * (courtHeight - tinHeight - 80) + 40;
+          const x2 = point.position_x * (courtWidth - 60) + 30;
+          const y2 = (1 - point.position_y) * (courtHeight - tinHeight - 80) + 40;
           
           return (
             <line
@@ -501,10 +394,96 @@ export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPla
               y1={y1}
               x2={x2}
               y2={y2}
-              stroke="rgba(255, 218, 0, 0.2)"
-              strokeWidth="1"
-              strokeDasharray="4,4"
+              stroke="rgba(255, 218, 0, 0.3)"
+              strokeWidth="2"
+              strokeDasharray="6,4"
             />
+          );
+        })}
+        
+        {/* Points/Balls on court */}
+        {visiblePoints.map((point, index) => {
+          const x = point.position_x * (courtWidth - 60) + 30;
+          const y = (1 - point.position_y) * (courtHeight - tinHeight - 80) + 40;
+          const isWinner = point.winner_player_id === myPlayerId;
+          const isHighlighted = highlightedPoint === point.point_id || index === currentStep - 1;
+          const ballSize = isHighlighted ? 28 : 22;
+          const halfSize = ballSize / 2;
+          
+          return (
+            <g
+              key={point.point_id || `point-${index}`}
+              onClick={() => onPointClick && onPointClick(point)}
+              style={{ cursor: 'pointer' }}
+            >
+              {/* Shadow */}
+              <ellipse
+                cx={x + 2}
+                cy={y + halfSize + 2}
+                rx={halfSize * 0.7}
+                ry={4}
+                fill="rgba(0,0,0,0.4)"
+              />
+              
+              {/* Ball base */}
+              <circle
+                cx={x}
+                cy={y}
+                r={halfSize}
+                fill="#2A2A2A"
+                stroke={isHighlighted ? '#FFFFFF' : (isWinner ? '#22C55E' : '#EF4444')}
+                strokeWidth={isHighlighted ? 3 : 2}
+              />
+              
+              {/* Ball inner (3D effect) */}
+              <circle
+                cx={x}
+                cy={y}
+                r={halfSize - 2}
+                fill="url(#ballGradient)"
+              />
+              
+              {/* Two yellow dots - characteristic of squash balls */}
+              <circle
+                cx={x - halfSize * 0.35}
+                cy={y - halfSize * 0.2}
+                r={3}
+                fill="#FFDA00"
+              />
+              <circle
+                cx={x + halfSize * 0.3}
+                cy={y + halfSize * 0.25}
+                r={3}
+                fill="#FFDA00"
+              />
+              
+              {/* Point number */}
+              <text
+                x={x}
+                y={y + 4}
+                textAnchor="middle"
+                fill="#FFFFFF"
+                fontSize="11"
+                fontFamily="Barlow Condensed"
+                fontWeight="bold"
+              >
+                {point.point_number || index + 1}
+              </text>
+              
+              {/* Highlight pulse ring */}
+              {isHighlighted && (
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={halfSize + 8}
+                  fill="none"
+                  stroke={isWinner ? '#22C55E' : '#EF4444'}
+                  strokeWidth="2"
+                  opacity="0.5"
+                  strokeDasharray="4,4"
+                />
+              )}
+            </g>
           );
         })}
       </svg>
@@ -512,14 +491,18 @@ export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPla
       {/* Legend */}
       <div className="flex justify-center gap-6 mt-4 text-sm">
         <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded-full bg-squash-ball border-2 border-green-500 flex items-center justify-center">
-            <div className="w-1 h-1 rounded-full bg-brand-yellow"></div>
+          <div className="relative w-6 h-6">
+            <div className="absolute inset-0 rounded-full bg-squash-ball border-2 border-green-500"></div>
+            <div className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-brand-yellow"></div>
+            <div className="absolute bottom-1.5 right-1 w-1.5 h-1.5 rounded-full bg-brand-yellow"></div>
           </div>
           <span className="text-brand-gray font-body">Punto ganado</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded-full bg-squash-ball border-2 border-red-500 flex items-center justify-center">
-            <div className="w-1 h-1 rounded-full bg-brand-yellow"></div>
+          <div className="relative w-6 h-6">
+            <div className="absolute inset-0 rounded-full bg-squash-ball border-2 border-red-500"></div>
+            <div className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-brand-yellow"></div>
+            <div className="absolute bottom-1.5 right-1 w-1.5 h-1.5 rounded-full bg-brand-yellow"></div>
           </div>
           <span className="text-brand-gray font-body">Punto perdido</span>
         </div>
@@ -534,7 +517,8 @@ export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPla
               <button
                 key={speed}
                 onClick={() => setPlaySpeed(speed)}
-                className={`px-3 py-1 rounded text-xs font-heading uppercase ${
+                data-testid={`speed-${speed}`}
+                className={`px-3 py-1 rounded text-xs font-heading uppercase transition-all ${
                   playSpeed === speed
                     ? 'bg-brand-yellow text-brand-black'
                     : 'bg-brand-dark-gray text-brand-gray border border-white/20 hover:border-brand-yellow'
