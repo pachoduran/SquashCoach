@@ -195,31 +195,15 @@ export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPla
             <g key={ball.point_id || `ball-${ball.index}`} 
                onClick={() => onPointClick && onPointClick(ball)}
                style={{ cursor: 'pointer' }}>
-              {/* Shadow */}
-              <ellipse cx={ball.x + 2} cy={ball.y + size + 3} rx={size * 0.8} ry={4} fill="rgba(0,0,0,0.5)" />
-              
-              {/* Ball outer - VISIBLE COLOR */}
-              <circle cx={ball.x} cy={ball.y} r={size} fill="#424242" 
-                stroke={ball.isHighlighted ? '#FFFFFF' : borderColor} strokeWidth={ball.isHighlighted ? 3 : 2} />
-              
-              {/* Ball gradient highlight */}
-              <circle cx={ball.x - size * 0.25} cy={ball.y - size * 0.25} r={size * 0.35} fill="#5A5A5A" opacity="0.7" />
-              
-              {/* Two yellow dots (squash ball characteristic) */}
-              <circle cx={ball.x - size * 0.35} cy={ball.y - size * 0.1} r={4} fill="#FFDA00" />
-              <circle cx={ball.x + size * 0.25} cy={ball.y + size * 0.3} r={4} fill="#FFDA00" />
+              {/* Ball outer - BRIGHT YELLOW FOR DEBUG */}
+              <circle cx={ball.x} cy={ball.y} r={size} fill="#FF00FF" 
+                stroke="#FFFFFF" strokeWidth="3" />
               
               {/* Point number */}
-              <text x={ball.x} y={ball.y + 5} textAnchor="middle" fill="#FFFFFF" fontSize="12" fontWeight="bold"
+              <text x={ball.x} y={ball.y + 5} textAnchor="middle" fill="#000000" fontSize="14" fontWeight="bold"
                 fontFamily="Arial, sans-serif">
                 {ball.point_number || ball.index + 1}
               </text>
-              
-              {/* Highlight ring */}
-              {ball.isHighlighted && (
-                <circle cx={ball.x} cy={ball.y} r={size + 6} fill="none" 
-                  stroke={borderColor} strokeWidth="2" opacity="0.6" strokeDasharray="4,4" />
-              )}
             </g>
           );
         })}
