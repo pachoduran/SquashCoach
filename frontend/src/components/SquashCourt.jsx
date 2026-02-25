@@ -64,6 +64,15 @@ export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPla
     isHighlighted: highlightedPoint === point.point_id || index === currentStep - 1,
     index
   }));
+  
+  // Debug log
+  console.log('SquashCourt render:', { 
+    pointsLength: points.length, 
+    currentStep, 
+    visiblePointsLength: visiblePoints.length,
+    ballDataLength: ballData.length,
+    myPlayerId
+  });
 
   return (
     <div className="relative w-full max-w-md mx-auto">
