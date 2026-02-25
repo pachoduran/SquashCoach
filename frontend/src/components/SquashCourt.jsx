@@ -198,7 +198,7 @@ export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPla
         {/* TEST BALL - hardcoded position */}
         <circle cx="320" cy="400" r="20" fill="#FF0000" stroke="#FFFFFF" strokeWidth="3" />
         
-        {/* Squash Balls */}
+        {/* Squash Balls - RENDERED LAST FOR Z-INDEX */}
         {ballData.map((ball) => {
           const size = ball.isHighlighted ? 18 : 15;
           const borderColor = ball.isWinner ? '#22C55E' : '#EF4444';
@@ -207,8 +207,8 @@ export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPla
             <g key={ball.point_id || `ball-${ball.index}`} 
                onClick={() => onPointClick && onPointClick(ball)}
                style={{ cursor: 'pointer' }}>
-              {/* Ball outer - BRIGHT YELLOW FOR DEBUG */}
-              <circle cx={ball.x} cy={ball.y} r={size} fill="#FF00FF" 
+              {/* Ball outer - BRIGHT CYAN FOR DEBUG */}
+              <circle cx={ball.x} cy={ball.y} r={size} fill="#00FFFF" 
                 stroke="#FFFFFF" strokeWidth="3" />
               
               {/* Point number */}
