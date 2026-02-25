@@ -13,6 +13,7 @@ import Players from './pages/Players';
 import Analysis from './pages/Analysis';
 import SharedMatches from './pages/SharedMatches';
 import SharedMatchDetail from './pages/SharedMatchDetail';
+import DemoCourt from './pages/DemoCourt';
 import { LoadingSpinner } from './components/LoadingSpinner';
 
 // Protected Route Component
@@ -72,6 +73,10 @@ function AppRoutes() {
             <Register />
           </PublicRoute>
         } 
+      />
+      <Route 
+        path="/demo" 
+        element={<DemoCourt />} 
       />
 
       {/* Protected Routes */}
