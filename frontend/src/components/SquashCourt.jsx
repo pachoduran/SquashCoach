@@ -66,7 +66,7 @@ export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPla
   }));
 
   return (
-    <div className="relative w-full max-w-lg mx-auto">
+    <div className="relative w-full max-w-md mx-auto">
       {/* Playback Controls */}
       {points.length > 0 && (
         <div className="bg-brand-dark-gray border border-white/10 rounded-lg p-4 mb-4">
