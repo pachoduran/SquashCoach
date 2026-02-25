@@ -1,0 +1,155 @@
+{
+  "project_name": "Squash Coach Web Dashboard",
+  "design_philosophy": {
+    "theme": "Dark Mode (Strict)",
+    "aesthetic": "High-Performance Sports Analytics",
+    "emotional_tone": "Precision, Focus, Athletic, Professional",
+    "core_principles": [
+      "Data Density with Clarity: High contrast for key metrics",
+      "Mobile-First DNA: Mimic the APK experience on all devices",
+      "Visual Feedback: Interactive court diagrams over static tables"
+    ]
+  },
+  "typography": {
+    "font_families": {
+      "headings": "Barlow Condensed, sans-serif",
+      "body": "Manrope, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "import_url": "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap",
+    "usage_rules": {
+      "h1_h2_h3": "Barlow Condensed - Uppercase, Tracking-wide",
+      "body_text": "Manrope - Clean, legible",
+      "data_labels": "Barlow Condensed - Bold, Uppercase",
+      "stats_numbers": "Barlow Condensed - Heavy/Bold"
+    }
+  },
+  "colors": {
+    "palette": {
+      "background": "#000000",
+      "foreground": "#FFFFFF",
+      "primary": "#FFDA00",
+      "primary_foreground": "#000000",
+      "secondary": "#707070",
+      "secondary_foreground": "#FFFFFF",
+      "accent": "#1A1A1A",
+      "muted": "#121212",
+      "border": "#333333",
+      "squash_ball": "#424242",
+      "success": "#22C55E",
+      "danger": "#EF4444",
+      "court_lines": "#FFDA00"
+    },
+    "tailwind_config_extension": {
+      "colors": {
+        "brand-black": "#000000",
+        "brand-yellow": "#FFDA00",
+        "brand-gray": "#707070",
+        "brand-dark-gray": "#121212"
+      }
+    }
+  },
+  "layout_strategies": {
+    "dashboard_grid": {
+      "type": "Bento Grid",
+      "mobile": "Single column (stack)",
+      "desktop": "Grid cols-12 with varied spans (4/8/12)",
+      "gap": "gap-4 md:gap-6"
+    },
+    "navigation": {
+      "mobile": "Bottom Navigation Bar (Fixed, matching APK style)",
+      "desktop": "Sidebar Navigation (Collapsible, Left aligned)"
+    },
+    "spacing": {
+      "container_padding": "p-4 md:p-8",
+      "card_padding": "p-5"
+    }
+  },
+  "components": {
+    "SquashCourt": {
+      "type": "Custom SVG",
+      "description": "Interactive court visualization to show shot placement and player movement",
+      "specs": {
+        "viewBox": "0 0 640 970",
+        "lines_color": "#FFDA00",
+        "floor_color": "transparent or #121212",
+        "features": [
+          "T-Line",
+          "Service Boxes",
+          "Tin (bottom area)",
+          "Out lines"
+        ],
+        "interaction": "Hover over points to see shot details"
+      }
+    },
+    "MatchCard": {
+      "style": "List Item / Card Hybrid",
+      "elements": [
+        "Date (Left, muted)",
+        "Opponent Name (Bold, White)",
+        "Score (Right, High Contrast, Yellow for winner)",
+        "Result Indicator (W/L Badge)"
+      ],
+      "hover": "bg-brand-gray/10 transition-colors"
+    },
+    "StatCard": {
+      "style": "Minimalist Metric",
+      "elements": [
+        "Label (Uppercase, small, gray)",
+        "Value (Large, Barlow Condensed, Yellow/White)",
+        "Trend (Small indicator, green/red)"
+      ]
+    },
+    "PlayerHeadToHead": {
+      "style": "VS Mode",
+      "layout": "Split view with central 'VS' divider",
+      "animation": "Slide in from sides"
+    }
+  },
+  "image_assets": {
+    "logo": {
+      "url": "https://customer-assets.emergentagent.com/job_squash-coach-web/artifacts/ijowgans_adaptive-icon.png",
+      "alt": "Squash Coach Logo"
+    },
+    "textures": {
+      "carbon_fiber": "https://images.pexels.com/photos/596815/pexels-photo-596815.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "court_floor": "https://images.unsplash.com/photo-1578208896106-f20b2482208d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2OTV8MHwxfHNlYXJjaHwxfHxzcXVhc2glMjBjb3VydCUyMGZsb29yJTIwd29vZCUyMHRleHR1cmV8ZW58MHx8fHwxNzcyMDUxNjM5fDA&ixlib=rb-4.1.0&q=85"
+    },
+    "placeholders": {
+      "player_female": "https://images.pexels.com/photos/7648160/pexels-photo-7648160.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "player_male": "https://images.unsplash.com/photo-1715333148733-022117866843?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODF8MHwxfHNlYXJjaHwyfHxzcXVhc2glMjBwbGF5ZXIlMjBwb3J0cmFpdCUyMGF0aGxldGljJTIwZGFyayUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzcyMDUxNjM3fDA&ixlib=rb-4.1.0&q=85",
+      "player_generic": "https://images.unsplash.com/photo-1661474973381-130596c650c4?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODF8MHwxfHNlYXJjaHwxfHxzcXVhc2glMjBwbGF5ZXIlMjBwb3J0cmFpdCUyMGF0aGxldGljJTIwZGFyayUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzcyMDUxNjM3fDA&ixlib=rb-4.1.0&q=85"
+    }
+  },
+  "visual_enhancements": {
+    "shadows": "shadow-[0_0_15px_rgba(255,218,0,0.1)] for active elements",
+    "borders": "border border-white/10",
+    "glassmorphism": "backdrop-blur-md bg-black/60 (Use sparingly, mainly for sticky navs)",
+    "micro_interactions": {
+      "hover": "scale-[1.02] transition-transform",
+      "click": "scale-[0.98]",
+      "loading": "Yellow pulse effect"
+    }
+  },
+  "libraries": {
+    "charts": "Recharts (Customized axis/grid to match dark theme)",
+    "icons": "Lucide React",
+    "animations": "Framer Motion (for page transitions and graph builds)",
+    "toast": "Sonner (Dark theme)"
+  },
+  "instructions_to_main_agent": [
+    "1. Setup: Install 'Barlow Condensed' and 'Manrope' fonts immediately.",
+    "2. Theme: Configure tailwind.config.js to use the specific brand colors (#000000 bg, #FFDA00 primary).",
+    "3. Auth: Create Login/Register pages first. They must be centered, minimal, using the logo.",
+    "4. Component: Build the 'SquashCourt' SVG component early. It is the core visual.",
+    "5. Data: Mock data structure should match standard squash scoring (11 points, best of 5 games).",
+    "6. Mobile: Ensure all tap targets are at least 44px. Bottom nav is mandatory for mobile view.",
+    "7. Testing: Add data-testid to all interactive elements."
+  ],
+  "universal_guidelines": [
+    "Do not use gradients for the background; stick to pure black or subtle noise.",
+    "Use yellow (#FFDA00) ONLY for primary actions and key data highlights.",
+    "Ensure 3:1 contrast ratio for all text. Use white/gray text hierarchy.",
+    "Avoid standard 'Bootstrap' grids. Use asymmetric bento grids for dashboards."
+  ]
+}
