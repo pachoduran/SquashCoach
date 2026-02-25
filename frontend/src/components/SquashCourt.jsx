@@ -403,6 +403,11 @@ export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPla
         })}
         
         {/* Points/Balls on court */}
+        {visiblePoints.length > 0 && (
+          <text x="320" y="100" fill="#FF0000" fontSize="20">
+            Puntos: {visiblePoints.length}
+          </text>
+        )}
         {visiblePoints.map((point, index) => {
           // Calculate position: x = 0 to 1 maps to court width, y = 0 to 1 maps to court height (excluding tin)
           const usableHeight = courtHeight - tinHeight - 60;
