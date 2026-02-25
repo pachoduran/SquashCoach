@@ -188,7 +188,7 @@ export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPla
         
         {/* Squash Balls */}
         {ballData.map((ball) => {
-          const size = ball.isHighlighted ? 16 : 13;
+          const size = ball.isHighlighted ? 18 : 15;
           const borderColor = ball.isWinner ? '#22C55E' : '#EF4444';
           
           return (
@@ -198,19 +198,20 @@ export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPla
               {/* Shadow */}
               <ellipse cx={ball.x + 2} cy={ball.y + size + 3} rx={size * 0.8} ry={4} fill="rgba(0,0,0,0.5)" />
               
-              {/* Ball outer */}
-              <circle cx={ball.x} cy={ball.y} r={size} fill="#2D2D2D" 
+              {/* Ball outer - VISIBLE COLOR */}
+              <circle cx={ball.x} cy={ball.y} r={size} fill="#424242" 
                 stroke={ball.isHighlighted ? '#FFFFFF' : borderColor} strokeWidth={ball.isHighlighted ? 3 : 2} />
               
               {/* Ball gradient highlight */}
-              <circle cx={ball.x - size * 0.3} cy={ball.y - size * 0.3} r={size * 0.4} fill="#4A4A4A" opacity="0.5" />
+              <circle cx={ball.x - size * 0.25} cy={ball.y - size * 0.25} r={size * 0.35} fill="#5A5A5A" opacity="0.7" />
               
               {/* Two yellow dots (squash ball characteristic) */}
-              <circle cx={ball.x - size * 0.4} cy={ball.y - size * 0.15} r={3.5} fill="#FFDA00" />
-              <circle cx={ball.x + size * 0.3} cy={ball.y + size * 0.35} r={3.5} fill="#FFDA00" />
+              <circle cx={ball.x - size * 0.35} cy={ball.y - size * 0.1} r={4} fill="#FFDA00" />
+              <circle cx={ball.x + size * 0.25} cy={ball.y + size * 0.3} r={4} fill="#FFDA00" />
               
               {/* Point number */}
-              <text x={ball.x} y={ball.y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">
+              <text x={ball.x} y={ball.y + 5} textAnchor="middle" fill="#FFFFFF" fontSize="12" fontWeight="bold"
+                fontFamily="Arial, sans-serif">
                 {ball.point_number || ball.index + 1}
               </text>
               
