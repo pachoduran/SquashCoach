@@ -238,6 +238,7 @@ export const MatchDetail = () => {
               points={gamePoints}
               onPointClick={(point) => setHighlightedPoint(point.point_id === highlightedPoint ? null : point.point_id)}
               highlightedPoint={highlightedPoint}
+              myPlayerId={match.my_player_id}
             />
 
             {/* Point Details */}

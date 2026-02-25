@@ -199,6 +199,7 @@ export const SharedMatchDetail = () => {
               points={gamePoints}
               onPointClick={(point) => setHighlightedPoint(point.point_id === highlightedPoint ? null : point.point_id)}
               highlightedPoint={highlightedPoint}
+              myPlayerId={match.my_player_id || match.player1_id}
             />
           </TabsContent>
 
