@@ -383,9 +383,9 @@ export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPla
           if (index === 0) return null;
           const prevPoint = visiblePoints[index - 1];
           const x1 = prevPoint.position_x * (courtWidth - 60) + 30;
-          const y1 = (1 - prevPoint.position_y) * (courtHeight - tinHeight - 80) + 40;
+          const y1 = prevPoint.position_y * (courtHeight - tinHeight - 80) + 40;
           const x2 = point.position_x * (courtWidth - 60) + 30;
-          const y2 = (1 - point.position_y) * (courtHeight - tinHeight - 80) + 40;
+          const y2 = point.position_y * (courtHeight - tinHeight - 80) + 40;
           
           return (
             <line
@@ -404,7 +404,7 @@ export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPla
         {/* Points/Balls on court */}
         {visiblePoints.map((point, index) => {
           const x = point.position_x * (courtWidth - 60) + 30;
-          const y = (1 - point.position_y) * (courtHeight - tinHeight - 80) + 40;
+          const y = point.position_y * (courtHeight - tinHeight - 80) + 40;
           const isWinner = point.winner_player_id === myPlayerId;
           const isHighlighted = highlightedPoint === point.point_id || index === currentStep - 1;
           const ballSize = isHighlighted ? 28 : 22;
