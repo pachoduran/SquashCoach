@@ -78,16 +78,28 @@ export default function CloudMatchesScreen() {
   };
 
   const handleMatchPress = async (match: CloudMatch) => {
-    // TODO: Download match data and show details
     Alert.alert(
       'Partido en la Nube',
       `${getPlayerName(match.player1_id)} vs ${getPlayerName(match.player2_id)}\n\nResultado: ${match.player1_games} - ${match.player2_games}`,
       [
-        { text: 'Cerrar' },
+        { text: 'Cerrar', style: 'cancel' },
         { 
-          text: 'Ver Análisis', 
+          text: 'Ver Partido', 
           onPress: () => {
-            // Navigate to analysis with cloud data
+            // Navigate to match summary with cloud match data
+            router.push({
+              pathname: '/match-summary',
+              params: { 
+                matchId: match.match_id,
+                isCloudMatch: 'true'
+              }
+            });
+          }
+        },
+        { 
+          text: 'Análisis Acumulado', 
+          onPress: () => {
+            // Navigate to analysis (all matches between these players)
             router.push({
               pathname: '/analysis',
               params: { 
