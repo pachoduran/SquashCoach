@@ -9,6 +9,7 @@ export const SquashCourt = ({
   onPointClick, 
   highlightedPoint, 
   myPlayerId,
+  matchPlayer1Id,
   player1Name = 'Jugador 1',
   player2Name = 'Jugador 2',
   matchScore = null,
