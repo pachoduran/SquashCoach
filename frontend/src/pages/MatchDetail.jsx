@@ -126,6 +126,7 @@ export const MatchDetail = () => {
                 onPointClick={(point) => setHighlightedPoint(point.point_id === highlightedPoint ? null : point.point_id)}
                 highlightedPoint={highlightedPoint}
                 myPlayerId={match.my_player_id}
+                matchPlayer1Id={match.player1_id}
                 player1Name={myPlayer?.nickname || 'Yo'}
                 player2Name={opponent?.nickname || 'Oponente'}
                 matchScore={{ p1: myGames, p2: opponentGames }}
