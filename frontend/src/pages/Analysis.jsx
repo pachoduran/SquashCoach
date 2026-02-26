@@ -121,8 +121,8 @@ export const Analysis = () => {
         .slice(0, 5);
 
       setAnalysisData({
-        total_matches: raw.matches_count || matchList.length,
-        total_points: raw.points_count || allPoints.length,
+        total_matches: matchList.length,
+        total_points: allPoints.length,
         player1_wins: p1Wins,
         player2_wins: p2Wins,
         player1_games: totalGamesP1,
