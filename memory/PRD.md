@@ -97,3 +97,21 @@ Dashboard web para Squash Coach que se conecta a un backend existente (https://l
 - Frontend: React 19, TailwindCSS, Shadcn/UI
 - External Backend: FastAPI (https://lev.jsb.mybluehost.me:8001)
 - Auth: JWT Bearer token
+
+## Update Jan 2026 - Court Visualization Enhancement
+
+### Changes Made:
+- ✅ Replaced SVG court drawing with real squash court image (wood floor texture)
+- ✅ Added realistic squash ball visualization with two yellow dots (characteristic of squash balls)
+- ✅ Implemented step-by-step point sequence playback
+- ✅ Play/Pause/Reset/Step Forward/Step Back controls
+- ✅ Speed control (Slow/Normal/Fast)
+- ✅ Score tracking during playback
+- ✅ Point reason display (Nick, Boast, Winner, Error, etc.)
+- ✅ Color coding: Green border = won point, Red border = lost point
+- ✅ Trail lines connecting consecutive points
+
+### Technical Notes:
+- Court image URL: https://customer-assets.emergentagent.com/job_squash-coach-web/artifacts/ipnldsxo_squash-court.png
+- Coordinates from API (position_x, position_y) are 0-1 values that map directly to image percentages
+- Demo page available at /demo for testing without authentication
