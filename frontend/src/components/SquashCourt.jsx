@@ -3,17 +3,14 @@ import { Play, Pause, SkipBack, SkipForward, RotateCcw } from 'lucide-react';
 import { Button } from './ui/button';
 import { Slider } from './ui/slider';
 
+// Court image URL
+const COURT_IMAGE = 'https://customer-assets.emergentagent.com/job_squash-coach-web/artifacts/ipnldsxo_squash-court.png';
+
 export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPlayerId }) => {
   const [currentStep, setCurrentStep] = useState(points.length);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playSpeed, setPlaySpeed] = useState(1000);
-  
-  const courtWidth = 640;
-  const courtHeight = 970;
-  const serviceLineY = courtHeight * 0.57;
-  const shortLineY = courtHeight * 0.44;
-  const tinHeight = 48;
-  const usableHeight = courtHeight - tinHeight - 60;
+  const [imageLoaded, setImageLoaded] = useState(false);
   
   // Auto-play effect
   useEffect(() => {
@@ -54,25 +51,6 @@ export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPla
 
   const score = getCurrentScore();
   const visiblePoints = points.slice(0, currentStep);
-  
-  // Pre-calculate all ball positions
-  const ballData = visiblePoints.map((point, index) => ({
-    ...point,
-    x: point.position_x * (courtWidth - 80) + 40,
-    y: point.position_y * usableHeight + 50,
-    isWinner: point.winner_player_id === myPlayerId,
-    isHighlighted: highlightedPoint === point.point_id || index === currentStep - 1,
-    index
-  }));
-  
-  // Debug log
-  console.log('SquashCourt render:', { 
-    pointsLength: points.length, 
-    currentStep, 
-    visiblePointsLength: visiblePoints.length,
-    ballDataLength: ballData.length,
-    myPlayerId
-  });
 
   return (
     <div className="relative w-full max-w-md mx-auto">
@@ -148,162 +126,132 @@ export const SquashCourt = ({ points = [], onPointClick, highlightedPoint, myPla
         </div>
       )}
 
-      {/* Court SVG */}
-      <svg
-        viewBox={`0 0 ${courtWidth} ${courtHeight}`}
-        className="w-full h-auto rounded-lg"
-        style={{ backgroundColor: '#0A0A0A' }}
-        data-testid="squash-court-svg"
+      {/* Court with Image Background */}
+      <div 
+        className="relative w-full rounded-lg overflow-hidden border-4 border-black"
+        style={{ aspectRatio: '1/1' }}
+        data-testid="squash-court-container"
       >
-        {/* Court floor */}
-        <rect x="4" y="4" width={courtWidth - 8} height={courtHeight - 8} fill="#1A1A1A" stroke="#FFDA00" strokeWidth="4" rx="4" />
+        {/* Court Background Image */}
+        <img 
+          src={COURT_IMAGE}
+          alt="Cancha de Squash"
+          className="absolute inset-0 w-full h-full object-cover"
+          onLoad={() => setImageLoaded(true)}
+        />
         
-        {/* Tin */}
-        <rect x="4" y={courtHeight - tinHeight - 4} width={courtWidth - 8} height={tinHeight} fill="#2A2A2A" stroke="#FFDA00" strokeWidth="2" />
-        <text x={courtWidth / 2} y={courtHeight - tinHeight / 2} textAnchor="middle" fill="#707070" fontSize="16" fontFamily="Barlow Condensed">TIN</text>
-        
-        {/* Service line */}
-        <line x1="4" y1={serviceLineY} x2={courtWidth - 4} y2={serviceLineY} stroke="#FFDA00" strokeWidth="2" strokeDasharray="15,8" opacity="0.7" />
-        
-        {/* Short line */}
-        <line x1="4" y1={shortLineY} x2={courtWidth - 4} y2={shortLineY} stroke="#FFDA00" strokeWidth="3" />
-        
-        {/* Center line */}
-        <line x1={courtWidth / 2} y1="4" x2={courtWidth / 2} y2={shortLineY} stroke="#FFDA00" strokeWidth="3" />
-        
-        {/* Service boxes */}
-        <rect x="4" y="4" width={courtWidth / 2 - 4} height={shortLineY - 4} fill="transparent" stroke="#FFDA00" strokeWidth="2" opacity="0.5" />
-        <rect x={courtWidth / 2} y="4" width={courtWidth / 2 - 4} height={shortLineY - 4} fill="transparent" stroke="#FFDA00" strokeWidth="2" opacity="0.5" />
-        
-        {/* T marker */}
-        <circle cx={courtWidth / 2} cy={shortLineY} r="12" fill="rgba(255, 218, 0, 0.2)" stroke="#FFDA00" strokeWidth="2" />
-        <text x={courtWidth / 2} y={shortLineY + 4} textAnchor="middle" fill="#FFDA00" fontSize="10" fontWeight="bold">T</text>
-        
-        {/* Labels */}
-        <text x={courtWidth / 4} y={shortLineY / 2} textAnchor="middle" fill="#505050" fontSize="14">IZQUIERDA</text>
-        <text x={(courtWidth / 4) * 3} y={shortLineY / 2} textAnchor="middle" fill="#505050" fontSize="14">DERECHA</text>
-        <text x={courtWidth / 2} y={courtHeight - tinHeight - 30} textAnchor="middle" fill="#505050" fontSize="12">PARED FRONTAL</text>
-        <text x={courtWidth / 2} y={30} textAnchor="middle" fill="#505050" fontSize="12">PARED TRASERA</text>
-        
-        {/* Trail lines */}
-        {ballData.map((ball, i) => {
-          if (i === 0) return null;
-          const prev = ballData[i - 1];
+        {/* Trail lines connecting points */}
+        {imageLoaded && visiblePoints.length > 1 && (
+          <svg 
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+          >
+            {visiblePoints.map((point, index) => {
+              if (index === 0) return null;
+              const prev = visiblePoints[index - 1];
+              return (
+                <line
+                  key={`trail-${index}`}
+                  x1={prev.position_x * 100}
+                  y1={prev.position_y * 100}
+                  x2={point.position_x * 100}
+                  y2={point.position_y * 100}
+                  stroke="rgba(255, 218, 0, 0.5)"
+                  strokeWidth="0.5"
+                  strokeDasharray="2,1"
+                />
+              );
+            })}
+          </svg>
+        )}
+
+        {/* Balls overlay */}
+        {imageLoaded && visiblePoints.map((point, index) => {
+          const isWinner = point.winner_player_id === myPlayerId;
+          const isHighlighted = highlightedPoint === point.point_id || index === currentStep - 1;
+          const size = isHighlighted ? 32 : 26;
+          
           return (
-            <line key={`trail-${i}`} x1={prev.x} y1={prev.y} x2={ball.x} y2={ball.y}
-              stroke="rgba(255, 218, 0, 0.4)" strokeWidth="2" strokeDasharray="8,4" />
+            <div
+              key={point.point_id || `ball-${index}`}
+              className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-200"
+              style={{
+                left: `${point.position_x * 100}%`,
+                top: `${point.position_y * 100}%`,
+                width: `${size}px`,
+                height: `${size}px`,
+                zIndex: isHighlighted ? 20 : 10 + index
+              }}
+              onClick={() => onPointClick && onPointClick(point)}
+              data-testid={`ball-${index}`}
+            >
+              {/* Ball shadow */}
+              <div 
+                className="absolute rounded-full bg-black/40"
+                style={{
+                  width: '90%',
+                  height: '30%',
+                  bottom: '-15%',
+                  left: '5%',
+                  filter: 'blur(2px)'
+                }}
+              />
+              
+              {/* Ball body */}
+              <div 
+                className={`absolute inset-0 rounded-full flex items-center justify-center ${
+                  isHighlighted ? 'ring-2 ring-white ring-offset-1' : ''
+                }`}
+                style={{
+                  background: 'radial-gradient(circle at 30% 30%, #5a5a5a, #2d2d2d 50%, #1a1a1a)',
+                  border: `3px solid ${isWinner ? '#22C55E' : '#EF4444'}`,
+                  boxShadow: isHighlighted ? `0 0 10px ${isWinner ? '#22C55E' : '#EF4444'}` : 'none'
+                }}
+              >
+                {/* Yellow dots - squash ball characteristic */}
+                <div 
+                  className="absolute w-2 h-2 rounded-full bg-yellow-400"
+                  style={{ top: '20%', left: '15%' }}
+                />
+                <div 
+                  className="absolute w-2 h-2 rounded-full bg-yellow-400"
+                  style={{ bottom: '20%', right: '15%' }}
+                />
+                
+                {/* Point number */}
+                <span className="text-white font-bold text-xs z-10">
+                  {point.point_number || index + 1}
+                </span>
+              </div>
+            </div>
           );
         })}
-        
-        {/* TEST BALL - hardcoded position */}
-        <circle cx="320" cy="400" r="20" fill="#FF0000" stroke="#FFFFFF" strokeWidth="3" />
-        
-        {/* Squash Balls - each ball rendered individually */}
-        {ballData.length > 0 && ballData[0] && (
-          <g key="ball-0">
-            <circle cx={ballData[0].x} cy={ballData[0].y} r={ballData[0].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[0].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
-            <circle cx={ballData[0].x - 5} cy={ballData[0].y - 3} r={3} fill="#FFDA00" />
-            <circle cx={ballData[0].x + 4} cy={ballData[0].y + 4} r={3} fill="#FFDA00" />
-            <text x={ballData[0].x} y={ballData[0].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">1</text>
-          </g>
-        )}
-        {ballData.length > 1 && ballData[1] && (
-          <g key="ball-1">
-            <circle cx={ballData[1].x} cy={ballData[1].y} r={ballData[1].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[1].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
-            <circle cx={ballData[1].x - 5} cy={ballData[1].y - 3} r={3} fill="#FFDA00" />
-            <circle cx={ballData[1].x + 4} cy={ballData[1].y + 4} r={3} fill="#FFDA00" />
-            <text x={ballData[1].x} y={ballData[1].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">2</text>
-          </g>
-        )}
-        {ballData.length > 2 && ballData[2] && (
-          <g key="ball-2">
-            <circle cx={ballData[2].x} cy={ballData[2].y} r={ballData[2].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[2].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
-            <circle cx={ballData[2].x - 5} cy={ballData[2].y - 3} r={3} fill="#FFDA00" />
-            <circle cx={ballData[2].x + 4} cy={ballData[2].y + 4} r={3} fill="#FFDA00" />
-            <text x={ballData[2].x} y={ballData[2].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">3</text>
-          </g>
-        )}
-        {ballData.length > 3 && ballData[3] && (
-          <g key="ball-3">
-            <circle cx={ballData[3].x} cy={ballData[3].y} r={ballData[3].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[3].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
-            <circle cx={ballData[3].x - 5} cy={ballData[3].y - 3} r={3} fill="#FFDA00" />
-            <circle cx={ballData[3].x + 4} cy={ballData[3].y + 4} r={3} fill="#FFDA00" />
-            <text x={ballData[3].x} y={ballData[3].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">4</text>
-          </g>
-        )}
-        {ballData.length > 4 && ballData[4] && (
-          <g key="ball-4">
-            <circle cx={ballData[4].x} cy={ballData[4].y} r={ballData[4].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[4].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
-            <circle cx={ballData[4].x - 5} cy={ballData[4].y - 3} r={3} fill="#FFDA00" />
-            <circle cx={ballData[4].x + 4} cy={ballData[4].y + 4} r={3} fill="#FFDA00" />
-            <text x={ballData[4].x} y={ballData[4].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">5</text>
-          </g>
-        )}
-        {ballData.length > 5 && ballData[5] && (
-          <g key="ball-5">
-            <circle cx={ballData[5].x} cy={ballData[5].y} r={ballData[5].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[5].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
-            <circle cx={ballData[5].x - 5} cy={ballData[5].y - 3} r={3} fill="#FFDA00" />
-            <circle cx={ballData[5].x + 4} cy={ballData[5].y + 4} r={3} fill="#FFDA00" />
-            <text x={ballData[5].x} y={ballData[5].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">6</text>
-          </g>
-        )}
-        {ballData.length > 6 && ballData[6] && (
-          <g key="ball-6">
-            <circle cx={ballData[6].x} cy={ballData[6].y} r={ballData[6].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[6].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
-            <circle cx={ballData[6].x - 5} cy={ballData[6].y - 3} r={3} fill="#FFDA00" />
-            <circle cx={ballData[6].x + 4} cy={ballData[6].y + 4} r={3} fill="#FFDA00" />
-            <text x={ballData[6].x} y={ballData[6].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">7</text>
-          </g>
-        )}
-        {ballData.length > 7 && ballData[7] && (
-          <g key="ball-7">
-            <circle cx={ballData[7].x} cy={ballData[7].y} r={ballData[7].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[7].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
-            <circle cx={ballData[7].x - 5} cy={ballData[7].y - 3} r={3} fill="#FFDA00" />
-            <circle cx={ballData[7].x + 4} cy={ballData[7].y + 4} r={3} fill="#FFDA00" />
-            <text x={ballData[7].x} y={ballData[7].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">8</text>
-          </g>
-        )}
-        {ballData.length > 8 && ballData[8] && (
-          <g key="ball-8">
-            <circle cx={ballData[8].x} cy={ballData[8].y} r={ballData[8].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[8].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
-            <circle cx={ballData[8].x - 5} cy={ballData[8].y - 3} r={3} fill="#FFDA00" />
-            <circle cx={ballData[8].x + 4} cy={ballData[8].y + 4} r={3} fill="#FFDA00" />
-            <text x={ballData[8].x} y={ballData[8].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">9</text>
-          </g>
-        )}
-        {ballData.length > 9 && ballData[9] && (
-          <g key="ball-9">
-            <circle cx={ballData[9].x} cy={ballData[9].y} r={ballData[9].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[9].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
-            <circle cx={ballData[9].x - 5} cy={ballData[9].y - 3} r={3} fill="#FFDA00" />
-            <circle cx={ballData[9].x + 4} cy={ballData[9].y + 4} r={3} fill="#FFDA00" />
-            <text x={ballData[9].x} y={ballData[9].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">10</text>
-          </g>
-        )}
-        {ballData.length > 10 && ballData[10] && (
-          <g key="ball-10">
-            <circle cx={ballData[10].x} cy={ballData[10].y} r={ballData[10].isHighlighted ? 18 : 15} fill="#424242" stroke={ballData[10].isWinner ? '#22C55E' : '#EF4444'} strokeWidth="2" />
-            <circle cx={ballData[10].x - 5} cy={ballData[10].y - 3} r={3} fill="#FFDA00" />
-            <circle cx={ballData[10].x + 4} cy={ballData[10].y + 4} r={3} fill="#FFDA00" />
-            <text x={ballData[10].x} y={ballData[10].y + 4} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="bold">11</text>
-          </g>
-        )}
-      </svg>
+      </div>
       
       {/* Legend */}
       <div className="flex justify-center gap-6 mt-4 text-sm">
         <div className="flex items-center gap-2">
           <div className="relative w-6 h-6">
-            <div className="absolute inset-0 rounded-full bg-[#2D2D2D] border-2 border-green-500"></div>
-            <div className="absolute top-1 left-0.5 w-2 h-2 rounded-full bg-brand-yellow"></div>
-            <div className="absolute bottom-1 right-0.5 w-2 h-2 rounded-full bg-brand-yellow"></div>
+            <div 
+              className="absolute inset-0 rounded-full border-2 border-green-500"
+              style={{ background: 'radial-gradient(circle at 30% 30%, #5a5a5a, #2d2d2d)' }}
+            >
+              <div className="absolute w-1.5 h-1.5 rounded-full bg-yellow-400" style={{ top: '15%', left: '10%' }} />
+              <div className="absolute w-1.5 h-1.5 rounded-full bg-yellow-400" style={{ bottom: '15%', right: '10%' }} />
+            </div>
           </div>
           <span className="text-brand-gray font-body">Punto ganado</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="relative w-6 h-6">
-            <div className="absolute inset-0 rounded-full bg-[#2D2D2D] border-2 border-red-500"></div>
-            <div className="absolute top-1 left-0.5 w-2 h-2 rounded-full bg-brand-yellow"></div>
-            <div className="absolute bottom-1 right-0.5 w-2 h-2 rounded-full bg-brand-yellow"></div>
+            <div 
+              className="absolute inset-0 rounded-full border-2 border-red-500"
+              style={{ background: 'radial-gradient(circle at 30% 30%, #5a5a5a, #2d2d2d)' }}
+            >
+              <div className="absolute w-1.5 h-1.5 rounded-full bg-yellow-400" style={{ top: '15%', left: '10%' }} />
+              <div className="absolute w-1.5 h-1.5 rounded-full bg-yellow-400" style={{ bottom: '15%', right: '10%' }} />
+            </div>
           </div>
           <span className="text-brand-gray font-body">Punto perdido</span>
         </div>
