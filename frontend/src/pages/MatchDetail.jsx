@@ -98,8 +98,15 @@ export const MatchDetail = () => {
         </Link>
 
         {/* Game Selector Tabs */}
-        <Tabs defaultValue="game-1" className="w-full">
+        <Tabs defaultValue="all" className="w-full">
           <TabsList className="w-full bg-brand-dark-gray border border-white/10 flex-wrap h-auto gap-1 p-1">
+            <TabsTrigger 
+              value="all"
+              onClick={() => setSelectedGame('all')}
+              className="flex-1 min-w-[60px] data-[state=active]:bg-brand-yellow data-[state=active]:text-brand-black font-heading text-sm uppercase"
+            >
+              Todos
+            </TabsTrigger>
             {gameNumbers.map(num => (
               <TabsTrigger 
                 key={num}
@@ -107,7 +114,7 @@ export const MatchDetail = () => {
                 onClick={() => setSelectedGame(num)}
                 className="flex-1 min-w-[60px] data-[state=active]:bg-brand-yellow data-[state=active]:text-brand-black font-heading text-sm uppercase"
               >
-                Juego {num}
+                G{num}
               </TabsTrigger>
             ))}
             <TabsTrigger 
@@ -117,6 +124,22 @@ export const MatchDetail = () => {
               Stats
             </TabsTrigger>
           </TabsList>
+
+          {/* All games court */}
+          <TabsContent value="all" className="mt-4">
+            <SquashCourt 
+              points={points || []}
+              onPointClick={(point) => setHighlightedPoint(point.point_id === highlightedPoint ? null : point.point_id)}
+              highlightedPoint={highlightedPoint}
+              myPlayerId={match.my_player_id}
+              player1Name={myPlayer?.nickname || 'Yo'}
+              player2Name={opponent?.nickname || 'Oponente'}
+              matchScore={{ p1: myGames, p2: opponentGames }}
+              tournamentName={`${match.tournament_name || 'Partido'} - ${formattedDate}`}
+              isWinner={isWinner}
+              gameNumber="Todos"
+            />
+          </TabsContent>
 
           {/* Court Tab for each game */}
           {gameNumbers.map(num => (
