@@ -98,15 +98,8 @@ export const MatchDetail = () => {
         </Link>
 
         {/* Game Selector Tabs */}
-        <Tabs defaultValue="all" className="w-full">
+        <Tabs defaultValue="game-1" className="w-full">
           <TabsList className="w-full bg-brand-dark-gray border border-white/10 flex-wrap h-auto gap-1 p-1">
-            <TabsTrigger 
-              value="all"
-              onClick={() => setSelectedGame('all')}
-              className="flex-1 min-w-[60px] data-[state=active]:bg-brand-yellow data-[state=active]:text-brand-black font-heading text-sm uppercase"
-            >
-              Todos
-            </TabsTrigger>
             {gameNumbers.map(num => (
               <TabsTrigger 
                 key={num}
@@ -114,7 +107,7 @@ export const MatchDetail = () => {
                 onClick={() => setSelectedGame(num)}
                 className="flex-1 min-w-[60px] data-[state=active]:bg-brand-yellow data-[state=active]:text-brand-black font-heading text-sm uppercase"
               >
-                G{num}
+                Set {num}
               </TabsTrigger>
             ))}
             <TabsTrigger 
