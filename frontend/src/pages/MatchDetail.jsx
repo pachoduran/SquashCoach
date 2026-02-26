@@ -70,14 +70,23 @@ export const MatchDetail = () => {
   const gamePoints = points?.filter(p => p.game_number === selectedGame) || [];
   const gameNumbers = [...new Set(points?.map(p => p.game_number) || [])].sort();
 
-  // Stats
-  const pointReasons = points?.reduce((acc, point) => {
+  // Stats - filter by selected game or all
+  const statsPoints = selectedGame === 'all' ? points : points?.filter(p => p.game_number === selectedGame);
+  
+  const pointReasons = statsPoints?.reduce((acc, point) => {
     const reason = point.reason || 'Otro';
-    if (!acc[reason]) acc[reason] = { won: 0, lost: 0 };
+    if (!acc[reason]) acc[reason] = { won: 0, lost: 0, total: 0 };
+    acc[reason].total++;
     if (point.winner_player_id === match.my_player_id) acc[reason].won++;
     else acc[reason].lost++;
     return acc;
   }, {}) || {};
+
+  const topReasons = Object.entries(pointReasons)
+    .map(([reason, s]) => ({ reason, ...s }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
+  const maxReasonCount = topReasons[0]?.total || 1;
 
   return (
     <Layout>
