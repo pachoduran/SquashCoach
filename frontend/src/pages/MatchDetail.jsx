@@ -16,7 +16,7 @@ export const MatchDetail = () => {
   const [matchData, setMatchData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedGame, setSelectedGame] = useState('all');
+  const [selectedGame, setSelectedGame] = useState(1);
   const [highlightedPoint, setHighlightedPoint] = useState(null);
   const [expandedGame, setExpandedGame] = useState(null);
 
