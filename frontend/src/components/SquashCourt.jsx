@@ -45,6 +45,9 @@ export const SquashCourt = ({
   const currentPointIndex = currentStep - 1;
   const currentPoint = currentStep > 0 ? points[currentStep - 1] : null;
 
+  // Total points in the game
+  const totalPoints = points.length;
+
   // Get current scores
   const getCurrentScores = () => {
     if (currentStep === 0) return { p1: 0, p2: 0 };
@@ -53,115 +56,136 @@ export const SquashCourt = ({
   };
   const scores = getCurrentScores();
 
-  // Create timeline data - each point in sequence
-  // For each point in the game, determine who won it and what score they reached
-  const timelineData = visiblePoints.map((point, idx) => {
+  // Create full timeline - ALL points of the game
+  // Each slot shows: gray (not reached yet), colored (reached), highlighted (current)
+  const fullTimeline = points.map((point, idx) => {
     const wonByPlayer1 = point.winner_player_id === myPlayerId;
+    const isReached = idx < currentStep;
+    const isCurrent = idx === currentPointIndex;
+    
     return {
       pointIndex: idx,
       wonByPlayer1,
-      // Score the winner reached after this point
       player1Score: wonByPlayer1 ? point.player1_score : null,
       player2Score: !wonByPlayer1 ? point.player2_score : null,
-      isCurrent: idx === currentPointIndex
+      isReached,
+      isCurrent
     };
   });
 
   return (
     <div className="relative w-full max-w-lg mx-auto">
-      {/* Scoreboard - Timeline Style */}
+      {/* Scoreboard - Full Timeline (No scroll) */}
       <div className="bg-brand-black rounded-lg overflow-hidden mb-3 border border-white/10">
         {/* Header */}
-        <div className="bg-brand-dark-gray px-3 py-1.5 flex items-center justify-between">
-          <span className="text-white/80 font-heading text-xs uppercase tracking-wider">
+        <div className="bg-brand-dark-gray px-3 py-2 flex items-center justify-between">
+          <span className="text-white font-heading text-sm uppercase tracking-wider">
             Game {gameNumber}
           </span>
           {tournamentName && (
-            <span className="text-white/50 font-body text-[10px] truncate ml-2">{tournamentName}</span>
+            <span className="text-white/50 font-body text-xs truncate ml-2">{tournamentName}</span>
           )}
         </div>
 
-        {/* Player 1 Row (My Player) - Timeline */}
-        <div className="flex items-center px-2 py-3 border-b border-white/10">
-          {/* Player Name */}
-          <div className="min-w-[70px] pr-2">
-            <span className="text-brand-yellow font-heading text-sm uppercase tracking-wide truncate block">
+        {/* Player 1 Row (My Player) */}
+        <div className="px-3 py-3 border-b border-white/10">
+          {/* Player Name + Score */}
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-brand-yellow font-heading text-sm uppercase tracking-wide">
               {player1Name}
             </span>
-          </div>
-          
-          {/* Timeline circles */}
-          <div className="flex-1 flex items-center gap-1 overflow-x-auto">
-            {timelineData.map((point, idx) => (
-              <div 
-                key={idx}
-                className="w-7 h-7 flex-shrink-0 flex items-center justify-center"
-              >
-                {point.wonByPlayer1 ? (
-                  <div 
-                    className={`w-6 h-6 rounded-full flex items-center justify-center font-heading text-sm font-bold
-                      transition-all duration-200
-                      ${point.isCurrent 
-                        ? 'bg-brand-yellow text-brand-black scale-110 ring-2 ring-white' 
-                        : 'bg-green-600 text-white'
-                      }`}
-                  >
-                    {point.player1Score}
-                  </div>
-                ) : (
-                  <div className="w-6 h-6" /> /* Empty space for opponent's point */
-                )}
-              </div>
-            ))}
-          </div>
-          
-          {/* Total Score */}
-          <div className="min-w-[30px] text-right pl-2">
             <span className="font-heading text-xl font-bold text-brand-yellow">
               {scores.p1}
             </span>
           </div>
+          
+          {/* Timeline circles - wrap to fit */}
+          <div className="flex flex-wrap gap-1.5">
+            {fullTimeline.map((point, idx) => {
+              if (!point.wonByPlayer1) {
+                // Empty placeholder for opponent's point
+                return (
+                  <div key={idx} className="w-7 h-7 flex items-center justify-center">
+                    <div className="w-5 h-5 rounded-full border border-white/10"></div>
+                  </div>
+                );
+              }
+              
+              // Player 1's point
+              let bgColor, textColor, borderColor;
+              if (point.isCurrent) {
+                bgColor = 'bg-brand-yellow';
+                textColor = 'text-brand-black';
+                borderColor = 'ring-2 ring-white';
+              } else if (point.isReached) {
+                bgColor = 'bg-green-600';
+                textColor = 'text-white';
+                borderColor = '';
+              } else {
+                bgColor = 'bg-gray-600/50';
+                textColor = 'text-gray-400';
+                borderColor = '';
+              }
+              
+              return (
+                <div key={idx} className="w-7 h-7 flex items-center justify-center">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center font-heading text-xs font-bold transition-all duration-300 ${bgColor} ${textColor} ${borderColor}`}>
+                    {point.player1Score}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Player 2 Row (Opponent) - Timeline */}
-        <div className="flex items-center px-2 py-3">
-          {/* Player Name */}
-          <div className="min-w-[70px] pr-2">
-            <span className="text-white/80 font-heading text-sm uppercase tracking-wide truncate block">
+        {/* Player 2 Row (Opponent) */}
+        <div className="px-3 py-3">
+          {/* Player Name + Score */}
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-white/80 font-heading text-sm uppercase tracking-wide">
               {player2Name}
             </span>
-          </div>
-          
-          {/* Timeline circles */}
-          <div className="flex-1 flex items-center gap-1 overflow-x-auto">
-            {timelineData.map((point, idx) => (
-              <div 
-                key={idx}
-                className="w-7 h-7 flex-shrink-0 flex items-center justify-center"
-              >
-                {!point.wonByPlayer1 ? (
-                  <div 
-                    className={`w-6 h-6 rounded-full flex items-center justify-center font-heading text-sm font-bold
-                      transition-all duration-200
-                      ${point.isCurrent 
-                        ? 'bg-red-500 text-white scale-110 ring-2 ring-white' 
-                        : 'bg-red-600/70 text-white/90'
-                      }`}
-                  >
-                    {point.player2Score}
-                  </div>
-                ) : (
-                  <div className="w-6 h-6" /> /* Empty space for player 1's point */
-                )}
-              </div>
-            ))}
-          </div>
-          
-          {/* Total Score */}
-          <div className="min-w-[30px] text-right pl-2">
             <span className="font-heading text-xl font-bold text-white">
               {scores.p2}
             </span>
+          </div>
+          
+          {/* Timeline circles - wrap to fit */}
+          <div className="flex flex-wrap gap-1.5">
+            {fullTimeline.map((point, idx) => {
+              if (point.wonByPlayer1) {
+                // Empty placeholder for player 1's point
+                return (
+                  <div key={idx} className="w-7 h-7 flex items-center justify-center">
+                    <div className="w-5 h-5 rounded-full border border-white/10"></div>
+                  </div>
+                );
+              }
+              
+              // Player 2's point
+              let bgColor, textColor, borderColor;
+              if (point.isCurrent) {
+                bgColor = 'bg-red-500';
+                textColor = 'text-white';
+                borderColor = 'ring-2 ring-white';
+              } else if (point.isReached) {
+                bgColor = 'bg-red-600/80';
+                textColor = 'text-white';
+                borderColor = '';
+              } else {
+                bgColor = 'bg-gray-600/50';
+                textColor = 'text-gray-400';
+                borderColor = '';
+              }
+              
+              return (
+                <div key={idx} className="w-7 h-7 flex items-center justify-center">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center font-heading text-xs font-bold transition-all duration-300 ${bgColor} ${textColor} ${borderColor}`}>
+                    {point.player2Score}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -254,26 +278,31 @@ export const SquashCourt = ({
           </svg>
         )}
 
-        {/* Balls on court */}
-        {imageLoaded && visiblePoints.map((point, index) => {
+        {/* ALL balls on court - gray until reached */}
+        {imageLoaded && points.map((point, index) => {
           const isWon = point.winner_player_id === myPlayerId;
+          const isReached = index < currentStep;
           const isCurrent = index === currentPointIndex;
           const size = isCurrent ? 30 : 22;
           
-          // Display score: the score of the winner after this point
+          // Display score
           const displayScore = isWon ? point.player1_score : point.player2_score;
           
-          // Colors
-          let borderColor, bgGradient;
+          // Colors based on state
+          let borderColor, bgGradient, opacity;
           if (isCurrent) {
             borderColor = '#FFDA00';
             bgGradient = 'radial-gradient(circle at 30% 30%, #5a5a5a, #3a3a3a 50%, #2a2a2a)';
-          } else if (isWon) {
-            borderColor = '#22C55E';
+            opacity = 1;
+          } else if (isReached) {
+            borderColor = isWon ? '#22C55E' : '#EF4444';
             bgGradient = 'radial-gradient(circle at 30% 30%, #4a4a4a, #2d2d2d 50%, #1a1a1a)';
+            opacity = 0.85;
           } else {
-            borderColor = '#EF4444';
-            bgGradient = 'radial-gradient(circle at 30% 30%, #4a4a4a, #2d2d2d 50%, #1a1a1a)';
+            // Not reached yet - gray
+            borderColor = '#555555';
+            bgGradient = 'radial-gradient(circle at 30% 30%, #3a3a3a, #2a2a2a 50%, #1a1a1a)';
+            opacity = 0.4;
           }
           
           return (
@@ -284,16 +313,18 @@ export const SquashCourt = ({
                 top: `${point.position_y * 100}%`,
                 width: `${size}px`,
                 height: `${size}px`,
-                zIndex: isCurrent ? 30 : 10 + index,
-                opacity: isCurrent ? 1 : 0.85
+                zIndex: isCurrent ? 30 : isReached ? 15 + index : 5,
+                opacity
               }}
               onClick={() => onPointClick && onPointClick(point)}
               data-testid={`ball-${index}`}
             >
               {/* Shadow */}
-              <div className="absolute rounded-full bg-black/40" 
-                style={{ width: '85%', height: '20%', bottom: '-10%', left: '7.5%', filter: 'blur(2px)' }} 
-              />
+              {isReached && (
+                <div className="absolute rounded-full bg-black/40" 
+                  style={{ width: '85%', height: '20%', bottom: '-10%', left: '7.5%', filter: 'blur(2px)' }} 
+                />
+              )}
               
               {/* Ball body */}
               <div 
@@ -305,11 +336,15 @@ export const SquashCourt = ({
                 }}
               >
                 {/* Yellow dots */}
-                <div className="absolute w-1.5 h-1.5 rounded-full bg-yellow-400" style={{ top: '15%', left: '15%' }} />
-                <div className="absolute w-1.5 h-1.5 rounded-full bg-yellow-400" style={{ bottom: '15%', right: '15%' }} />
+                <div className="absolute w-1.5 h-1.5 rounded-full" 
+                  style={{ top: '15%', left: '15%', backgroundColor: isReached ? '#facc15' : '#666' }} />
+                <div className="absolute w-1.5 h-1.5 rounded-full" 
+                  style={{ bottom: '15%', right: '15%', backgroundColor: isReached ? '#facc15' : '#666' }} />
                 
                 {/* Score number */}
-                <span className={`font-bold z-10 ${isCurrent ? 'text-brand-yellow text-sm' : 'text-white text-[10px]'}`}>
+                <span className={`font-bold z-10 transition-all duration-300 ${
+                  isCurrent ? 'text-brand-yellow text-sm' : isReached ? 'text-white text-[10px]' : 'text-gray-500 text-[10px]'
+                }`}>
                   {displayScore}
                 </span>
               </div>
@@ -317,7 +352,7 @@ export const SquashCourt = ({
               {/* Pulse for current */}
               {isCurrent && (
                 <div className="absolute inset-[-4px] rounded-full animate-ping"
-                  style={{ border: `2px solid ${borderColor}`, opacity: 0.4 }}
+                  style={{ border: '2px solid #FFDA00', opacity: 0.4 }}
                 />
               )}
             </div>
@@ -347,6 +382,13 @@ export const SquashCourt = ({
             <span className="text-[8px] text-white font-bold">1</span>
           </div>
           <span className="text-brand-gray">Perdido</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center opacity-50" 
+            style={{ background: 'radial-gradient(circle at 30% 30%, #3a3a3a, #2a2a2a)' }}>
+            <span className="text-[8px] text-gray-500 font-bold">?</span>
+          </div>
+          <span className="text-brand-gray">Pendiente</span>
         </div>
       </div>
     </div>
