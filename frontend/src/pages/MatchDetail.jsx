@@ -67,7 +67,7 @@ export const MatchDetail = () => {
     ? format(new Date(match.date), "d MMM yyyy", { locale: es })
     : '';
 
-  const gamePoints = points?.filter(p => p.game_number === selectedGame) || [];
+  const gamePoints = selectedGame === 'all' ? (points || []) : (points?.filter(p => p.game_number === selectedGame) || []);
   const gameNumbers = [...new Set(points?.map(p => p.game_number) || [])].sort();
 
   // Stats - filter by selected game or all
