@@ -34,6 +34,8 @@ export const Analysis = () => {
   const [dateFrom, setDateFrom] = useState(null);
   const [dateTo, setDateTo] = useState(null);
   const [analysisData, setAnalysisData] = useState(null);
+  const [dateFromOpen, setDateFromOpen] = useState(false);
+  const [dateToOpen, setDateToOpen] = useState(false);
 
   useEffect(() => {
     fetchInitialData();
