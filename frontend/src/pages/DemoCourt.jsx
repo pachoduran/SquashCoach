@@ -3,8 +3,7 @@ import { SquashCourt } from '../components/SquashCourt';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-// Sample demo data to showcase the court visualization
-// position_y: 0 = back wall (top of diagram), 1 = front wall (bottom of diagram)
+// Sample demo data
 const demoPoints = [
   { point_id: 'p1', position_x: 0.25, position_y: 0.7, winner_player_id: 'player1', reason: 'Winner', point_number: 1, player1_score: 1, player2_score: 0 },
   { point_id: 'p2', position_x: 0.75, position_y: 0.6, winner_player_id: 'player2', reason: 'Error', point_number: 2, player1_score: 1, player2_score: 1 },
@@ -23,92 +22,30 @@ export const DemoCourt = () => {
   const [highlightedPoint, setHighlightedPoint] = useState(null);
 
   return (
-    <div className="min-h-screen bg-brand-black p-4 md:p-8">
-      {/* Header */}
-      <div className="max-w-4xl mx-auto mb-8">
-        <Link 
-          to="/login" 
-          className="inline-flex items-center gap-2 text-brand-gray hover:text-white transition-colors mb-6"
-        >
+    <div className="min-h-screen bg-brand-black p-4">
+      {/* Compact Header */}
+      <div className="max-w-lg mx-auto mb-4">
+        <Link to="/login" className="inline-flex items-center gap-2 text-brand-gray hover:text-white transition-colors mb-2">
           <ArrowLeft className="w-4 h-4" />
-          <span className="font-heading text-sm uppercase tracking-wide">Volver al Login</span>
+          <span className="font-heading text-xs uppercase tracking-wide">Volver</span>
         </Link>
-        
-        <h1 className="font-heading text-3xl md:text-4xl text-white uppercase tracking-wide mb-2">
-          Demo de <span className="text-brand-yellow">Visualización</span>
+        <h1 className="font-heading text-xl text-white uppercase tracking-wide">
+          Demo <span className="text-brand-yellow">Visualización</span>
         </h1>
-        <p className="text-brand-gray font-body">
-          Explora cómo se visualizan los puntos en la cancha de squash
-        </p>
       </div>
 
-      {/* Demo Match Info */}
-      <div className="max-w-4xl mx-auto mb-6">
-        <div className="bg-brand-dark-gray border border-white/10 rounded-xl p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex-1 text-center">
-              <p className="font-heading text-2xl text-white uppercase tracking-wide">Jugador Demo</p>
-              <span className="inline-block mt-2 px-3 py-1 bg-green-500/20 text-green-500 text-xs font-heading uppercase tracking-wider rounded-full">
-                Ganador
-              </span>
-            </div>
-            <div className="px-8">
-              <div className="flex items-center gap-4">
-                <span className="font-heading text-5xl font-bold text-brand-yellow">7</span>
-                <span className="font-heading text-3xl text-brand-gray">-</span>
-                <span className="font-heading text-5xl font-bold text-white">4</span>
-              </div>
-              <p className="text-center text-brand-gray text-xs font-heading uppercase tracking-wider mt-2">
-                Juego de demostración
-              </p>
-            </div>
-            <div className="flex-1 text-center">
-              <p className="font-heading text-2xl text-white uppercase tracking-wide">Oponente Demo</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Court with Controls */}
-      <div className="max-w-4xl mx-auto">
-        <SquashCourt 
-          points={demoPoints}
-          onPointClick={(point) => setHighlightedPoint(point.point_id === highlightedPoint ? null : point.point_id)}
-          highlightedPoint={highlightedPoint}
-          myPlayerId="player1"
-        />
-      </div>
-
-      {/* Instructions */}
-      <div className="max-w-4xl mx-auto mt-8">
-        <div className="bg-brand-dark-gray border border-white/10 rounded-lg p-6">
-          <h2 className="font-heading text-lg text-brand-yellow uppercase tracking-wide mb-4">
-            Instrucciones
-          </h2>
-          <ul className="space-y-2 text-brand-gray font-body text-sm">
-            <li className="flex items-start gap-2">
-              <span className="text-brand-yellow">▸</span>
-              Usa los botones de <strong className="text-white">Play/Pause</strong> para ver la secuencia de puntos animada
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-brand-yellow">▸</span>
-              Usa el <strong className="text-white">Slider</strong> para navegar punto por punto
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-brand-yellow">▸</span>
-              Haz <strong className="text-white">clic en una bola</strong> para ver detalles del punto
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-brand-yellow">▸</span>
-              Las <strong className="text-green-500">bolas verdes</strong> son puntos ganados, las <strong className="text-red-500">rojas</strong> son puntos perdidos
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-brand-yellow">▸</span>
-              Las <strong className="text-white">líneas punteadas</strong> muestran la trayectoria del juego
-            </li>
-          </ul>
-        </div>
-      </div>
+      {/* Court with all controls integrated */}
+      <SquashCourt 
+        points={demoPoints}
+        onPointClick={(point) => setHighlightedPoint(point.point_id === highlightedPoint ? null : point.point_id)}
+        highlightedPoint={highlightedPoint}
+        myPlayerId="player1"
+        player1Name="Jugador Demo"
+        player2Name="Oponente Demo"
+        matchScore={{ p1: 3, p2: 1 }}
+        tournamentName="Torneo Demo - Juego 1"
+        isWinner={true}
+      />
     </div>
   );
 };
