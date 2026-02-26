@@ -1104,12 +1104,24 @@ async def health():
 # Include the router in the main app
 app.include_router(api_router)
 
+# CORS - Permitir dominios específicos y cualquier origen
+ALLOWED_ORIGINS = [
+    "https://match-replay-9.preview.emergentagent.com",
+    "https://squash-recovery.preview.emergentagent.com",
+    "https://lev.jsb.mybluehost.me",
+    "http://localhost:3000",
+    "http://localhost:8081",
+    "http://localhost:19006",
+]
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"https://.*\.preview\.emergentagent\.com",  # Permitir todos los subdominios de preview
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 @app.on_event("shutdown")
