@@ -52,8 +52,10 @@ interface GameResult {
 export default function MatchSummary() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const matchId = parseInt(params.matchId as string);
+  const matchId = params.matchId as string;
+  const isCloudMatch = params.isCloudMatch === 'true';
   const { t } = useLanguage();
+  const { sessionToken } = useAuth();
 
   const [matchData, setMatchData] = useState<MatchData | null>(null);
   const [allPoints, setAllPoints] = useState<PointData[]>([]);
@@ -70,13 +72,81 @@ export default function MatchSummary() {
   const [statsFilter, setStatsFilter] = useState<'all' | 'player1' | 'player2'>('all');
 
   useEffect(() => {
-    loadMatchSummary();
+    if (isCloudMatch) {
+      loadCloudMatchSummary();
+    } else {
+      loadMatchSummary();
+    }
   }, []);
 
   // Reset punto seleccionado cuando cambia el filtro de game
   useEffect(() => {
     setSelectedPointIndex(0);
   }, [selectedGame]);
+
+  const loadCloudMatchSummary = async () => {
+    try {
+      const BACKEND_URL = 'https://lev.jsb.mybluehost.me:8001';
+      const response = await fetch(`${BACKEND_URL}/api/matches/${matchId}`, {
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error cargando partido de la nube');
+      }
+
+      const data = await response.json();
+      
+      // Mapear datos de la nube al formato local
+      const players = data.players || [];
+      const player1 = players.find((p: any) => p.player_id === data.match.player1_id);
+      const player2 = players.find((p: any) => p.player_id === data.match.player2_id);
+      const winner = players.find((p: any) => p.player_id === data.match.winner_id);
+
+      setMatchData({
+        id: 0,
+        player1_id: data.match.player1_id,
+        player2_id: data.match.player2_id,
+        player1_nickname: player1?.nickname || 'Jugador 1',
+        player2_nickname: player2?.nickname || 'Jugador 2',
+        winner_nickname: winner?.nickname || '',
+        player1_games: data.match.player1_games,
+        player2_games: data.match.player2_games,
+        date: data.match.date,
+        tournament_name: data.match.tournament_name,
+      });
+
+      // Mapear puntos
+      const mappedPoints = (data.points || []).map((p: any, index: number) => ({
+        id: index,
+        position_x: p.position_x,
+        position_y: p.position_y,
+        winner_player_id: p.winner_player_id,
+        reason: p.reason,
+        game_number: p.game_number,
+        point_number: p.point_number,
+        player1_score: p.player1_score,
+        player2_score: p.player2_score,
+      }));
+      setAllPoints(mappedPoints);
+
+      // Mapear resultados de games
+      const mappedGameResults = (data.game_results || []).map((g: any) => ({
+        game_number: g.game_number,
+        player1_score: g.player1_score,
+        player2_score: g.player2_score,
+      }));
+      setGameResults(mappedGameResults);
+
+    } catch (error) {
+      console.error('Error cargando partido de la nube:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadMatchSummary = async () => {
     try {
@@ -95,20 +165,20 @@ export default function MatchSummary() {
         JOIN players p2 ON m.player2_id = p2.id
         LEFT JOIN players pw ON m.winner_id = pw.id
         WHERE m.id = ?`,
-        [matchId]
+        [parseInt(matchId)]
       );
 
       setMatchData(match as MatchData);
 
       const pointsData = await db.getAllAsync(
         'SELECT * FROM points WHERE match_id = ? ORDER BY game_number, point_number',
-        [matchId]
+        [parseInt(matchId)]
       );
       setAllPoints(pointsData as PointData[]);
 
       const gamesData = await db.getAllAsync(
         'SELECT * FROM game_results WHERE match_id = ? ORDER BY game_number',
-        [matchId]
+        [parseInt(matchId)]
       );
       setGameResults(gamesData as GameResult[]);
 
