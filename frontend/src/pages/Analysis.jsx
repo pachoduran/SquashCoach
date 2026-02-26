@@ -308,7 +308,7 @@ export const Analysis = () => {
             >
               {analysisLoading ? (
                 <>
-                  <LoadingSpinner size="sm" message="" />
+                  <div className="w-4 h-4 border-2 border-brand-black/30 border-t-brand-black rounded-full animate-spin" />
                   <span className="ml-2">Analizando...</span>
                 </>
               ) : (
