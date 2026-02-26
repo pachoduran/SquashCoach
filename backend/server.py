@@ -1,5 +1,5 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -28,6 +28,14 @@ app = FastAPI(title="Squash Coach API")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
+
+# Endpoint para descargar el código actualizado
+@app.get("/download/SquashCoach-Updated.zip")
+async def download_code():
+    file_path = ROOT_DIR / "SquashCoach-Updated.zip"
+    if file_path.exists():
+        return FileResponse(file_path, filename="SquashCoach-Updated.zip", media_type="application/zip")
+    raise HTTPException(status_code=404, detail="Archivo no encontrado")
 
 # Configure logging
 logging.basicConfig(
