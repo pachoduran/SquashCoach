@@ -61,14 +61,30 @@ export const Analysis = () => {
       setAnalysisLoading(true);
       setError(null);
 
-      let url = `/api/analysis/head-to-head?player1_id=${player1}&player2_id=${player2}`;
-      if (dateFrom) url += `&date_from=${format(dateFrom, 'yyyy-MM-dd')}`;
-      if (dateTo) url += `&date_to=${format(dateTo, 'yyyy-MM-dd')}`;
-
+      // Always fetch without dates (external API doesn't support date params reliably)
+      // Then filter locally by date range
+      const url = `/api/analysis/head-to-head?player1_id=${player1}&player2_id=${player2}`;
       const response = await api.get(url);
       const raw = response.data;
-      const matchList = raw.matches || [];
-      const allPoints = raw.points || [];
+
+      // Filter matches by date range locally
+      let matchList = raw.matches || [];
+      if (dateFrom || dateTo) {
+        matchList = matchList.filter(m => {
+          const matchDate = new Date(m.match_date || m.date);
+          if (dateFrom && matchDate < dateFrom) return false;
+          if (dateTo) {
+            const toEnd = new Date(dateTo);
+            toEnd.setHours(23, 59, 59, 999);
+            if (matchDate > toEnd) return false;
+          }
+          return true;
+        });
+      }
+
+      // Filter points to only include those from filtered matches
+      const matchIds = new Set(matchList.map(m => m.match_id));
+      const allPoints = (raw.points || []).filter(p => matchIds.has(p.match_id));
 
       // Basic stats
       const p1Wins = matchList.filter(m => m.winner_id === player1).length;
