@@ -53,119 +53,113 @@ export const SquashCourt = ({
   };
   const scores = getCurrentScores();
 
-  // Get point sequence with the SCORE the player had when they won that point
-  const getPlayerScoreSequence = (isMyPlayer) => {
-    return points
-      .slice(0, currentStep)
-      .map((p, idx) => {
-        const wonByMe = p.winner_player_id === myPlayerId;
-        // Get the score of the winner at that moment
-        const myScore = p.player1_score;
-        const oppScore = p.player2_score;
-        return {
-          ...p,
-          originalIndex: idx,
-          // The score this player had after winning this point
-          scoreAtPoint: isMyPlayer ? myScore : oppScore,
-          wonByThisPlayer: isMyPlayer ? wonByMe : !wonByMe
-        };
-      })
-      .filter(p => p.wonByThisPlayer);
-  };
-
-  const player1Sequence = getPlayerScoreSequence(true);
-  const player2Sequence = getPlayerScoreSequence(false);
-
-  // Check if a point is the current one
-  const isCurrentPointForPlayer = (pointIndex) => {
-    return pointIndex === currentPointIndex;
-  };
+  // Create timeline data - each point in sequence
+  // For each point in the game, determine who won it and what score they reached
+  const timelineData = visiblePoints.map((point, idx) => {
+    const wonByPlayer1 = point.winner_player_id === myPlayerId;
+    return {
+      pointIndex: idx,
+      wonByPlayer1,
+      // Score the winner reached after this point
+      player1Score: wonByPlayer1 ? point.player1_score : null,
+      player2Score: !wonByPlayer1 ? point.player2_score : null,
+      isCurrent: idx === currentPointIndex
+    };
+  });
 
   return (
     <div className="relative w-full max-w-lg mx-auto">
-      {/* Scoreboard - Broadcast Style */}
-      <div className="bg-[#1a2626]/95 rounded-lg overflow-hidden mb-3 border border-white/10">
+      {/* Scoreboard - Timeline Style */}
+      <div className="bg-brand-black rounded-lg overflow-hidden mb-3 border border-white/10">
         {/* Header */}
-        <div className="bg-[#2a3a3a] px-3 py-1.5 flex items-center justify-between">
+        <div className="bg-brand-dark-gray px-3 py-1.5 flex items-center justify-between">
           <span className="text-white/80 font-heading text-xs uppercase tracking-wider">
-            Game {gameNumber} Points
+            Game {gameNumber}
           </span>
           {tournamentName && (
             <span className="text-white/50 font-body text-[10px] truncate ml-2">{tournamentName}</span>
           )}
         </div>
 
-        {/* Player 1 Row (My Player) */}
-        <div className={`flex items-center px-2 py-2 border-b border-white/10 ${isWinner ? 'bg-brand-yellow/5' : ''}`}>
-          {/* Player indicator + Name */}
-          <div className="flex items-center gap-2 min-w-[90px]">
-            <div className="w-1 h-6 bg-brand-yellow rounded-full"></div>
-            <span className="text-white font-heading text-xs uppercase tracking-wide truncate">
+        {/* Player 1 Row (My Player) - Timeline */}
+        <div className="flex items-center px-2 py-3 border-b border-white/10">
+          {/* Player Name */}
+          <div className="min-w-[70px] pr-2">
+            <span className="text-brand-yellow font-heading text-sm uppercase tracking-wide truncate block">
               {player1Name}
             </span>
           </div>
           
-          {/* Score circles sequence */}
-          <div className="flex-1 flex items-center gap-1.5 px-2 overflow-x-auto">
-            {player1Sequence.map((p, idx) => {
-              const isCurrent = isCurrentPointForPlayer(p.originalIndex);
-              return (
-                <div 
-                  key={idx}
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-heading font-bold
-                    transition-all duration-200 flex-shrink-0
-                    ${isCurrent 
-                      ? 'bg-brand-yellow text-brand-black scale-110 ring-2 ring-white' 
-                      : 'bg-green-600/80 text-white'
-                    }`}
-                >
-                  {p.scoreAtPoint}
-                </div>
-              );
-            })}
+          {/* Timeline circles */}
+          <div className="flex-1 flex items-center gap-1 overflow-x-auto">
+            {timelineData.map((point, idx) => (
+              <div 
+                key={idx}
+                className="w-7 h-7 flex-shrink-0 flex items-center justify-center"
+              >
+                {point.wonByPlayer1 ? (
+                  <div 
+                    className={`w-6 h-6 rounded-full flex items-center justify-center font-heading text-sm font-bold
+                      transition-all duration-200
+                      ${point.isCurrent 
+                        ? 'bg-brand-yellow text-brand-black scale-110 ring-2 ring-white' 
+                        : 'bg-green-600 text-white'
+                      }`}
+                  >
+                    {point.player1Score}
+                  </div>
+                ) : (
+                  <div className="w-6 h-6" /> /* Empty space for opponent's point */
+                )}
+              </div>
+            ))}
           </div>
           
           {/* Total Score */}
-          <div className="min-w-[35px] text-right">
-            <span className={`font-heading text-xl font-bold ${isWinner ? 'text-brand-yellow' : 'text-white'}`}>
+          <div className="min-w-[30px] text-right pl-2">
+            <span className="font-heading text-xl font-bold text-brand-yellow">
               {scores.p1}
             </span>
           </div>
         </div>
 
-        {/* Player 2 Row (Opponent) */}
-        <div className={`flex items-center px-2 py-2 ${!isWinner ? 'bg-brand-yellow/5' : ''}`}>
-          {/* Player indicator + Name */}
-          <div className="flex items-center gap-2 min-w-[90px]">
-            <div className="w-1 h-6 bg-white/40 rounded-full"></div>
-            <span className="text-white font-heading text-xs uppercase tracking-wide truncate">
+        {/* Player 2 Row (Opponent) - Timeline */}
+        <div className="flex items-center px-2 py-3">
+          {/* Player Name */}
+          <div className="min-w-[70px] pr-2">
+            <span className="text-white/80 font-heading text-sm uppercase tracking-wide truncate block">
               {player2Name}
             </span>
           </div>
           
-          {/* Score circles sequence */}
-          <div className="flex-1 flex items-center gap-1.5 px-2 overflow-x-auto">
-            {player2Sequence.map((p, idx) => {
-              const isCurrent = isCurrentPointForPlayer(p.originalIndex);
-              return (
-                <div 
-                  key={idx}
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-heading font-bold
-                    transition-all duration-200 flex-shrink-0
-                    ${isCurrent 
-                      ? 'bg-red-500 text-white scale-110 ring-2 ring-white' 
-                      : 'bg-red-600/60 text-white/90'
-                    }`}
-                >
-                  {p.scoreAtPoint}
-                </div>
-              );
-            })}
+          {/* Timeline circles */}
+          <div className="flex-1 flex items-center gap-1 overflow-x-auto">
+            {timelineData.map((point, idx) => (
+              <div 
+                key={idx}
+                className="w-7 h-7 flex-shrink-0 flex items-center justify-center"
+              >
+                {!point.wonByPlayer1 ? (
+                  <div 
+                    className={`w-6 h-6 rounded-full flex items-center justify-center font-heading text-sm font-bold
+                      transition-all duration-200
+                      ${point.isCurrent 
+                        ? 'bg-red-500 text-white scale-110 ring-2 ring-white' 
+                        : 'bg-red-600/70 text-white/90'
+                      }`}
+                  >
+                    {point.player2Score}
+                  </div>
+                ) : (
+                  <div className="w-6 h-6" /> /* Empty space for player 1's point */
+                )}
+              </div>
+            ))}
           </div>
           
           {/* Total Score */}
-          <div className="min-w-[35px] text-right">
-            <span className={`font-heading text-xl font-bold ${!isWinner ? 'text-brand-yellow' : 'text-white'}`}>
+          <div className="min-w-[30px] text-right pl-2">
+            <span className="font-heading text-xl font-bold text-white">
               {scores.p2}
             </span>
           </div>
@@ -260,13 +254,13 @@ export const SquashCourt = ({
           </svg>
         )}
 
-        {/* Balls on court - showing the SCORE at that point */}
+        {/* Balls on court */}
         {imageLoaded && visiblePoints.map((point, index) => {
           const isWon = point.winner_player_id === myPlayerId;
           const isCurrent = index === currentPointIndex;
           const size = isCurrent ? 30 : 22;
           
-          // The score to display: the score of the winner after this point
+          // Display score: the score of the winner after this point
           const displayScore = isWon ? point.player1_score : point.player2_score;
           
           // Colors
@@ -310,7 +304,7 @@ export const SquashCourt = ({
                   boxShadow: isCurrent ? `0 0 12px rgba(255, 218, 0, 0.6), 0 0 24px rgba(255, 218, 0, 0.3)` : 'none'
                 }}
               >
-                {/* Yellow dots characteristic of squash ball */}
+                {/* Yellow dots */}
                 <div className="absolute w-1.5 h-1.5 rounded-full bg-yellow-400" style={{ top: '15%', left: '15%' }} />
                 <div className="absolute w-1.5 h-1.5 rounded-full bg-yellow-400" style={{ bottom: '15%', right: '15%' }} />
                 
@@ -320,10 +314,9 @@ export const SquashCourt = ({
                 </span>
               </div>
               
-              {/* Pulse animation for current */}
+              {/* Pulse for current */}
               {isCurrent && (
-                <div 
-                  className="absolute inset-[-4px] rounded-full animate-ping"
+                <div className="absolute inset-[-4px] rounded-full animate-ping"
                   style={{ border: `2px solid ${borderColor}`, opacity: 0.4 }}
                 />
               )}
