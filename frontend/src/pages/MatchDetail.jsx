@@ -67,11 +67,11 @@ export const MatchDetail = () => {
     ? format(new Date(match.date), "d MMM yyyy", { locale: es })
     : '';
 
-  const gamePoints = selectedGame === 'all' ? (points || []) : (points?.filter(p => p.game_number === selectedGame) || []);
+  const gamePoints = points?.filter(p => p.game_number === selectedGame) || [];
   const gameNumbers = [...new Set(points?.map(p => p.game_number) || [])].sort();
 
-  // Stats - filter by selected game or all
-  const statsPoints = selectedGame === 'all' ? points : points?.filter(p => p.game_number === selectedGame);
+  // Stats - filter by selected game
+  const statsPoints = points?.filter(p => p.game_number === selectedGame);
   
   const pointReasons = statsPoints?.reduce((acc, point) => {
     const reason = point.reason || 'Otro';
