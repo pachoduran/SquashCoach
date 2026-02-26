@@ -76,7 +76,32 @@ export const Analysis = () => {
       }
       
       const response = await api.get(url);
-      setAnalysisData(response.data);
+      const raw = response.data;
+
+      // Transform API response to expected format
+      const matchList = raw.matches || [];
+      const p1Wins = matchList.filter(m => m.winner_id === player1).length;
+      const p2Wins = matchList.filter(m => m.winner_id === player2).length;
+
+      let totalGamesP1 = 0;
+      let totalGamesP2 = 0;
+      matchList.forEach(m => {
+        if (m.player1_id === player1) {
+          totalGamesP1 += m.player1_games || 0;
+          totalGamesP2 += m.player2_games || 0;
+        } else {
+          totalGamesP1 += m.player2_games || 0;
+          totalGamesP2 += m.player1_games || 0;
+        }
+      });
+
+      setAnalysisData({
+        total_matches: raw.matches_count || matchList.length,
+        player1_wins: p1Wins,
+        player2_wins: p2Wins,
+        player1_games: totalGamesP1,
+        player2_games: totalGamesP2,
+      });
     } catch (err) {
       console.error('Error fetching analysis:', err);
       setError('Error al cargar el análisis. Intenta de nuevo.');
