@@ -13,25 +13,50 @@ Dashboard web page to access information from an existing "Squash Coach" backend
 
 ## Tech Stack
 - **Frontend**: React, Tailwind CSS, Shadcn UI, Axios
-- **Backend**: FastAPI (proxy - minimal usage, frontend calls external API directly)
+- **Backend**: FastAPI (minimal, frontend calls external API directly)
 - **External API**: `https://lev.jsb.mybluehost.me:8001`
 - **Auth**: JWT via Bearer token, stored in localStorage
 
 ## What's Been Implemented
-- Full auth flow (Login, Register, Logout) via AuthContext
-- Dashboard, Matches, Match Detail, Players, Shared Matches pages
-- Squash Court visualization with animated ball sequences and broadcast-style scoreboard
-- Analysis Head-to-Head page with player selection, date filters, and stats display
-- Responsive dark theme (black, yellow, gray)
-- Sidebar (desktop) and BottomNav (mobile) navigation
 
-## Bug Fixes (Feb 26, 2026)
-- **Analysis page data mismatch**: API returns `{matches_count, matches[], points[]}` but component expected `{total_matches, player1_wins, ...}`. Fixed by transforming API response in `fetchAnalysis`.
-- **Date pickers not closing**: Made Popover components controlled with `open`/`onOpenChange` state.
-- **LoadingSpinner in button**: Replaced full-size spinner with inline spinner for button context.
+### Authentication
+- Login, Register, Logout via AuthContext
+- JWT Bearer token auth with external API
+
+### Pages
+- **Dashboard**: Overview page
+- **Matches**: List of matches
+- **Match Detail**: Per-game court visualization with point-by-point playback, broadcast scoreboard. Tabs: Todos, G1, G2, Stats. Stats tab includes: match summary, Efectividad de Puntos with bars, Top 5 Motivos with visual bars, Resultados por Juego.
+- **Players**: Player list
+- **Analysis (Head-to-Head)**: Full analysis with heatmaps, effectiveness, Top 5 reasons, match list
+- **Shared Matches**: Matches shared by other users
+
+### Analysis Page Features (Feb 26, 2026)
+- Player selection with date range filters (controlled popover calendars)
+- Stats grid: Partidos, Puntos Totales, Victorias, Games
+- Efectividad de Puntos with percentage and comparison bar
+- 3 Court Heatmaps (4x6 grid): Player 1 (blue #2196F3), All (purple #9C27B0), Player 2 (orange #FF5722)
+- Top 5 Motivos de Punto with split bars per player
+- Partidos Analizados list with results and dates
+
+### Match Detail Enhancements (Feb 26, 2026)
+- "Todos" tab to show all points across all games
+- Top 5 Motivos with visual green/red bars
+- Efectividad de Puntos with percentages and bar
+- Game-filtered stats
+
+### Squash Court Visualization
+- Custom court image background
+- Step-by-step point playback with slider
+- Animated ball sequences with broadcast scoreboard
+- Correct aspect ratio (0.713:1)
+
+## Bug Fixes
+- **Analysis page data mismatch** (Feb 26): API returns `{matches_count, matches[], points[]}` but component expected different fields. Fixed with data transformation.
+- **Date pickers not closing** (Feb 26): Made Popover controlled with open/onOpenChange state.
+- **CORS** (Feb 26): User enabled CORS on external API server.
 
 ## Known Limitations
-- Date filter API calls may encounter CORS issues from external API (external API limitation)
 - `DemoCourt.jsx` uses hardcoded mock data (development aid)
 
 ## Backlog
