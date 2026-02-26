@@ -234,7 +234,7 @@ export const Analysis = () => {
               <label className="block text-brand-gray font-heading text-xs uppercase tracking-wider mb-2">
                 Desde
               </label>
-              <Popover>
+              <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -252,7 +252,10 @@ export const Analysis = () => {
                   <Calendar
                     mode="single"
                     selected={dateFrom}
-                    onSelect={setDateFrom}
+                    onSelect={(date) => {
+                      setDateFrom(date);
+                      setDateFromOpen(false);
+                    }}
                     initialFocus
                     className="bg-brand-dark-gray"
                   />
@@ -265,7 +268,7 @@ export const Analysis = () => {
               <label className="block text-brand-gray font-heading text-xs uppercase tracking-wider mb-2">
                 Hasta
               </label>
-              <Popover>
+              <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -283,7 +286,10 @@ export const Analysis = () => {
                   <Calendar
                     mode="single"
                     selected={dateTo}
-                    onSelect={setDateTo}
+                    onSelect={(date) => {
+                      setDateTo(date);
+                      setDateToOpen(false);
+                    }}
                     initialFocus
                     className="bg-brand-dark-gray"
                   />
