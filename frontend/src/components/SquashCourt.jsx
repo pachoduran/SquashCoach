@@ -48,9 +48,15 @@ export const SquashCourt = ({
 
   const totalPoints = points.length;
 
+  // Determine if we need to swap scores (when myPlayer is the match's player2)
+  const swapScores = matchPlayer1Id && myPlayerId !== matchPlayer1Id;
+
   const getCurrentScores = () => {
     if (currentStep === 0) return { p1: 0, p2: 0 };
     const point = points[currentStep - 1];
+    if (swapScores) {
+      return { p1: point?.player2_score || 0, p2: point?.player1_score || 0 };
+    }
     return { p1: point?.player1_score || 0, p2: point?.player2_score || 0 };
   };
   const scores = getCurrentScores();
@@ -61,11 +67,14 @@ export const SquashCourt = ({
     const isReached = idx < currentStep;
     const isCurrent = idx === currentPointIndex;
     
+    const myScore = swapScores ? point.player2_score : point.player1_score;
+    const oppScore = swapScores ? point.player1_score : point.player2_score;
+    
     return {
       pointIndex: idx,
       wonByPlayer1,
-      player1Score: wonByPlayer1 ? point.player1_score : null,
-      player2Score: !wonByPlayer1 ? point.player2_score : null,
+      player1Score: wonByPlayer1 ? myScore : null,
+      player2Score: !wonByPlayer1 ? oppScore : null,
       isReached,
       isCurrent
     };
