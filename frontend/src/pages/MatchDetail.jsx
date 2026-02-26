@@ -118,22 +118,6 @@ export const MatchDetail = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* All games court */}
-          <TabsContent value="all" className="mt-4">
-            <SquashCourt 
-              points={points || []}
-              onPointClick={(point) => setHighlightedPoint(point.point_id === highlightedPoint ? null : point.point_id)}
-              highlightedPoint={highlightedPoint}
-              myPlayerId={match.my_player_id}
-              player1Name={myPlayer?.nickname || 'Yo'}
-              player2Name={opponent?.nickname || 'Oponente'}
-              matchScore={{ p1: myGames, p2: opponentGames }}
-              tournamentName={`${match.tournament_name || 'Partido'} - ${formattedDate}`}
-              isWinner={isWinner}
-              gameNumber="Todos"
-            />
-          </TabsContent>
-
           {/* Court Tab for each game */}
           {gameNumbers.map(num => (
             <TabsContent key={num} value={`game-${num}`} className="mt-4">
