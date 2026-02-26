@@ -158,35 +158,68 @@ export const MatchDetail = () => {
             </div>
 
             {/* Points Summary */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-brand-dark-gray border border-white/10 rounded-lg p-4 text-center">
-                <p className="font-heading text-3xl font-bold text-green-500">
-                  {points?.filter(p => p.winner_player_id === match.my_player_id).length || 0}
-                </p>
-                <p className="text-brand-gray text-xs font-heading uppercase">Puntos Ganados</p>
+            <div className="bg-brand-dark-gray border border-white/10 rounded-lg p-4">
+              <p className="text-brand-gray text-xs font-heading uppercase tracking-wider text-center mb-3">Efectividad de Puntos</p>
+              <div className="grid grid-cols-2 gap-4 mb-3">
+                <div className="text-center">
+                  <p className="font-heading text-3xl font-bold text-green-500">
+                    {statsPoints?.filter(p => p.winner_player_id === match.my_player_id).length || 0}
+                  </p>
+                  <p className="text-brand-gray text-xs font-heading uppercase">{myPlayer?.nickname}</p>
+                  <p className="text-green-400 font-heading text-sm font-bold">
+                    {statsPoints?.length > 0 ? Math.round((statsPoints.filter(p => p.winner_player_id === match.my_player_id).length / statsPoints.length) * 100) : 0}%
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="font-heading text-3xl font-bold text-red-500">
+                    {statsPoints?.filter(p => p.winner_player_id !== match.my_player_id).length || 0}
+                  </p>
+                  <p className="text-brand-gray text-xs font-heading uppercase">{opponent?.nickname}</p>
+                  <p className="text-red-400 font-heading text-sm font-bold">
+                    {statsPoints?.length > 0 ? Math.round((statsPoints.filter(p => p.winner_player_id !== match.my_player_id).length / statsPoints.length) * 100) : 0}%
+                  </p>
+                </div>
               </div>
-              <div className="bg-brand-dark-gray border border-white/10 rounded-lg p-4 text-center">
-                <p className="font-heading text-3xl font-bold text-red-500">
-                  {points?.filter(p => p.winner_player_id !== match.my_player_id).length || 0}
-                </p>
-                <p className="text-brand-gray text-xs font-heading uppercase">Puntos Perdidos</p>
+              <div className="h-3 bg-brand-black rounded-full overflow-hidden flex">
+                <div className="h-full bg-green-500 transition-all duration-500"
+                  style={{ width: `${statsPoints?.length > 0 ? (statsPoints.filter(p => p.winner_player_id === match.my_player_id).length / statsPoints.length) * 100 : 50}%` }} />
+                <div className="h-full bg-red-500 transition-all duration-500"
+                  style={{ width: `${statsPoints?.length > 0 ? (statsPoints.filter(p => p.winner_player_id !== match.my_player_id).length / statsPoints.length) * 100 : 50}%` }} />
               </div>
             </div>
 
-            {/* Point Reasons */}
+            {/* Top 5 Point Reasons with Visual Bars */}
             <div className="bg-brand-dark-gray border border-white/10 rounded-lg p-4">
-              <h3 className="font-heading text-sm text-brand-gray uppercase tracking-wide mb-3">Tipos de Punto</h3>
-              <div className="space-y-2">
-                {Object.entries(pointReasons).map(([reason, stats]) => (
-                  <div key={reason} className="flex items-center justify-between">
-                    <span className="text-white font-body text-sm">{reason}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-green-500 font-heading font-bold">{stats.won}</span>
-                      <span className="text-brand-gray">/</span>
-                      <span className="text-red-500 font-heading font-bold">{stats.lost}</span>
+              <h3 className="font-heading text-sm text-brand-gray uppercase tracking-wide mb-3">Top 5 Motivos de Punto</h3>
+              <div className="space-y-3">
+                {topReasons.map((r, i) => (
+                  <div key={r.reason} data-testid={`match-reason-${i}`}>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-white font-heading text-sm">{r.reason}</span>
+                      <span className="text-brand-gray text-xs font-heading">{r.total}</span>
+                    </div>
+                    <div className="h-5 bg-brand-black rounded-full overflow-hidden flex">
+                      <div className="h-full bg-green-500 transition-all duration-500 flex items-center justify-end pr-1"
+                        style={{ width: `${(r.won / maxReasonCount) * 100}%` }}>
+                        {r.won > 0 && <span className="text-white text-[10px] font-bold">{r.won}</span>}
+                      </div>
+                      <div className="h-full bg-red-500 transition-all duration-500 flex items-center justify-start pl-1"
+                        style={{ width: `${(r.lost / maxReasonCount) * 100}%` }}>
+                        {r.lost > 0 && <span className="text-white text-[10px] font-bold">{r.lost}</span>}
+                      </div>
                     </div>
                   </div>
                 ))}
+              </div>
+              <div className="flex justify-center gap-6 mt-3 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-sm bg-green-500" />
+                  <span className="text-brand-gray">{myPlayer?.nickname} (ganados)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-sm bg-red-500" />
+                  <span className="text-brand-gray">{opponent?.nickname} (ganados)</span>
+                </div>
               </div>
             </div>
 
