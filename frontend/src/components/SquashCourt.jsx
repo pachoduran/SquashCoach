@@ -301,7 +301,9 @@ export const SquashCourt = ({
           const isCurrent = index === currentPointIndex;
           const size = isCurrent ? 28 : 20;
           
-          const displayScore = isWon ? point.player1_score : point.player2_score;
+          const displayScore = isWon 
+            ? (swapScores ? point.player2_score : point.player1_score) 
+            : (swapScores ? point.player1_score : point.player2_score);
           
           let borderColor, bgGradient, opacity;
           if (isCurrent) {
