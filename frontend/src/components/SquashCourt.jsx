@@ -91,7 +91,7 @@ export const SquashCourt = ({
         {/* Header */}
         <div className="bg-brand-dark-gray px-3 py-1 flex items-center justify-between">
           <span className="text-white font-heading text-xs uppercase tracking-wider">
-            Game {gameNumber}
+            Set {gameNumber}
           </span>
           {tournamentName && (
             <span className="text-white/50 font-body text-[10px] truncate">{tournamentName}</span>
