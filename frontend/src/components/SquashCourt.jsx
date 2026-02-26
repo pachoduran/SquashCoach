@@ -180,10 +180,10 @@ export const SquashCourt = ({
         )}
       </div>
 
-      {/* Court with Image Background */}
+      {/* Court with Image Background - maintains 713:1000 aspect ratio */}
       <div 
         className="relative w-full rounded-lg overflow-hidden border-2 border-black"
-        style={{ aspectRatio: '1/1' }}
+        style={{ aspectRatio: '713/1000' }}
         data-testid="squash-court-container"
       >
         <img 
