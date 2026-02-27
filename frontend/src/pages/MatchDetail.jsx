@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Layout } from '../components/Layout';
 import { SquashCourt } from '../components/SquashCourt';
+import { CourtHeatmap } from '../components/CourtHeatmap';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ArrowLeft, Calendar, Trophy, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
@@ -19,6 +20,7 @@ export const MatchDetail = () => {
   const [selectedGame, setSelectedGame] = useState(1);
   const [highlightedPoint, setHighlightedPoint] = useState(null);
   const [expandedGame, setExpandedGame] = useState(null);
+  const [heatmapReason, setHeatmapReason] = useState('all');
 
   useEffect(() => {
     fetchMatchDetail();
