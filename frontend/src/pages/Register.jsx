@@ -55,7 +55,7 @@ export const Register = () => {
         <img 
           src="https://customer-assets.emergentagent.com/job_squash-coach-web/artifacts/ijowgans_adaptive-icon.png" 
           alt="Squash Coach" 
-          className="w-20 h-20 mx-auto mb-4"
+          className="w-60 h-60 mx-auto mb-4"
         />
         <h1 className="font-heading text-2xl tracking-wide">
           <span className="text-brand-gray">SQUASH</span>

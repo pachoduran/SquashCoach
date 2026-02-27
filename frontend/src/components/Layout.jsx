@@ -48,7 +48,8 @@ export const Layout = ({ children }) => {
             <img 
               src="https://customer-assets.emergentagent.com/job_squash-coach-web/artifacts/ijowgans_adaptive-icon.png" 
               alt="Squash Coach" 
-              className="w-10 h-10 rounded-lg"
+              className="w-30 h-30 rounded-lg"
+              style={{ width: '120px', height: '120px' }}
             />
             <div>
               <span className="font-heading text-brand-gray text-lg tracking-wide">SQUASH</span>
@@ -109,7 +110,8 @@ export const Layout = ({ children }) => {
           <img 
             src="https://customer-assets.emergentagent.com/job_squash-coach-web/artifacts/ijowgans_adaptive-icon.png" 
             alt="Squash Coach" 
-            className="w-8 h-8 rounded-lg"
+            className="rounded-lg"
+            style={{ width: '96px', height: '96px' }}
           />
           <span className="font-heading text-brand-yellow text-lg tracking-wide">COACH</span>
         </Link>
