@@ -1,6 +1,6 @@
 {
   "cli": {
-    "version": ">= 3.0.0"
+    "version": ">= 3.13.0"
   },
   "build": {
     "preview": {
@@ -10,9 +10,12 @@
       }
     },
     "production": {
-      "distribution": "store",
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "app-bundle",
+        "gradleCommand": ":app:bundleRelease"
+      },
+      "env": {
+        "EXPO_NO_CAPABILITY_SYNC": "1"
       }
     }
   }
