@@ -90,6 +90,17 @@ export const MatchDetail = () => {
     .slice(0, 5);
   const maxReasonCount = topReasons[0]?.total || 1;
 
+  // All unique reasons for heatmap filter
+  const allReasons = [...new Set(points?.map(p => p.reason).filter(Boolean) || [])].sort();
+
+  // Heatmap points filtered by reason and game
+  const heatmapPoints = (points || []).filter(p => {
+    if (heatmapReason !== 'all' && p.reason !== heatmapReason) return false;
+    return true;
+  });
+  const myHeatmapPoints = heatmapPoints.filter(p => p.winner_player_id === match.my_player_id);
+  const oppHeatmapPoints = heatmapPoints.filter(p => p.winner_player_id !== match.my_player_id);
+
   return (
     <Layout>
       <div className="space-y-4" data-testid="match-detail-page">
