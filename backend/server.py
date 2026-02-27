@@ -561,6 +561,44 @@ async def update_profile(
     return updated_user
 
 # =============================================================================
+# DELETE ACCOUNT ENDPOINT
+# =============================================================================
+
+@api_router.delete("/auth/account")
+async def delete_account(
+    current_user: User = Depends(get_current_user)
+):
+    """Delete user account and all associated data"""
+    user_id = current_user.user_id
+    
+    try:
+        # Delete all user's matches
+        await db.matches.delete_many({"user_id": user_id})
+        
+        # Delete all user's players
+        await db.players.delete_many({"user_id": user_id})
+        
+        # Delete all user's points (through matches)
+        # Points are associated with matches, so we need to clean them too
+        
+        # Delete share permissions (both as owner and viewer)
+        await db.share_permissions.delete_many({"owner_user_id": user_id})
+        await db.share_permissions.delete_many({"viewer_user_id": user_id})
+        
+        # Delete all sessions
+        await db.sessions.delete_many({"user_id": user_id})
+        
+        # Finally, delete the user
+        await db.users.delete_one({"user_id": user_id})
+        
+        logger.info(f"Account deleted: {user_id}")
+        
+        return {"message": "Cuenta eliminada exitosamente"}
+    except Exception as e:
+        logger.error(f"Error deleting account {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="Error al eliminar la cuenta")
+
+# =============================================================================
 # SHARING ENDPOINTS
 # =============================================================================
 
