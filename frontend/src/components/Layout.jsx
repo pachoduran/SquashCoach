@@ -43,12 +43,12 @@ export const Layout = ({ children }) => {
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col fixed left-0 top-0 h-full w-64 bg-brand-dark-gray border-r border-white/10 z-50">
         {/* Logo */}
-        <div className="p-6 border-b border-white/10">
-          <Link to="/" className="flex items-center gap-3">
+        <div className="p-4 border-b border-white/10">
+          <Link to="/" className="flex flex-col items-center gap-2">
             <img 
               src="https://customer-assets.emergentagent.com/job_squash-coach-web/artifacts/ijowgans_adaptive-icon.png" 
               alt="Squash Coach" 
-              className="w-30 h-30 rounded-lg"
+              className="rounded-lg"
               style={{ width: '120px', height: '120px' }}
             />
             <div>
