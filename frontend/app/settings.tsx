@@ -430,4 +430,26 @@ const styles = StyleSheet.create({
   modalButtonTextPrimary: {
     color: '#FFF',
   },
+  deleteAccountButton: {
+    backgroundColor: '#F44336',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 14,
+    borderRadius: 10,
+    marginTop: 12,
+    gap: 8,
+  },
+  deleteAccountText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  deleteWarning: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 16,
+  },
 });
