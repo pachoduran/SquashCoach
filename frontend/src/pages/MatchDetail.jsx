@@ -237,6 +237,47 @@ export const MatchDetail = () => {
               </div>
             </div>
 
+            {/* Heatmaps with Reason Filter */}
+            <div className="bg-brand-dark-gray border border-white/10 rounded-xl p-4">
+              <h3 className="font-heading text-sm text-brand-gray uppercase tracking-wider text-center mb-3">Mapa de Calor</h3>
+              
+              {/* Reason Filter Chips */}
+              <div className="flex flex-wrap gap-1.5 justify-center mb-4">
+                <button
+                  onClick={() => setHeatmapReason('all')}
+                  data-testid="heatmap-filter-all"
+                  className={`px-3 py-1 rounded-full text-xs font-heading uppercase transition-all ${
+                    heatmapReason === 'all'
+                      ? 'bg-brand-yellow text-brand-black'
+                      : 'bg-brand-black text-brand-gray border border-white/20 hover:border-white/40'
+                  }`}
+                >
+                  Todos
+                </button>
+                {allReasons.map(reason => (
+                  <button
+                    key={reason}
+                    onClick={() => setHeatmapReason(reason)}
+                    data-testid={`heatmap-filter-${reason.toLowerCase().replace(/\s/g, '-')}`}
+                    className={`px-3 py-1 rounded-full text-xs font-heading transition-all ${
+                      heatmapReason === reason
+                        ? 'bg-brand-yellow text-brand-black'
+                        : 'bg-brand-black text-brand-gray border border-white/20 hover:border-white/40'
+                    }`}
+                  >
+                    {reason}
+                  </button>
+                ))}
+              </div>
+
+              {/* Heatmap Courts */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <CourtHeatmap points={myHeatmapPoints} color="#22C55E" label="player1" playerName={myPlayer?.nickname || 'Yo'} />
+                <CourtHeatmap points={heatmapPoints} color="#9C27B0" label="todos" playerName="Todos" />
+                <CourtHeatmap points={oppHeatmapPoints} color="#EF4444" label="player2" playerName={opponent?.nickname || 'Oponente'} />
+              </div>
+            </div>
+
             {/* Game Results */}
             <div className="bg-brand-dark-gray border border-white/10 rounded-lg p-4">
               <h3 className="font-heading text-sm text-brand-gray uppercase tracking-wide mb-3">Resultados por Juego</h3>
