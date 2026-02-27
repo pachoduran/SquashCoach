@@ -370,6 +370,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const deleteAccount = async (): Promise<{ success: boolean; error?: string }> => {
+    if (!sessionToken) {
+      return { success: false, error: 'No autenticado' };
+    }
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/auth/account`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        return { success: false, error: data.detail || 'Error al eliminar la cuenta' };
+      }
+
+      // Clear local data after successful deletion
+      setUser(null);
+      setSessionToken(null);
+      await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
+
+      return { success: true };
+    } catch (error) {
+      console.error('Delete account error:', error);
+      return { success: false, error: 'Error de conexión' };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -381,6 +412,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         register,
         logout,
         updateProfile,
+        deleteAccount,
         sessionToken
       }}
     >
