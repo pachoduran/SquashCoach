@@ -23,9 +23,42 @@ interface CustomReason {
 
 export default function Settings() {
   const router = useRouter();
+  const { isAuthenticated, deleteAccount, user } = useAuth();
   const [reasons, setReasons] = useState<CustomReason[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newReasonName, setNewReasonName] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    loadReasons();
+  }, []);
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Eliminar Cuenta',
+      '¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer y perderás todos tus datos sincronizados en la nube.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeleting(true);
+            const result = await deleteAccount();
+            setIsDeleting(false);
+            
+            if (result.success) {
+              Alert.alert('Cuenta Eliminada', 'Tu cuenta ha sido eliminada exitosamente.', [
+                { text: 'OK', onPress: () => router.replace('/') }
+              ]);
+            } else {
+              Alert.alert('Error', result.error || 'No se pudo eliminar la cuenta');
+            }
+          }
+        }
+      ]
+    );
+  };
 
   useEffect(() => {
     loadReasons();
