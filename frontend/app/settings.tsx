@@ -199,13 +199,36 @@ export default function Settings() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Acerca de</Text>
           <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>Squash Analyzer</Text>
+            <Text style={styles.infoTitle}>Squash Coach</Text>
             <Text style={styles.infoText}>Versión 1.0.0</Text>
             <Text style={styles.infoDescription}>
               Aplicación para análisis detallado de partidos de squash. Registra puntos, posiciones y motivos para mejorar tu juego.
             </Text>
           </View>
         </View>
+
+        {/* Sección de Cuenta */}
+        {isAuthenticated && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Cuenta</Text>
+            <View style={styles.infoCard}>
+              <Text style={styles.infoText}>Usuario: {user?.name || user?.email}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.deleteAccountButton}
+              onPress={handleDeleteAccount}
+              disabled={isDeleting}
+            >
+              <Ionicons name="trash-outline" size={20} color="#FFF" />
+              <Text style={styles.deleteAccountText}>
+                {isDeleting ? 'Eliminando...' : 'Eliminar Cuenta'}
+              </Text>
+            </TouchableOpacity>
+            <Text style={styles.deleteWarning}>
+              Esta acción eliminará permanentemente tu cuenta y todos los datos sincronizados en la nube.
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
       {/* Modal para agregar motivo */}
