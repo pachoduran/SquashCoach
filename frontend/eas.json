@@ -11,8 +11,7 @@
     },
     "production": {
       "android": {
-        "buildType": "app-bundle",
-        "gradleCommand": ":app:bundleRelease"
+        "buildType": "app-bundle"
       },
       "env": {
         "EXPO_NO_CAPABILITY_SYNC": "1"
