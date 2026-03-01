@@ -9,14 +9,14 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.squashcoach.app"
+      "bundleIdentifier": "com.sqcoash.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#000000"
       },
-      "package": "com.squashcoach.app",
+      "package": "com.sqcoash.app",
       "versionCode": 7
     },
     "web": {
