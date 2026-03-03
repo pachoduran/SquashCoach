@@ -8,14 +8,17 @@ import {
   Dimensions,
   FlatList,
   Animated,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '@/src/context/LanguageContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CONTAINER_WIDTH = SCREEN_WIDTH * 0.9;
 
 interface TutorialStep {
-  icon: string;
+  icon?: string;
+  useAppIcon?: boolean;
   iconColor: string;
   bgColor: string;
   titleKey: string;
@@ -24,9 +27,9 @@ interface TutorialStep {
 
 const STEPS: TutorialStep[] = [
   {
-    icon: 'tennisball',
-    iconColor: '#4CAF50',
-    bgColor: '#E8F5E9',
+    useAppIcon: true,
+    iconColor: '#1E3A5F',
+    bgColor: '#E3F2FD',
     titleKey: 'tutorial.welcome_title',
     descKey: 'tutorial.welcome_desc',
   },
@@ -110,14 +113,22 @@ export const TutorialModal: React.FC<Props> = ({ visible, onClose }) => {
   };
 
   const onMomentumScrollEnd = (e: any) => {
-    const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+    const index = Math.round(e.nativeEvent.contentOffset.x / CONTAINER_WIDTH);
     setCurrentIndex(index);
   };
 
   const renderStep = ({ item, index }: { item: TutorialStep; index: number }) => (
-    <View style={[styles.slide, { width: SCREEN_WIDTH }]}>
+    <View style={styles.slide}>
       <View style={[styles.iconContainer, { backgroundColor: item.bgColor }]}>
-        <Ionicons name={item.icon as any} size={80} color={item.iconColor} />
+        {item.useAppIcon ? (
+          <Image
+            source={require('@/assets/images/icon.png')}
+            style={styles.appIcon}
+            resizeMode="contain"
+          />
+        ) : (
+          <Ionicons name={item.icon as any} size={70} color={item.iconColor} />
+        )}
       </View>
       <Text style={styles.stepCounter}>{index + 1} / {STEPS.length}</Text>
       <Text style={styles.title}>{t(item.titleKey)}</Text>
@@ -129,12 +140,10 @@ export const TutorialModal: React.FC<Props> = ({ visible, onClose }) => {
     <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
       <View style={styles.overlay}>
         <View style={styles.container}>
-          {/* Close button */}
           <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
             <Ionicons name="close" size={24} color="#666" />
           </TouchableOpacity>
 
-          {/* Slides */}
           <FlatList
             ref={flatListRef}
             data={STEPS}
@@ -145,18 +154,19 @@ export const TutorialModal: React.FC<Props> = ({ visible, onClose }) => {
             showsHorizontalScrollIndicator={false}
             onMomentumScrollEnd={onMomentumScrollEnd}
             scrollEventThrottle={16}
+            snapToInterval={CONTAINER_WIDTH}
+            decelerationRate="fast"
             onScroll={Animated.event(
               [{ nativeEvent: { contentOffset: { x: scrollX } } }],
               { useNativeDriver: false }
             )}
             getItemLayout={(_, index) => ({
-              length: SCREEN_WIDTH,
-              offset: SCREEN_WIDTH * index,
+              length: CONTAINER_WIDTH,
+              offset: CONTAINER_WIDTH * index,
               index,
             })}
           />
 
-          {/* Dots */}
           <View style={styles.dotsContainer}>
             {STEPS.map((_, i) => (
               <View
@@ -169,7 +179,6 @@ export const TutorialModal: React.FC<Props> = ({ visible, onClose }) => {
             ))}
           </View>
 
-          {/* Navigation buttons */}
           <View style={styles.navRow}>
             {currentIndex > 0 ? (
               <TouchableOpacity style={styles.prevButton} onPress={goToPrev}>
@@ -207,7 +216,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FFF',
     borderRadius: 20,
-    width: SCREEN_WIDTH * 0.9,
+    width: CONTAINER_WIDTH,
     maxHeight: '80%',
     overflow: 'hidden',
     paddingBottom: 20,
@@ -222,18 +231,24 @@ const styles = StyleSheet.create({
     padding: 6,
   },
   slide: {
+    width: CONTAINER_WIDTH,
     alignItems: 'center',
-    paddingHorizontal: 30,
+    paddingHorizontal: 24,
     paddingTop: 50,
     paddingBottom: 10,
   },
   iconContainer: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+  },
+  appIcon: {
+    width: 90,
+    height: 90,
+    borderRadius: 18,
   },
   stepCounter: {
     fontSize: 12,
@@ -253,6 +268,7 @@ const styles = StyleSheet.create({
     color: '#555',
     textAlign: 'center',
     lineHeight: 22,
+    paddingHorizontal: 4,
   },
   dotsContainer: {
     flexDirection: 'row',
