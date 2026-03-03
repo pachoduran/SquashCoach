@@ -10,6 +10,7 @@ import {
   Image,
   Modal,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +19,7 @@ import { useAuth } from '@/src/context/AuthContext';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { syncService } from '@/src/store/syncService';
 import { format } from 'date-fns';
+import { TutorialModal } from '@/src/components/TutorialModal';
 
 interface Match {
   id: number;
@@ -42,10 +44,28 @@ export default function Index() {
   const [syncing, setSyncing] = useState(false);
   const [hasPendingSync, setHasPendingSync] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
 
   useEffect(() => {
     initializeApp();
+    checkFirstLaunch();
   }, []);
+
+  const checkFirstLaunch = async () => {
+    try {
+      const seen = await AsyncStorage.getItem('tutorial_seen');
+      if (!seen) {
+        setShowTutorial(true);
+      }
+    } catch (e) {}
+  };
+
+  const closeTutorial = async () => {
+    setShowTutorial(false);
+    try {
+      await AsyncStorage.setItem('tutorial_seen', 'true');
+    } catch (e) {}
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -235,6 +255,13 @@ export default function Index() {
             <Ionicons name="globe-outline" size={22} color="#FFF" />
             <Text style={styles.langMenuText}>{language.toUpperCase()}</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.helpButton} 
+            onPress={() => setShowTutorial(true)}
+          >
+            <Ionicons name="help-circle-outline" size={24} color="#FFF" />
+          </TouchableOpacity>
           
           <Text style={styles.title}>{t('home.title')}</Text>
           
@@ -399,6 +426,9 @@ export default function Index() {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Tutorial */}
+      <TutorialModal visible={showTutorial} onClose={closeTutorial} />
     </SafeAreaView>
   );
 }
@@ -431,6 +461,12 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 12,
     fontWeight: '600',
+  },
+  helpButton: {
+    padding: 6,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 20,
+    marginLeft: 8,
   },
   title: {
     fontSize: 20,

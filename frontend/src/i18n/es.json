@@ -188,5 +188,25 @@
     "title": "Partidos en la Nube",
     "noMatches": "No hay partidos sincronizados",
     "syncFirst": "Sincroniza tus partidos para verlos aquí"
+  },
+  "tutorial": {
+    "welcome_title": "Bienvenido a Squash Coach",
+    "welcome_desc": "Tu entrenador personal de squash. Registra partidos punto por punto, analiza tu rendimiento y mejora tu juego con estadísticas detalladas.",
+    "newMatch_title": "Crear Nuevo Partido",
+    "newMatch_desc": "Toca \"Nuevo Partido\" en la pantalla principal. Selecciona los dos jugadores, indica cuál eres tú, elige el formato (mejor de 3 o 5 games) y opcionalmente el nombre del torneo.",
+    "scoring_title": "Registrar Puntos",
+    "scoring_desc": "Durante el partido, toca al jugador que ganó el punto. Selecciona la razón (Winner, Error, Stroke, Let) y la ubicación en la cancha. Puedes deshacer o editar el último punto si te equivocas.",
+    "history_title": "Historial de Partidos",
+    "history_desc": "En \"Historial\" encontrarás todos tus partidos finalizados. Puedes filtrar por jugador, rival o torneo. Toca cualquier partido para ver el resumen detallado punto por punto.",
+    "analysis_title": "Análisis por Jugador",
+    "analysis_desc": "En \"Análisis\" selecciona dos jugadores para ver estadísticas acumuladas: puntos ganados, mapa de calor de la cancha, winners vs errores y tendencias a lo largo del tiempo.",
+    "cloud_title": "Sincronizar a la Nube",
+    "cloud_desc": "Sincroniza tus partidos para guardarlos de forma segura en la nube. Así nunca perderás tu historial aunque cambies de celular. Necesitas estar conectado con tu cuenta.",
+    "share_title": "Compartir con Otros",
+    "share_desc": "Comparte tus partidos con tu entrenador, compañeros de club o rivales. Ellos podrán ver tus estadísticas en modo solo lectura desde su propia cuenta.",
+    "next": "Siguiente",
+    "prev": "Anterior",
+    "start": "Empezar",
+    "help": "Ayuda"
   }
 }

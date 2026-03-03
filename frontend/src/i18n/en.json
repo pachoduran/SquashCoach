@@ -188,5 +188,25 @@
     "title": "Cloud Matches",
     "noMatches": "No synced matches",
     "syncFirst": "Sync your matches to see them here"
+  },
+  "tutorial": {
+    "welcome_title": "Welcome to Squash Coach",
+    "welcome_desc": "Your personal squash coach. Record matches point by point, analyze your performance and improve your game with detailed statistics.",
+    "newMatch_title": "Create New Match",
+    "newMatch_desc": "Tap \"New Match\" on the home screen. Select both players, indicate which one is you, choose the format (best of 3 or 5 games) and optionally the tournament name.",
+    "scoring_title": "Record Points",
+    "scoring_desc": "During the match, tap the player who won the point. Select the reason (Winner, Error, Stroke, Let) and the location on the court. You can undo or edit the last point if you make a mistake.",
+    "history_title": "Match History",
+    "history_desc": "In \"History\" you'll find all your finished matches. You can filter by player, opponent or tournament. Tap any match to see the detailed point-by-point summary.",
+    "analysis_title": "Player Analysis",
+    "analysis_desc": "In \"Analysis\" select two players to see cumulative stats: points won, court heat map, winners vs errors and trends over time.",
+    "cloud_title": "Sync to Cloud",
+    "cloud_desc": "Sync your matches to safely store them in the cloud. You'll never lose your history even if you change your phone. You need to be logged in with your account.",
+    "share_title": "Share with Others",
+    "share_desc": "Share your matches with your coach, club mates or rivals. They'll be able to see your stats in read-only mode from their own account.",
+    "next": "Next",
+    "prev": "Previous",
+    "start": "Let's Go",
+    "help": "Help"
   }
 }
