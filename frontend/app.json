@@ -9,15 +9,15 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.sqcoash.app"
+      "bundleIdentifier": "com.sqcoach.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#000000"
       },
-      "package": "com.sqcoash.app",
-      "versionCode": 3
+      "package": "com.sqcoach.app",
+      "versionCode": 4
     },
     "web": {
       "bundler": "metro",
