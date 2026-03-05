@@ -173,14 +173,14 @@ export default function AnalysisScreen() {
   };
 
   const handleDateFromChange = (event: any, selectedDate?: Date) => {
-    setShowDateFromPicker(Platform.OS === 'ios');
+    if (Platform.OS !== 'ios') setShowDateFromPicker(false);
     if (selectedDate) {
       setDateFrom(selectedDate);
     }
   };
 
   const handleDateToChange = (event: any, selectedDate?: Date) => {
-    setShowDateToPicker(Platform.OS === 'ios');
+    if (Platform.OS !== 'ios') setShowDateToPicker(false);
     if (selectedDate) {
       setDateTo(selectedDate);
     }
@@ -312,21 +312,21 @@ export default function AnalysisScreen() {
           </View>
           
           {/* Date Pickers */}
-          {showDateFromPicker && (
+          {Platform.OS !== 'ios' && showDateFromPicker && (
             <DateTimePicker
               value={dateFrom || new Date()}
               mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              display="default"
               onChange={handleDateFromChange}
               maximumDate={dateTo || new Date()}
             />
           )}
           
-          {showDateToPicker && (
+          {Platform.OS !== 'ios' && showDateToPicker && (
             <DateTimePicker
               value={dateTo || new Date()}
               mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              display="default"
               onChange={handleDateToChange}
               minimumDate={dateFrom || undefined}
               maximumDate={new Date()}
@@ -494,6 +494,60 @@ export default function AnalysisScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* iOS Date Modals */}
+      {Platform.OS === 'ios' && (
+        <Modal visible={showDateFromPicker} animationType="slide" transparent onRequestClose={() => setShowDateFromPicker(false)}>
+          <View style={styles.pickerModalOverlay}>
+            <View style={styles.pickerModalContent}>
+              <View style={styles.pickerModalHeader}>
+                <TouchableOpacity onPress={() => setShowDateFromPicker(false)}>
+                  <Text style={styles.pickerModalCancel}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+                <Text style={styles.pickerModalTitle}>{t('common.from')}</Text>
+                <TouchableOpacity onPress={() => setShowDateFromPicker(false)}>
+                  <Text style={styles.pickerModalDone}>OK</Text>
+                </TouchableOpacity>
+              </View>
+              <DateTimePicker
+                value={dateFrom || new Date()}
+                mode="date"
+                display="spinner"
+                onChange={handleDateFromChange}
+                maximumDate={dateTo || new Date()}
+                style={{ height: 200 }}
+              />
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {Platform.OS === 'ios' && (
+        <Modal visible={showDateToPicker} animationType="slide" transparent onRequestClose={() => setShowDateToPicker(false)}>
+          <View style={styles.pickerModalOverlay}>
+            <View style={styles.pickerModalContent}>
+              <View style={styles.pickerModalHeader}>
+                <TouchableOpacity onPress={() => setShowDateToPicker(false)}>
+                  <Text style={styles.pickerModalCancel}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+                <Text style={styles.pickerModalTitle}>{t('common.to')}</Text>
+                <TouchableOpacity onPress={() => setShowDateToPicker(false)}>
+                  <Text style={styles.pickerModalDone}>OK</Text>
+                </TouchableOpacity>
+              </View>
+              <DateTimePicker
+                value={dateTo || new Date()}
+                mode="date"
+                display="spinner"
+                onChange={handleDateToChange}
+                minimumDate={dateFrom || undefined}
+                maximumDate={new Date()}
+                style={{ height: 200 }}
+              />
+            </View>
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 }

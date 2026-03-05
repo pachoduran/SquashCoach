@@ -38,6 +38,8 @@
     "deleted": "Deleted",
     "matchDeleted": "The match has been deleted",
     "deleteError": "Could not delete the match",
+    "playersRestored": "players restored",
+    "matchesRestored": "matches restored",
     "loginRequired": "Login Required",
     "loginRequiredMsg": "You must login to sync",
     "sync": "Sync",

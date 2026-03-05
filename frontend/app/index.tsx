@@ -78,7 +78,39 @@ export default function Index() {
     if (isAuthenticated && hasPendingSync) {
       handleSync();
     }
+    if (isAuthenticated) {
+      restoreFromCloudIfNeeded();
+    }
   }, [isAuthenticated, hasPendingSync]);
+
+  const restoreFromCloudIfNeeded = async () => {
+    try {
+      const db = await getDatabase();
+      const userId = user?.user_id || '';
+      const localPlayers = await db.getAllAsync('SELECT COUNT(*) as count FROM players');
+      const localMatches = await db.getAllAsync('SELECT COUNT(*) as count FROM matches WHERE user_id = ?', [userId]);
+      const playerCount = (localPlayers as any[])[0]?.count || 0;
+      const matchCount = (localMatches as any[])[0]?.count || 0;
+      
+      // If no local data, try to restore from cloud
+      if (playerCount === 0 || matchCount === 0) {
+        console.log('[Restore] No hay datos locales, restaurando desde la nube...');
+        setSyncing(true);
+        const result = await syncService.restoreFromCloud();
+        if (result.success && (result.playersRestored > 0 || result.matchesRestored > 0)) {
+          Alert.alert(
+            t('common.success'),
+            `${result.playersRestored} ${t('home.playersRestored')}, ${result.matchesRestored} ${t('home.matchesRestored')}`
+          );
+          await loadActiveMatches();
+        }
+        setSyncing(false);
+      }
+    } catch (error) {
+      console.error('[Restore] Error:', error);
+      setSyncing(false);
+    }
+  };
 
   const initializeApp = async () => {
     try {

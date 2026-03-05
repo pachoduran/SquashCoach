@@ -7,6 +7,8 @@ import {
   FlatList,
   ActivityIndicator,
   Platform,
+  Modal,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -50,7 +52,6 @@ export default function HistoryScreen() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   
-  // Filtros - fechas por defecto: hace 1 mes hasta hoy
   const getDefaultDateFrom = () => {
     const date = new Date();
     date.setMonth(date.getMonth() - 1);
@@ -65,6 +66,11 @@ export default function HistoryScreen() {
   const [showDateToPicker, setShowDateToPicker] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
 
+  // iOS modal pickers
+  const [showMyPlayerPicker, setShowMyPlayerPicker] = useState(false);
+  const [showOpponentPicker, setShowOpponentPicker] = useState(false);
+  const [showTournamentPicker, setShowTournamentPicker] = useState(false);
+
   useEffect(() => {
     loadInitialData();
   }, []);
@@ -78,7 +84,6 @@ export default function HistoryScreen() {
   const loadInitialData = async () => {
     try {
       const db = await getDatabase();
-      
       const playersData = await db.getAllAsync(
         'SELECT id, nickname FROM players ORDER BY nickname ASC'
       );
@@ -88,7 +93,6 @@ export default function HistoryScreen() {
         "SELECT DISTINCT tournament_name as name FROM matches WHERE tournament_name IS NOT NULL AND tournament_name != '' ORDER BY tournament_name ASC"
       );
       setTournaments(tournamentsData as Tournament[]);
-      
       await loadMatches();
     } catch (error) {
       console.error('Error cargando datos:', error);
@@ -103,16 +107,9 @@ export default function HistoryScreen() {
       
       let query = `
         SELECT 
-          m.id,
-          m.player1_id,
-          m.player2_id,
-          m.date,
-          m.status,
-          m.player1_games,
-          m.player2_games,
-          m.tournament_name,
-          p1.nickname as player1_nickname,
-          p2.nickname as player2_nickname,
+          m.id, m.player1_id, m.player2_id, m.date, m.status,
+          m.player1_games, m.player2_games, m.tournament_name,
+          p1.nickname as player1_nickname, p2.nickname as player2_nickname,
           pw.nickname as winner_nickname
         FROM matches m
         JOIN players p1 ON m.player1_id = p1.id
@@ -120,39 +117,28 @@ export default function HistoryScreen() {
         LEFT JOIN players pw ON m.winner_id = pw.id
         WHERE m.status = 'finished' AND (m.user_id = ? OR m.user_id IS NULL)
       `;
-      
       const params: any[] = [userId];
       
-      // Filtro por Mi Jugador
       if (myPlayer) {
         query += ` AND (m.player1_id = ? OR m.player2_id = ?)`;
         params.push(myPlayer, myPlayer);
       }
-      
-      // Filtro por Contrincante
       if (opponent) {
         query += ` AND (m.player1_id = ? OR m.player2_id = ?)`;
         params.push(opponent, opponent);
       }
-      
-      // Filtro por torneo
       if (selectedTournament) {
         query += ` AND m.tournament_name = ?`;
         params.push(selectedTournament);
       }
-      
-      // Filtro por fecha desde
       if (dateFrom) {
         query += ` AND m.date >= ?`;
         params.push(format(dateFrom, 'yyyy-MM-dd') + 'T00:00:00');
       }
-      
-      // Filtro por fecha hasta
       if (dateTo) {
         query += ` AND m.date <= ?`;
         params.push(format(dateTo, 'yyyy-MM-dd') + 'T23:59:59');
       }
-      
       query += ` ORDER BY m.date DESC`;
       
       const result = await db.getAllAsync(query, params);
@@ -175,17 +161,13 @@ export default function HistoryScreen() {
   const hasActiveFilters = myPlayer || opponent || selectedTournament || dateFrom || dateTo;
 
   const handleDateFromChange = (event: any, selectedDate?: Date) => {
-    setShowDateFromPicker(Platform.OS === 'ios');
-    if (selectedDate) {
-      setDateFrom(selectedDate);
-    }
+    if (Platform.OS !== 'ios') setShowDateFromPicker(false);
+    if (selectedDate) setDateFrom(selectedDate);
   };
 
   const handleDateToChange = (event: any, selectedDate?: Date) => {
-    setShowDateToPicker(Platform.OS === 'ios');
-    if (selectedDate) {
-      setDateTo(selectedDate);
-    }
+    if (Platform.OS !== 'ios') setShowDateToPicker(false);
+    if (selectedDate) setDateTo(selectedDate);
   };
 
   const deleteMatch = async (matchId: number) => {
@@ -200,13 +182,9 @@ export default function HistoryScreen() {
           onPress: async () => {
             try {
               const db = await getDatabase();
-              // Eliminar puntos del partido
               await db.runAsync('DELETE FROM points WHERE match_id = ?', [matchId]);
-              // Eliminar resultados de games
               await db.runAsync('DELETE FROM game_results WHERE match_id = ?', [matchId]);
-              // Eliminar el partido
               await db.runAsync('DELETE FROM matches WHERE id = ?', [matchId]);
-              
               Alert.alert(t('home.deleted'), t('home.matchDeleted'));
               loadMatches();
             } catch (error) {
@@ -219,28 +197,104 @@ export default function HistoryScreen() {
     );
   };
 
+  const getPlayerLabel = (playerId: number | null) => {
+    if (!playerId) return t('common.all');
+    return players.find(p => p.id === playerId)?.nickname || t('common.all');
+  };
+
+  const renderPickerButton = (label: string, value: any, placeholder: string, onPress: () => void) => (
+    <TouchableOpacity style={styles.iosPickerButton} onPress={onPress}>
+      <Text style={[styles.iosPickerText, !value && styles.iosPickerPlaceholder]}>
+        {value ? label : placeholder}
+      </Text>
+      <Ionicons name="chevron-down" size={18} color="#666" />
+    </TouchableOpacity>
+  );
+
+  const renderPickerModal = (
+    visible: boolean, 
+    onClose: () => void, 
+    title: string, 
+    selectedValue: any, 
+    onValueChange: (v: any) => void, 
+    items: { label: string; value: any }[]
+  ) => (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={styles.pickerModalOverlay}>
+        <View style={styles.pickerModalContent}>
+          <View style={styles.pickerModalHeader}>
+            <TouchableOpacity onPress={onClose}>
+              <Text style={styles.pickerModalCancel}>{t('common.cancel')}</Text>
+            </TouchableOpacity>
+            <Text style={styles.pickerModalTitle}>{title}</Text>
+            <TouchableOpacity onPress={onClose}>
+              <Text style={styles.pickerModalDone}>OK</Text>
+            </TouchableOpacity>
+          </View>
+          <Picker
+            selectedValue={selectedValue}
+            onValueChange={onValueChange}
+            style={{ height: 200 }}
+            itemStyle={{ fontSize: 18, color: '#333' }}
+          >
+            {items.map((item, idx) => (
+              <Picker.Item key={idx} label={item.label} value={item.value} color="#333" />
+            ))}
+          </Picker>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const renderDateModal = (
+    visible: boolean, 
+    onClose: () => void, 
+    title: string, 
+    value: Date, 
+    onChange: (e: any, d?: Date) => void,
+    minDate?: Date,
+    maxDate?: Date
+  ) => (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={styles.pickerModalOverlay}>
+        <View style={styles.pickerModalContent}>
+          <View style={styles.pickerModalHeader}>
+            <TouchableOpacity onPress={onClose}>
+              <Text style={styles.pickerModalCancel}>{t('common.cancel')}</Text>
+            </TouchableOpacity>
+            <Text style={styles.pickerModalTitle}>{title}</Text>
+            <TouchableOpacity onPress={onClose}>
+              <Text style={styles.pickerModalDone}>OK</Text>
+            </TouchableOpacity>
+          </View>
+          <DateTimePicker
+            value={value}
+            mode="date"
+            display="spinner"
+            onChange={onChange}
+            minimumDate={minDate}
+            maximumDate={maxDate || new Date()}
+            style={{ height: 200 }}
+          />
+        </View>
+      </View>
+    </Modal>
+  );
+
   const renderMatch = ({ item }: { item: Match }) => (
     <View style={styles.matchCard}>
       <TouchableOpacity
         style={styles.matchContent}
-        onPress={() => router.push({
-          pathname: '/match-summary',
-          params: { matchId: item.id },
-        })}
+        onPress={() => router.push({ pathname: '/match-summary', params: { matchId: item.id } })}
       >
         <View style={styles.matchHeader}>
           <Text style={styles.matchPlayers} numberOfLines={1}>
             {item.player1_nickname} vs {item.player2_nickname}
           </Text>
-          <Text style={styles.matchScore}>
-            {item.player1_games}-{item.player2_games}
-          </Text>
+          <Text style={styles.matchScore}>{item.player1_games}-{item.player2_games}</Text>
         </View>
-        
         <View style={styles.matchDetails}>
-          <Text style={styles.matchDate}>
-            {format(new Date(item.date), "dd/MM/yyyy")}
-          </Text>
+          <Text style={styles.matchDate}>{format(new Date(item.date), "dd/MM/yyyy")}</Text>
           {item.tournament_name && (
             <View style={styles.tournamentBadge}>
               <Ionicons name="trophy-outline" size={11} color="#FF9800" />
@@ -248,22 +302,31 @@ export default function HistoryScreen() {
             </View>
           )}
         </View>
-        
         {item.winner_nickname && (
           <Text style={styles.winnerText}>
             <Ionicons name="checkmark-circle" size={12} color="#4CAF50" /> {item.winner_nickname}
           </Text>
         )}
       </TouchableOpacity>
-      
-      <TouchableOpacity
-        style={styles.deleteMatchButton}
-        onPress={() => deleteMatch(item.id)}
-      >
+      <TouchableOpacity style={styles.deleteMatchButton} onPress={() => deleteMatch(item.id)}>
         <Ionicons name="trash-outline" size={18} color="#F44336" />
       </TouchableOpacity>
     </View>
   );
+
+  // Build picker items
+  const playerItems = [
+    { label: t('common.all'), value: null },
+    ...players.map(p => ({ label: p.nickname, value: p.id }))
+  ];
+  const opponentItems = [
+    { label: t('common.all'), value: null },
+    ...players.filter(p => p.id !== myPlayer).map(p => ({ label: p.nickname, value: p.id }))
+  ];
+  const tournamentItems = [
+    { label: t('common.all'), value: null },
+    ...tournaments.map(t => ({ label: t.name, value: t.name }))
+  ];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -281,69 +344,56 @@ export default function HistoryScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Panel de Filtros */}
       {showFilters && (
         <View style={styles.filtersPanel}>
           {/* Mi Jugador */}
           <View style={styles.filterSection}>
             <Text style={styles.filterLabel}>{t('history.myPlayer')}</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={myPlayer}
-                onValueChange={(value) => setMyPlayer(value)}
-                style={styles.picker}
-                itemStyle={styles.pickerItem}
-              >
-                <Picker.Item label={t('common.all')} value={null} />
-                {players.map((player) => (
-                  <Picker.Item key={player.id} label={player.nickname} value={player.id} />
-                ))}
-              </Picker>
-            </View>
+            {Platform.OS === 'ios' ? (
+              renderPickerButton(getPlayerLabel(myPlayer), myPlayer, t('common.all'), () => setShowMyPlayerPicker(true))
+            ) : (
+              <View style={styles.pickerContainer}>
+                <Picker selectedValue={myPlayer} onValueChange={setMyPlayer} style={styles.picker} itemStyle={styles.pickerItem}>
+                  <Picker.Item label={t('common.all')} value={null} color="#333" />
+                  {players.map(p => <Picker.Item key={p.id} label={p.nickname} value={p.id} color="#333" />)}
+                </Picker>
+              </View>
+            )}
           </View>
           
           {/* Contrincante */}
           <View style={styles.filterSection}>
             <Text style={styles.filterLabel}>{t('history.opponent')}</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={opponent}
-                onValueChange={(value) => setOpponent(value)}
-                style={styles.picker}
-                itemStyle={styles.pickerItem}
-              >
-                <Picker.Item label={t('common.all')} value={null} />
-                {players.filter(p => p.id !== myPlayer).map((player) => (
-                  <Picker.Item key={player.id} label={player.nickname} value={player.id} />
-                ))}
-              </Picker>
-            </View>
+            {Platform.OS === 'ios' ? (
+              renderPickerButton(getPlayerLabel(opponent), opponent, t('common.all'), () => setShowOpponentPicker(true))
+            ) : (
+              <View style={styles.pickerContainer}>
+                <Picker selectedValue={opponent} onValueChange={setOpponent} style={styles.picker} itemStyle={styles.pickerItem}>
+                  <Picker.Item label={t('common.all')} value={null} color="#333" />
+                  {players.filter(p => p.id !== myPlayer).map(p => <Picker.Item key={p.id} label={p.nickname} value={p.id} color="#333" />)}
+                </Picker>
+              </View>
+            )}
           </View>
           
           {/* Torneo */}
           <View style={styles.filterSection}>
             <Text style={styles.filterLabel}>{t('history.tournament')}</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={selectedTournament}
-                onValueChange={(value) => setSelectedTournament(value)}
-                style={styles.picker}
-                itemStyle={styles.pickerItem}
-              >
-                <Picker.Item label={t('common.all')} value={null} />
-                {tournaments.map((t, index) => (
-                  <Picker.Item key={index} label={t.name} value={t.name} />
-                ))}
-              </Picker>
-            </View>
+            {Platform.OS === 'ios' ? (
+              renderPickerButton(selectedTournament || t('common.all'), selectedTournament, t('common.all'), () => setShowTournamentPicker(true))
+            ) : (
+              <View style={styles.pickerContainer}>
+                <Picker selectedValue={selectedTournament} onValueChange={setSelectedTournament} style={styles.picker} itemStyle={styles.pickerItem}>
+                  <Picker.Item label={t('common.all')} value={null} color="#333" />
+                  {tournaments.map((tor, i) => <Picker.Item key={i} label={tor.name} value={tor.name} color="#333" />)}
+                </Picker>
+              </View>
+            )}
           </View>
           
           {/* Fechas */}
           <View style={styles.dateRow}>
-            <TouchableOpacity 
-              style={styles.dateButton}
-              onPress={() => setShowDateFromPicker(true)}
-            >
+            <TouchableOpacity style={styles.dateButton} onPress={() => setShowDateFromPicker(true)}>
               <Ionicons name="calendar-outline" size={18} color="#2196F3" />
               <Text style={styles.dateButtonText}>
                 {dateFrom ? format(dateFrom, 'dd/MM/yy') : t('common.from')}
@@ -355,10 +405,7 @@ export default function HistoryScreen() {
               )}
             </TouchableOpacity>
             
-            <TouchableOpacity 
-              style={styles.dateButton}
-              onPress={() => setShowDateToPicker(true)}
-            >
+            <TouchableOpacity style={styles.dateButton} onPress={() => setShowDateToPicker(true)}>
               <Ionicons name="calendar-outline" size={18} color="#2196F3" />
               <Text style={styles.dateButtonText}>
                 {dateTo ? format(dateTo, 'dd/MM/yy') : t('common.to')}
@@ -370,6 +417,27 @@ export default function HistoryScreen() {
               )}
             </TouchableOpacity>
           </View>
+
+          {/* Android date pickers (inline) */}
+          {Platform.OS !== 'ios' && showDateFromPicker && (
+            <DateTimePicker
+              value={dateFrom || new Date()}
+              mode="date"
+              display="default"
+              onChange={handleDateFromChange}
+              maximumDate={dateTo || new Date()}
+            />
+          )}
+          {Platform.OS !== 'ios' && showDateToPicker && (
+            <DateTimePicker
+              value={dateTo || new Date()}
+              mode="date"
+              display="default"
+              onChange={handleDateToChange}
+              minimumDate={dateFrom || undefined}
+              maximumDate={new Date()}
+            />
+          )}
           
           {/* Botones */}
           <View style={styles.filterButtons}>
@@ -383,27 +451,6 @@ export default function HistoryScreen() {
               <Text style={styles.applyButtonText}>{t('common.search')}</Text>
             </TouchableOpacity>
           </View>
-          
-          {showDateFromPicker && (
-            <DateTimePicker
-              value={dateFrom || new Date()}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={handleDateFromChange}
-              maximumDate={dateTo || new Date()}
-            />
-          )}
-          
-          {showDateToPicker && (
-            <DateTimePicker
-              value={dateTo || new Date()}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={handleDateToChange}
-              minimumDate={dateFrom || undefined}
-              maximumDate={new Date()}
-            />
-          )}
         </View>
       )}
 
@@ -438,235 +485,73 @@ export default function HistoryScreen() {
           )}
         </View>
       )}
+
+      {/* iOS Picker Modals */}
+      {renderPickerModal(showMyPlayerPicker, () => setShowMyPlayerPicker(false), t('history.myPlayer'), myPlayer, setMyPlayer, playerItems)}
+      {renderPickerModal(showOpponentPicker, () => setShowOpponentPicker(false), t('history.opponent'), opponent, setOpponent, opponentItems)}
+      {renderPickerModal(showTournamentPicker, () => setShowTournamentPicker(false), t('history.tournament'), selectedTournament, setSelectedTournament, tournamentItems)}
+
+      {/* iOS Date Modals */}
+      {Platform.OS === 'ios' && renderDateModal(
+        showDateFromPicker, () => setShowDateFromPicker(false), t('common.from'),
+        dateFrom || new Date(), handleDateFromChange, undefined, dateTo || new Date()
+      )}
+      {Platform.OS === 'ios' && renderDateModal(
+        showDateToPicker, () => setShowDateToPicker(false), t('common.to'),
+        dateTo || new Date(), handleDateToChange, dateFrom || undefined, new Date()
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F7FA',
-  },
-  header: {
-    backgroundColor: '#1E3A5F',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFF',
-  },
-  filterToggle: {
-    padding: 4,
-    position: 'relative',
-  },
-  filterToggleActive: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 8,
-  },
-  filterDot: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FF9800',
-  },
-  filtersPanel: {
-    backgroundColor: '#FFF',
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  filterSection: {
-    marginBottom: 10,
-  },
-  filterLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
-    fontWeight: '600',
-  },
-  pickerContainer: {
-    backgroundColor: '#F5F7FA',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    overflow: 'hidden',
-  },
-  picker: {
-    height: 50,
-  },
-  pickerItem: {
-    fontSize: 16,
-    height: 50,
-  },
-  dateRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 10,
-  },
-  dateButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F7FA',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    gap: 8,
-  },
-  dateButtonText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#333',
-  },
-  filterButtons: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  clearButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFEBEE',
-    borderRadius: 8,
-    paddingVertical: 10,
-    gap: 6,
-  },
-  clearButtonText: {
-    color: '#F44336',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  applyButton: {
-    flex: 2,
-    backgroundColor: '#2196F3',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  applyButtonText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  resultsHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  resultsCount: {
-    fontSize: 13,
-    color: '#666',
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-  },
-  matchCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  matchContent: {
-    flex: 1,
-    padding: 12,
-  },
-  deleteMatchButton: {
-    padding: 12,
-    borderLeftWidth: 1,
-    borderLeftColor: '#F0F0F0',
-  },
-  matchHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  matchPlayers: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#333',
-    flex: 1,
-  },
-  matchScore: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2196F3',
-  },
-  matchDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  matchDate: {
-    fontSize: 12,
-    color: '#666',
-  },
-  tournamentBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF3E0',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    gap: 3,
-  },
-  tournamentText: {
-    fontSize: 10,
-    color: '#FF9800',
-    fontWeight: '500',
-  },
-  winnerText: {
-    fontSize: 12,
-    color: '#4CAF50',
-    marginTop: 6,
-    fontWeight: '500',
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 16,
-  },
-  clearFiltersButton: {
-    marginTop: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: '#E3F2FD',
-    borderRadius: 20,
-  },
-  clearFiltersText: {
-    color: '#2196F3',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  container: { flex: 1, backgroundColor: '#F5F7FA' },
+  header: { backgroundColor: '#1E3A5F', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
+  backButton: { padding: 4 },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFF' },
+  filterToggle: { padding: 4, position: 'relative' },
+  filterToggleActive: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 8 },
+  filterDot: { position: 'absolute', top: 2, right: 2, width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF9800' },
+  filtersPanel: { backgroundColor: '#FFF', padding: 12, borderBottomWidth: 1, borderBottomColor: '#E0E0E0' },
+  filterSection: { marginBottom: 10 },
+  filterLabel: { fontSize: 12, color: '#666', marginBottom: 4, fontWeight: '600' },
+  pickerContainer: { backgroundColor: '#F5F7FA', borderRadius: 10, borderWidth: 1, borderColor: '#E0E0E0', overflow: 'hidden' },
+  picker: { height: 50 },
+  pickerItem: { fontSize: 16, height: 50 },
+  iosPickerButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F5F7FA', borderRadius: 10, borderWidth: 1, borderColor: '#E0E0E0', padding: 14 },
+  iosPickerText: { fontSize: 16, color: '#333' },
+  iosPickerPlaceholder: { color: '#999' },
+  dateRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+  dateButton: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F7FA', borderRadius: 10, borderWidth: 1, borderColor: '#E0E0E0', paddingVertical: 12, paddingHorizontal: 12, gap: 8 },
+  dateButtonText: { flex: 1, fontSize: 14, color: '#333' },
+  filterButtons: { flexDirection: 'row', gap: 10 },
+  clearButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFEBEE', borderRadius: 8, paddingVertical: 10, gap: 6 },
+  clearButtonText: { color: '#F44336', fontSize: 14, fontWeight: '600' },
+  applyButton: { flex: 2, backgroundColor: '#2196F3', borderRadius: 8, paddingVertical: 12, alignItems: 'center' },
+  applyButtonText: { color: '#FFF', fontSize: 14, fontWeight: '600' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  resultsHeader: { paddingHorizontal: 16, paddingVertical: 8 },
+  resultsCount: { fontSize: 13, color: '#666' },
+  listContent: { paddingHorizontal: 16, paddingBottom: 20 },
+  matchCard: { backgroundColor: '#FFF', borderRadius: 10, flexDirection: 'row', alignItems: 'center', marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
+  matchContent: { flex: 1, padding: 12 },
+  deleteMatchButton: { padding: 12, borderLeftWidth: 1, borderLeftColor: '#F0F0F0' },
+  matchHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  matchPlayers: { fontSize: 15, fontWeight: '600', color: '#333', flex: 1 },
+  matchScore: { fontSize: 18, fontWeight: 'bold', color: '#2196F3' },
+  matchDetails: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  matchDate: { fontSize: 12, color: '#666' },
+  tournamentBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF3E0', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, gap: 3 },
+  tournamentText: { fontSize: 10, color: '#FF9800', fontWeight: '500' },
+  winnerText: { fontSize: 12, color: '#4CAF50', marginTop: 6, fontWeight: '500' },
+  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
+  emptyText: { fontSize: 16, color: '#666', marginTop: 16 },
+  clearFiltersButton: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 10, backgroundColor: '#E3F2FD', borderRadius: 20 },
+  clearFiltersText: { color: '#2196F3', fontSize: 14, fontWeight: '600' },
+  pickerModalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },
+  pickerModalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingBottom: 30 },
+  pickerModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E0E0E0' },
+  pickerModalTitle: { fontSize: 17, fontWeight: '600', color: '#333' },
+  pickerModalCancel: { fontSize: 17, color: '#999' },
+  pickerModalDone: { fontSize: 17, color: '#2196F3', fontWeight: '600' },
 });

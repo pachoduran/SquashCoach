@@ -38,6 +38,8 @@
     "deleted": "Eliminado",
     "matchDeleted": "El partido ha sido eliminado",
     "deleteError": "No se pudo eliminar el partido",
+    "playersRestored": "jugadores restaurados",
+    "matchesRestored": "partidos restaurados",
     "loginRequired": "Iniciar Sesión",
     "loginRequiredMsg": "Debes iniciar sesión para sincronizar",
     "sync": "Sincronización",
