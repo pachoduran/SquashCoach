@@ -496,8 +496,8 @@ export default function AnalysisScreen() {
       </Modal>
 
       {/* iOS Date Modals */}
-      {Platform.OS === 'ios' && (
-        <Modal visible={showDateFromPicker} animationType="slide" transparent onRequestClose={() => setShowDateFromPicker(false)}>
+      {Platform.OS === 'ios' && showDateFromPicker && (
+        <Modal visible={true} animationType="slide" transparent onRequestClose={() => setShowDateFromPicker(false)}>
           <View style={styles.pickerModalOverlay}>
             <View style={styles.pickerModalContent}>
               <View style={styles.pickerModalHeader}>
@@ -512,18 +512,18 @@ export default function AnalysisScreen() {
               <DateTimePicker
                 value={dateFrom || new Date()}
                 mode="date"
-                display="spinner"
-                onChange={handleDateFromChange}
+                display="inline"
+                onChange={(e, d) => { if (d) setDateFrom(d); }}
                 maximumDate={dateTo || new Date()}
-                style={{ height: 200 }}
+                style={{ height: 340 }}
               />
             </View>
           </View>
         </Modal>
       )}
 
-      {Platform.OS === 'ios' && (
-        <Modal visible={showDateToPicker} animationType="slide" transparent onRequestClose={() => setShowDateToPicker(false)}>
+      {Platform.OS === 'ios' && showDateToPicker && (
+        <Modal visible={true} animationType="slide" transparent onRequestClose={() => setShowDateToPicker(false)}>
           <View style={styles.pickerModalOverlay}>
             <View style={styles.pickerModalContent}>
               <View style={styles.pickerModalHeader}>
@@ -538,11 +538,11 @@ export default function AnalysisScreen() {
               <DateTimePicker
                 value={dateTo || new Date()}
                 mode="date"
-                display="spinner"
-                onChange={handleDateToChange}
+                display="inline"
+                onChange={(e, d) => { if (d) setDateTo(d); }}
                 minimumDate={dateFrom || undefined}
                 maximumDate={new Date()}
-                style={{ height: 200 }}
+                style={{ height: 340 }}
               />
             </View>
           </View>

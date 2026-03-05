@@ -301,6 +301,16 @@ class SyncService {
       return { success: false, message: 'Sin conexión', playersRestored: 0, matchesRestored: 0 };
     }
 
+    // Get user_id from AsyncStorage
+    let userId = '';
+    try {
+      const userStr = await AsyncStorage.getItem('user');
+      if (userStr) {
+        const userData = JSON.parse(userStr);
+        userId = userData.user_id || userData.email || '';
+      }
+    } catch (e) {}
+
     console.log('[Sync] ===== RESTAURANDO DESDE LA NUBE =====');
     let playersRestored = 0;
     let matchesRestored = 0;
@@ -313,14 +323,17 @@ class SyncService {
       console.log(`[Sync] Jugadores en la nube: ${cloudPlayers.length}`);
       
       for (const cp of cloudPlayers) {
-        const existing = await db.getFirstAsync(
-          'SELECT id FROM players WHERE nickname = ?',
-          [cp.nickname]
-        );
-        if (!existing) {
-          await db.runAsync('INSERT INTO players (nickname) VALUES (?)', [cp.nickname]);
-          playersRestored++;
-          console.log(`[Sync] Jugador restaurado: ${cp.nickname}`);
+        try {
+          const existing = await db.getFirstAsync(
+            'SELECT id FROM players WHERE nickname = ?',
+            [cp.nickname]
+          );
+          if (!existing) {
+            await db.runAsync('INSERT INTO players (nickname) VALUES (?)', [cp.nickname]);
+            playersRestored++;
+          }
+        } catch (playerError) {
+          console.error('[Sync] Error restaurando jugador:', cp.nickname, playerError);
         }
       }
 
@@ -330,73 +343,96 @@ class SyncService {
 
       for (const cm of cloudMatches) {
         try {
-          const matchDetail = await this.downloadMatch(cm._id || cm.id);
+          const matchId = cm._id || cm.id;
+          if (!matchId) continue;
+
+          let matchDetail;
+          try {
+            matchDetail = await this.downloadMatch(matchId);
+          } catch (downloadErr) {
+            console.error('[Sync] Error descargando partido:', matchId, downloadErr);
+            continue;
+          }
           if (!matchDetail) continue;
 
           // Get local player IDs
-          const p1 = await db.getFirstAsync('SELECT id FROM players WHERE nickname = ?', [matchDetail.player1_nickname]) as any;
-          const p2 = await db.getFirstAsync('SELECT id FROM players WHERE nickname = ?', [matchDetail.player2_nickname]) as any;
+          const p1Name = matchDetail.player1_nickname || matchDetail.player1;
+          const p2Name = matchDetail.player2_nickname || matchDetail.player2;
+          if (!p1Name || !p2Name) continue;
+
+          const p1 = await db.getFirstAsync('SELECT id FROM players WHERE nickname = ?', [p1Name]) as any;
+          const p2 = await db.getFirstAsync('SELECT id FROM players WHERE nickname = ?', [p2Name]) as any;
           if (!p1 || !p2) continue;
 
-          const winnerNickname = matchDetail.winner_nickname;
+          const winnerNickname = matchDetail.winner_nickname || matchDetail.winner;
           let winnerId = null;
           if (winnerNickname) {
             const w = await db.getFirstAsync('SELECT id FROM players WHERE nickname = ?', [winnerNickname]) as any;
-            winnerId = w?.id;
+            winnerId = w?.id || null;
           }
 
-          const myPlayerNickname = matchDetail.my_player_nickname;
+          const myPlayerNickname = matchDetail.my_player_nickname || matchDetail.my_player;
           let myPlayerId = null;
           if (myPlayerNickname) {
             const mp = await db.getFirstAsync('SELECT id FROM players WHERE nickname = ?', [myPlayerNickname]) as any;
-            myPlayerId = mp?.id;
+            myPlayerId = mp?.id || null;
           }
 
-          // Check if match already exists locally (by date + players)
+          // Check if match already exists locally
           const existingMatch = await db.getFirstAsync(
             'SELECT id FROM matches WHERE player1_id = ? AND player2_id = ? AND date = ?',
             [p1.id, p2.id, matchDetail.date]
           );
           if (existingMatch) continue;
 
+          const matchDate = matchDetail.date || new Date().toISOString();
           const result = await db.runAsync(
-            `INSERT INTO matches (player1_id, player2_id, my_player_id, best_of, winner_id, date, status, current_game, player1_games, player2_games, tournament_name, match_date)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [p1.id, p2.id, myPlayerId, matchDetail.best_of || 3, winnerId, matchDetail.date, matchDetail.status || 'finished',
+            `INSERT INTO matches (player1_id, player2_id, my_player_id, best_of, winner_id, date, status, current_game, player1_games, player2_games, tournament_name, match_date, user_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [p1.id, p2.id, myPlayerId, matchDetail.best_of || 3, winnerId, matchDate, matchDetail.status || 'finished',
              matchDetail.current_game || 1, matchDetail.player1_games || 0, matchDetail.player2_games || 0,
-             matchDetail.tournament_name || null, matchDetail.match_date || matchDetail.date]
+             matchDetail.tournament_name || null, matchDetail.match_date || matchDate, userId]
           );
 
           const localMatchId = result.lastInsertRowId;
 
           // Restore points
-          if (matchDetail.points && matchDetail.points.length > 0) {
+          if (matchDetail.points && Array.isArray(matchDetail.points)) {
             for (const pt of matchDetail.points) {
-              const ptWinnerId = pt.winner_player_nickname === matchDetail.player1_nickname ? p1.id : p2.id;
-              await db.runAsync(
-                `INSERT INTO points (match_id, position_x, position_y, winner_player_id, reason, my_player_pos_x, my_player_pos_y, opponent_pos_x, opponent_pos_y, game_number, point_number, player1_score, player2_score)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [localMatchId, pt.position_x, pt.position_y, ptWinnerId, pt.reason,
-                 pt.my_player_pos_x, pt.my_player_pos_y, pt.opponent_pos_x, pt.opponent_pos_y,
-                 pt.game_number, pt.point_number, pt.player1_score, pt.player2_score]
-              );
+              try {
+                const ptWinnerNick = pt.winner_player_nickname || pt.winner;
+                const ptWinnerId = ptWinnerNick === p1Name ? p1.id : p2.id;
+                await db.runAsync(
+                  `INSERT INTO points (match_id, position_x, position_y, winner_player_id, reason, my_player_pos_x, my_player_pos_y, opponent_pos_x, opponent_pos_y, game_number, point_number, player1_score, player2_score)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                  [localMatchId, pt.position_x || 0, pt.position_y || 0, ptWinnerId, pt.reason || '',
+                   pt.my_player_pos_x || 0, pt.my_player_pos_y || 0, pt.opponent_pos_x || 0, pt.opponent_pos_y || 0,
+                   pt.game_number || 1, pt.point_number || 0, pt.player1_score || 0, pt.player2_score || 0]
+                );
+              } catch (ptErr) {
+                console.error('[Sync] Error restaurando punto:', ptErr);
+              }
             }
           }
 
           // Restore game results
-          if (matchDetail.game_results && matchDetail.game_results.length > 0) {
+          if (matchDetail.game_results && Array.isArray(matchDetail.game_results)) {
             for (const gr of matchDetail.game_results) {
-              const grWinnerId = gr.winner_nickname === matchDetail.player1_nickname ? p1.id : p2.id;
-              await db.runAsync(
-                `INSERT INTO game_results (match_id, game_number, player1_score, player2_score, winner_id)
-                 VALUES (?, ?, ?, ?, ?)`,
-                [localMatchId, gr.game_number, gr.player1_score, gr.player2_score, grWinnerId]
-              );
+              try {
+                const grWinnerNick = gr.winner_nickname || gr.winner;
+                const grWinnerId = grWinnerNick === p1Name ? p1.id : p2.id;
+                await db.runAsync(
+                  `INSERT INTO game_results (match_id, game_number, player1_score, player2_score, winner_id)
+                   VALUES (?, ?, ?, ?, ?)`,
+                  [localMatchId, gr.game_number || 1, gr.player1_score || 0, gr.player2_score || 0, grWinnerId]
+                );
+              } catch (grErr) {
+                console.error('[Sync] Error restaurando game result:', grErr);
+              }
             }
           }
 
           matchesRestored++;
-          console.log(`[Sync] Partido restaurado: ${matchDetail.player1_nickname} vs ${matchDetail.player2_nickname}`);
         } catch (matchError) {
           console.error('[Sync] Error restaurando partido:', matchError);
         }
