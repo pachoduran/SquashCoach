@@ -472,13 +472,15 @@ export default function NewMatch() {
               selectedValue={selectedPlayer1Id}
               onValueChange={(itemValue) => setSelectedPlayer1Id(itemValue)}
               style={styles.iosPicker}
+              itemStyle={{ fontSize: 18, color: '#333' }}
             >
-              <Picker.Item label={t('newMatch.selectPlayer')} value={null} />
+              <Picker.Item label={t('newMatch.selectPlayer')} value={null} color="#999" />
               {players.map((player) => (
                 <Picker.Item
                   key={player.id}
                   label={player.nickname}
                   value={player.id}
+                  color="#333"
                 />
               ))}
             </Picker>
@@ -508,13 +510,15 @@ export default function NewMatch() {
               selectedValue={selectedPlayer2Id}
               onValueChange={(itemValue) => setSelectedPlayer2Id(itemValue)}
               style={styles.iosPicker}
+              itemStyle={{ fontSize: 18, color: '#333' }}
             >
-              <Picker.Item label={t('newMatch.selectPlayer')} value={null} />
+              <Picker.Item label={t('newMatch.selectPlayer')} value={null} color="#999" />
               {players.map((player) => (
                 <Picker.Item
                   key={player.id}
                   label={player.nickname}
                   value={player.id}
+                  color="#333"
                 />
               ))}
             </Picker>

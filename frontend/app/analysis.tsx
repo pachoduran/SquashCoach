@@ -62,6 +62,10 @@ export default function AnalysisScreen() {
   const [player1Wins, setPlayer1Wins] = useState(0);
   const [player2Wins, setPlayer2Wins] = useState(0);
 
+  // Para iOS - modales de selección
+  const [showPlayer1Picker, setShowPlayer1Picker] = useState(false);
+  const [showPlayer2Picker, setShowPlayer2Picker] = useState(false);
+
   useEffect(() => {
     loadPlayers();
   }, []);
@@ -206,19 +210,33 @@ export default function AnalysisScreen() {
           {/* Jugador 1 */}
           <View style={styles.pickerSection}>
             <Text style={styles.pickerLabel}>{t('newMatch.myPlayer')}</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={selectedPlayer1}
-                onValueChange={(value) => setSelectedPlayer1(value)}
-                style={styles.picker}
-                itemStyle={styles.pickerItem}
+            {Platform.OS === 'ios' ? (
+              <TouchableOpacity 
+                style={styles.iosPickerButton}
+                onPress={() => setShowPlayer1Picker(true)}
               >
-                <Picker.Item label={t('newMatch.selectPlayer')} value={null} />
-                {players.map((player) => (
-                  <Picker.Item key={player.id} label={player.nickname} value={player.id} />
-                ))}
-              </Picker>
-            </View>
+                <Text style={[styles.iosPickerButtonText, !selectedPlayer1 && styles.iosPickerPlaceholder]}>
+                  {selectedPlayer1 
+                    ? players.find(p => p.id === selectedPlayer1)?.nickname 
+                    : t('newMatch.selectPlayer')}
+                </Text>
+                <Ionicons name="chevron-down" size={20} color="#666" />
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={selectedPlayer1}
+                  onValueChange={(value) => setSelectedPlayer1(value)}
+                  style={styles.picker}
+                  itemStyle={styles.pickerItem}
+                >
+                  <Picker.Item label={t('newMatch.selectPlayer')} value={null} />
+                  {players.map((player) => (
+                    <Picker.Item key={player.id} label={player.nickname} value={player.id} />
+                  ))}
+                </Picker>
+              </View>
+            )}
           </View>
           
           <View style={styles.vsContainer}>
@@ -230,19 +248,33 @@ export default function AnalysisScreen() {
           {/* Jugador 2 */}
           <View style={styles.pickerSection}>
             <Text style={styles.pickerLabel}>{t('history.opponent')}</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={selectedPlayer2}
-                onValueChange={(value) => setSelectedPlayer2(value)}
-                style={styles.picker}
-                itemStyle={styles.pickerItem}
+            {Platform.OS === 'ios' ? (
+              <TouchableOpacity 
+                style={styles.iosPickerButton}
+                onPress={() => setShowPlayer2Picker(true)}
               >
-                <Picker.Item label={t('newMatch.selectPlayer')} value={null} />
-                {players.filter(p => p.id !== selectedPlayer1).map((player) => (
-                  <Picker.Item key={player.id} label={player.nickname} value={player.id} />
-                ))}
-              </Picker>
-            </View>
+                <Text style={[styles.iosPickerButtonText, !selectedPlayer2 && styles.iosPickerPlaceholder]}>
+                  {selectedPlayer2 
+                    ? players.find(p => p.id === selectedPlayer2)?.nickname 
+                    : t('newMatch.selectPlayer')}
+                </Text>
+                <Ionicons name="chevron-down" size={20} color="#666" />
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={selectedPlayer2}
+                  onValueChange={(value) => setSelectedPlayer2(value)}
+                  style={styles.picker}
+                  itemStyle={styles.pickerItem}
+                >
+                  <Picker.Item label={t('newMatch.selectPlayer')} value={null} />
+                  {players.filter(p => p.id !== selectedPlayer1).map((player) => (
+                    <Picker.Item key={player.id} label={player.nickname} value={player.id} />
+                  ))}
+                </Picker>
+              </View>
+            )}
           </View>
           
           {/* Filtros de fecha */}
@@ -406,6 +438,62 @@ export default function AnalysisScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Modal Picker Jugador 1 (iOS) */}
+      <Modal visible={showPlayer1Picker} animationType="slide" transparent onRequestClose={() => setShowPlayer1Picker(false)}>
+        <View style={styles.pickerModalOverlay}>
+          <View style={styles.pickerModalContent}>
+            <View style={styles.pickerModalHeader}>
+              <TouchableOpacity onPress={() => setShowPlayer1Picker(false)}>
+                <Text style={styles.pickerModalCancel}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <Text style={styles.pickerModalTitle}>{t('newMatch.myPlayer')}</Text>
+              <TouchableOpacity onPress={() => setShowPlayer1Picker(false)}>
+                <Text style={styles.pickerModalDone}>OK</Text>
+              </TouchableOpacity>
+            </View>
+            <Picker
+              selectedValue={selectedPlayer1}
+              onValueChange={(value) => setSelectedPlayer1(value)}
+              style={styles.iosModalPicker}
+              itemStyle={styles.iosModalPickerItem}
+            >
+              <Picker.Item label={t('newMatch.selectPlayer')} value={null} color="#999" />
+              {players.map((player) => (
+                <Picker.Item key={player.id} label={player.nickname} value={player.id} color="#333" />
+              ))}
+            </Picker>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal Picker Jugador 2 (iOS) */}
+      <Modal visible={showPlayer2Picker} animationType="slide" transparent onRequestClose={() => setShowPlayer2Picker(false)}>
+        <View style={styles.pickerModalOverlay}>
+          <View style={styles.pickerModalContent}>
+            <View style={styles.pickerModalHeader}>
+              <TouchableOpacity onPress={() => setShowPlayer2Picker(false)}>
+                <Text style={styles.pickerModalCancel}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <Text style={styles.pickerModalTitle}>{t('history.opponent')}</Text>
+              <TouchableOpacity onPress={() => setShowPlayer2Picker(false)}>
+                <Text style={styles.pickerModalDone}>OK</Text>
+              </TouchableOpacity>
+            </View>
+            <Picker
+              selectedValue={selectedPlayer2}
+              onValueChange={(value) => setSelectedPlayer2(value)}
+              style={styles.iosModalPicker}
+              itemStyle={styles.iosModalPickerItem}
+            >
+              <Picker.Item label={t('newMatch.selectPlayer')} value={null} color="#999" />
+              {players.filter(p => p.id !== selectedPlayer1).map((player) => (
+                <Picker.Item key={player.id} label={player.nickname} value={player.id} color="#333" />
+              ))}
+            </Picker>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -625,5 +713,62 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
     marginTop: 4,
+  },
+  iosPickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F5F7FA',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    padding: 14,
+  },
+  iosPickerButtonText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  iosPickerPlaceholder: {
+    color: '#999',
+  },
+  pickerModalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  pickerModalContent: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 30,
+  },
+  pickerModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  pickerModalTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#333',
+  },
+  pickerModalCancel: {
+    fontSize: 17,
+    color: '#999',
+  },
+  pickerModalDone: {
+    fontSize: 17,
+    color: '#2196F3',
+    fontWeight: '600',
+  },
+  iosModalPicker: {
+    height: 200,
+  },
+  iosModalPickerItem: {
+    fontSize: 18,
+    color: '#333',
   },
 });
