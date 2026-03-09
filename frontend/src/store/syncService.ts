@@ -290,6 +290,53 @@ class SyncService {
     return [];
   }
 
+  async syncPlayers(): Promise<number> {
+    const sessionToken = await this.getSessionToken();
+    if (!sessionToken) return 0;
+
+    const isOnline = await this.isOnline();
+    if (!isOnline) return 0;
+
+    try {
+      const db = await getDatabase();
+      
+      // Get local players
+      const localPlayers = await db.getAllAsync('SELECT id, nickname FROM players ORDER BY nickname ASC');
+      
+      // Get cloud players
+      const cloudPlayers = await this.getCloudPlayers();
+      const cloudNicknames = new Set(cloudPlayers.map((p: any) => p.nickname));
+      
+      let uploaded = 0;
+      for (const lp of localPlayers as any[]) {
+        if (!cloudNicknames.has(lp.nickname)) {
+          try {
+            const response = await fetch(`${BACKEND_URL}/api/players`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionToken}`
+              },
+              body: JSON.stringify({ nickname: lp.nickname })
+            });
+            if (response.ok) {
+              uploaded++;
+              console.log(`[Sync] Jugador subido: ${lp.nickname}`);
+            }
+          } catch (e) {
+            console.error(`[Sync] Error subiendo jugador ${lp.nickname}:`, e);
+          }
+        }
+      }
+      
+      console.log(`[Sync] ${uploaded} jugadores subidos a la nube`);
+      return uploaded;
+    } catch (error) {
+      console.error('[Sync] Error sincronizando jugadores:', error);
+      return 0;
+    }
+  }
+
   async restoreFromCloud(): Promise<{ success: boolean; message: string; playersRestored: number; matchesRestored: number }> {
     const sessionToken = await this.getSessionToken();
     if (!sessionToken) {

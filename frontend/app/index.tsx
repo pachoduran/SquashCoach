@@ -181,10 +181,14 @@ export default function Index() {
 
     setSyncing(true);
     Alert.alert('Sync', 'Iniciando sincronización...');
+    
+    // First sync players to cloud
+    await syncService.syncPlayers();
+    
+    // Then sync matches
     const result = await syncService.syncPendingMatches();
     setSyncing(false);
 
-    // Siempre mostrar resultado
     Alert.alert('Sync Resultado', `${result.success ? 'OK' : 'Error'}: ${result.message}`);
     
     if (result.success) {
