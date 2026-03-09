@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '@/src/store/database';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { useAuth } from '@/src/context/AuthContext';
+import { syncService } from '@/src/store/syncService';
 import { format } from 'date-fns';
 import { adService } from '@/src/services/adService';
 
@@ -29,7 +30,7 @@ interface Player {
 export default function NewMatch() {
   const router = useRouter();
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayer1Id, setSelectedPlayer1Id] = useState<number | null>(null);
   const [selectedPlayer2Id, setSelectedPlayer2Id] = useState<number | null>(null);
@@ -166,6 +167,11 @@ export default function NewMatch() {
       setNewPlayerNickname('');
       setShowAddPlayer(false);
       Alert.alert(t('common.success'), t('newMatch.addPlayer'));
+      
+      // Auto-sync player to cloud
+      if (isAuthenticated) {
+        syncService.syncPlayers().catch(e => console.error('[Sync] Auto-sync player error:', e));
+      }
     } catch (error: any) {
       console.error('Error agregando jugador:', error);
       const errorMsg = error?.message || error?.toString() || 'Error desconocido';

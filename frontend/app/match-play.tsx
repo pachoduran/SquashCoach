@@ -353,7 +353,9 @@ export default function MatchPlay() {
           console.log('[MatchPlay] Partido marcado para sync');
           
           // Intentar sincronizar automáticamente
-          syncService.syncPendingMatches().then(result => {
+          syncService.syncPlayers().then(() => {
+            return syncService.syncPendingMatches();
+          }).then(result => {
             console.log('[MatchPlay] Auto-sync result:', result);
           });
 
