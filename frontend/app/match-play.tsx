@@ -217,9 +217,11 @@ export default function MatchPlay() {
       const result = await db.getAllAsync(
         'SELECT name FROM custom_reasons WHERE is_active = 1 ORDER BY name ASC'
       );
-      setReasons(result.map((r: any) => r.name));
+      const dbReasons = result.map((r: any) => r.name);
+      setReasons([t('matchPlay.noReason'), ...dbReasons]);
     } catch (error) {
       console.error('Error cargando motivos:', error);
+      setReasons([t('matchPlay.noReason')]);
     }
   };
 

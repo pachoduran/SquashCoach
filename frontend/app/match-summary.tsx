@@ -218,7 +218,9 @@ export default function MatchSummary() {
     
     const reasonCounts: { [key: string]: number } = {};
     points.forEach(p => {
-      reasonCounts[p.reason] = (reasonCounts[p.reason] || 0) + 1;
+      if (p.reason && p.reason !== t('matchPlay.noReason') && p.reason !== 'Ninguna' && p.reason !== 'None') {
+        reasonCounts[p.reason] = (reasonCounts[p.reason] || 0) + 1;
+      }
     });
     
     return Object.entries(reasonCounts)

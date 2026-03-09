@@ -123,6 +123,7 @@
     "game": "Game",
     "set": "Set",
     "games": "Games",
+    "noReason": "None",
     "whoWon": "Who won the point?",
     "selectReason": "Select the reason",
     "pointLocation": "Point location",
