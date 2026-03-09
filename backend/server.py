@@ -1152,8 +1152,8 @@ app.include_router(api_router)
 
 # CORS - Permitir dominios específicos y cualquier origen
 ALLOWED_ORIGINS = [
-    "https://kotlin-fix-test.preview.emergentagent.com",
-    "https://kotlin-fix-test.preview.emergentagent.com",
+    "https://player-sync-test.preview.emergentagent.com",
+    "https://player-sync-test.preview.emergentagent.com",
     "https://lev.jsb.mybluehost.me",
     "http://localhost:3000",
     "http://localhost:8081",

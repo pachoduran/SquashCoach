@@ -19,6 +19,7 @@ import { getDatabase } from '@/src/store/database';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { useAuth } from '@/src/context/AuthContext';
 import { syncService } from '@/src/store/syncService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format } from 'date-fns';
 import { adService } from '@/src/services/adService';
 
@@ -166,12 +167,34 @@ export default function NewMatch() {
       setPlayers([...players, newPlayer].sort((a, b) => a.nickname.localeCompare(b.nickname)));
       setNewPlayerNickname('');
       setShowAddPlayer(false);
-      Alert.alert(t('common.success'), t('newMatch.addPlayer'));
       
-      // Auto-sync player to cloud
+      // Auto-sync player to cloud immediately
       if (isAuthenticated) {
-        syncService.syncPlayers().catch(e => console.error('[Sync] Auto-sync player error:', e));
+        try {
+          const token = await AsyncStorage.getItem('@squash_coach_auth');
+          if (token) {
+            const authData = JSON.parse(token);
+            const sessionToken = authData.sessionToken;
+            if (sessionToken) {
+              const resp = await fetch('https://lev.jsb.mybluehost.me:8001/api/players', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${sessionToken}`
+                },
+                body: JSON.stringify({ nickname: newPlayerNickname.trim() })
+              });
+              if (resp.ok) {
+                console.log('[Sync] Player uploaded to cloud:', newPlayerNickname.trim());
+              }
+            }
+          }
+        } catch (syncErr) {
+          console.error('[Sync] Error uploading player:', syncErr);
+        }
       }
+      
+      Alert.alert(t('common.success'), t('newMatch.addPlayer'));
     } catch (error: any) {
       console.error('Error agregando jugador:', error);
       const errorMsg = error?.message || error?.toString() || 'Error desconocido';
