@@ -19,7 +19,6 @@ import { getDatabase } from '@/src/store/database';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { useAuth } from '@/src/context/AuthContext';
 import { syncService } from '@/src/store/syncService';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format } from 'date-fns';
 import { adService } from '@/src/services/adService';
 
@@ -171,24 +170,8 @@ export default function NewMatch() {
       // Auto-sync player to cloud immediately
       if (isAuthenticated) {
         try {
-          const token = await AsyncStorage.getItem('@squash_coach_auth');
-          if (token) {
-            const authData = JSON.parse(token);
-            const sessionToken = authData.sessionToken;
-            if (sessionToken) {
-              const resp = await fetch('https://lev.jsb.mybluehost.me:8001/api/players', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${sessionToken}`
-                },
-                body: JSON.stringify({ nickname: newPlayerNickname.trim() })
-              });
-              if (resp.ok) {
-                console.log('[Sync] Player uploaded to cloud:', newPlayerNickname.trim());
-              }
-            }
-          }
+          await syncService.syncPlayers();
+          console.log('[Sync] Player sync completed for:', nickname);
         } catch (syncErr) {
           console.error('[Sync] Error uploading player:', syncErr);
         }

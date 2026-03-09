@@ -292,19 +292,27 @@ class SyncService {
 
   async syncPlayers(): Promise<number> {
     const sessionToken = await this.getSessionToken();
-    if (!sessionToken) return 0;
+    if (!sessionToken) {
+      console.log('[Sync] syncPlayers: No hay token de sesión');
+      return 0;
+    }
 
     const isOnline = await this.isOnline();
-    if (!isOnline) return 0;
+    if (!isOnline) {
+      console.log('[Sync] syncPlayers: Sin conexión');
+      return 0;
+    }
 
     try {
       const db = await getDatabase();
       
       // Get local players
       const localPlayers = await db.getAllAsync('SELECT id, nickname FROM players ORDER BY nickname ASC');
+      console.log(`[Sync] syncPlayers: ${(localPlayers as any[]).length} jugadores locales`);
       
       // Get cloud players
       const cloudPlayers = await this.getCloudPlayers();
+      console.log(`[Sync] syncPlayers: ${cloudPlayers.length} jugadores en la nube`);
       const cloudNicknames = new Set(cloudPlayers.map((p: any) => p.nickname));
       
       let uploaded = 0;
@@ -322,6 +330,9 @@ class SyncService {
             if (response.ok) {
               uploaded++;
               console.log(`[Sync] Jugador subido: ${lp.nickname}`);
+            } else {
+              const errText = await response.text();
+              console.error(`[Sync] Error subiendo jugador ${lp.nickname}: ${response.status} ${errText}`);
             }
           } catch (e) {
             console.error(`[Sync] Error subiendo jugador ${lp.nickname}:`, e);
@@ -329,7 +340,7 @@ class SyncService {
         }
       }
       
-      console.log(`[Sync] ${uploaded} jugadores subidos a la nube`);
+      console.log(`[Sync] syncPlayers completado: ${uploaded} nuevos jugadores subidos`);
       return uploaded;
     } catch (error) {
       console.error('[Sync] Error sincronizando jugadores:', error);
@@ -351,10 +362,10 @@ class SyncService {
     // Get user_id from AsyncStorage
     let userId = '';
     try {
-      const userStr = await AsyncStorage.getItem('user');
-      if (userStr) {
-        const userData = JSON.parse(userStr);
-        userId = userData.user_id || userData.email || '';
+      const stored = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
+      if (stored) {
+        const authData = JSON.parse(stored);
+        userId = authData.user?.user_id || '';
       }
     } catch (e) {}
 
@@ -365,7 +376,7 @@ class SyncService {
     try {
       const db = await getDatabase();
 
-      // 1. Restore players
+      // 1. Restore players from cloud
       const cloudPlayers = await this.getCloudPlayers();
       console.log(`[Sync] Jugadores en la nube: ${cloudPlayers.length}`);
       
@@ -376,106 +387,149 @@ class SyncService {
             [cp.nickname]
           );
           if (!existing) {
-            await db.runAsync('INSERT INTO players (nickname) VALUES (?)', [cp.nickname]);
+            await db.runAsync(
+              'INSERT INTO players (nickname, created_at, user_id) VALUES (?, ?, ?)',
+              [cp.nickname, cp.created_at || new Date().toISOString(), userId]
+            );
             playersRestored++;
+            console.log(`[Sync] Jugador restaurado: ${cp.nickname}`);
           }
         } catch (playerError) {
           console.error('[Sync] Error restaurando jugador:', cp.nickname, playerError);
         }
       }
 
-      // 2. Restore matches
+      // 2. Restore matches from cloud
       const cloudMatches = await this.getCloudMatches();
       console.log(`[Sync] Partidos en la nube: ${cloudMatches.length}`);
 
       for (const cm of cloudMatches) {
         try {
-          const matchId = cm._id || cm.id;
-          if (!matchId) continue;
+          // The cloud match list returns match_id as the identifier
+          const serverMatchId = cm.match_id;
+          if (!serverMatchId) {
+            console.log('[Sync] Partido sin match_id, saltando');
+            continue;
+          }
 
+          // Download full match detail
           let matchDetail;
           try {
-            matchDetail = await this.downloadMatch(matchId);
+            matchDetail = await this.downloadMatch(serverMatchId);
           } catch (downloadErr) {
-            console.error('[Sync] Error descargando partido:', matchId, downloadErr);
+            console.error('[Sync] Error descargando partido:', serverMatchId, downloadErr);
             continue;
           }
           if (!matchDetail) continue;
 
-          // Get local player IDs
-          const p1Name = matchDetail.player1_nickname || matchDetail.player1;
-          const p2Name = matchDetail.player2_nickname || matchDetail.player2;
-          if (!p1Name || !p2Name) continue;
+          // The response structure is: { match: {...}, points: [...], game_results: [...], players: [...] }
+          const matchData = matchDetail.match;
+          const matchPlayers = matchDetail.players || [];
+          const matchPoints = matchDetail.points || [];
+          const matchGameResults = matchDetail.game_results || [];
 
-          const p1 = await db.getFirstAsync('SELECT id FROM players WHERE nickname = ?', [p1Name]) as any;
-          const p2 = await db.getFirstAsync('SELECT id FROM players WHERE nickname = ?', [p2Name]) as any;
-          if (!p1 || !p2) continue;
-
-          const winnerNickname = matchDetail.winner_nickname || matchDetail.winner;
-          let winnerId = null;
-          if (winnerNickname) {
-            const w = await db.getFirstAsync('SELECT id FROM players WHERE nickname = ?', [winnerNickname]) as any;
-            winnerId = w?.id || null;
+          if (!matchData) {
+            console.log('[Sync] Sin datos de partido en detalle');
+            continue;
           }
 
-          const myPlayerNickname = matchDetail.my_player_nickname || matchDetail.my_player;
-          let myPlayerId = null;
-          if (myPlayerNickname) {
-            const mp = await db.getFirstAsync('SELECT id FROM players WHERE nickname = ?', [myPlayerNickname]) as any;
-            myPlayerId = mp?.id || null;
+          // Find player nicknames from the players array using server player_ids
+          const p1Server = matchPlayers.find((p: any) => p.player_id === matchData.player1_id);
+          const p2Server = matchPlayers.find((p: any) => p.player_id === matchData.player2_id);
+
+          if (!p1Server || !p2Server) {
+            console.log(`[Sync] No se encontraron jugadores para partido ${serverMatchId}`);
+            continue;
           }
 
-          // Check if match already exists locally
+          // Get local player IDs by nickname
+          const p1Local = await db.getFirstAsync('SELECT id FROM players WHERE nickname = ?', [p1Server.nickname]) as any;
+          const p2Local = await db.getFirstAsync('SELECT id FROM players WHERE nickname = ?', [p2Server.nickname]) as any;
+
+          if (!p1Local || !p2Local) {
+            console.log(`[Sync] Jugadores locales no encontrados: ${p1Server.nickname}, ${p2Server.nickname}`);
+            continue;
+          }
+
+          // Resolve winner local ID
+          let winnerLocalId = null;
+          if (matchData.winner_id) {
+            const winnerServer = matchPlayers.find((p: any) => p.player_id === matchData.winner_id);
+            if (winnerServer) {
+              const winnerLocal = await db.getFirstAsync('SELECT id FROM players WHERE nickname = ?', [winnerServer.nickname]) as any;
+              winnerLocalId = winnerLocal?.id || null;
+            }
+          }
+
+          // Resolve my_player local ID
+          let myPlayerLocalId = null;
+          if (matchData.my_player_id) {
+            const myPlayerServer = matchPlayers.find((p: any) => p.player_id === matchData.my_player_id);
+            if (myPlayerServer) {
+              const myPlayerLocal = await db.getFirstAsync('SELECT id FROM players WHERE nickname = ?', [myPlayerServer.nickname]) as any;
+              myPlayerLocalId = myPlayerLocal?.id || null;
+            }
+          }
+
+          // Check if match already exists locally (by players + date)
           const existingMatch = await db.getFirstAsync(
             'SELECT id FROM matches WHERE player1_id = ? AND player2_id = ? AND date = ?',
-            [p1.id, p2.id, matchDetail.date]
+            [p1Local.id, p2Local.id, matchData.date]
           );
-          if (existingMatch) continue;
+          if (existingMatch) {
+            console.log(`[Sync] Partido ya existe localmente, saltando`);
+            continue;
+          }
 
-          const matchDate = matchDetail.date || new Date().toISOString();
+          const matchDate = matchData.date || new Date().toISOString();
           const result = await db.runAsync(
             `INSERT INTO matches (player1_id, player2_id, my_player_id, best_of, winner_id, date, status, current_game, player1_games, player2_games, tournament_name, match_date, user_id)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [p1.id, p2.id, myPlayerId, matchDetail.best_of || 3, winnerId, matchDate, matchDetail.status || 'finished',
-             matchDetail.current_game || 1, matchDetail.player1_games || 0, matchDetail.player2_games || 0,
-             matchDetail.tournament_name || null, matchDetail.match_date || matchDate, userId]
+            [p1Local.id, p2Local.id, myPlayerLocalId || p1Local.id, matchData.best_of || 3, winnerLocalId, matchDate,
+             matchData.status || 'finished', matchData.current_game || 1, matchData.player1_games || 0,
+             matchData.player2_games || 0, matchData.tournament_name || null, matchData.match_date || null, userId]
           );
 
           const localMatchId = result.lastInsertRowId;
+          console.log(`[Sync] Partido restaurado: ${p1Server.nickname} vs ${p2Server.nickname} (local ID: ${localMatchId})`);
+
+          // Build a map from server player_id to local player id for points/results
+          const serverToLocalPlayerMap: Record<string, number> = {};
+          for (const sp of matchPlayers) {
+            const localP = await db.getFirstAsync('SELECT id FROM players WHERE nickname = ?', [sp.nickname]) as any;
+            if (localP) {
+              serverToLocalPlayerMap[sp.player_id] = localP.id;
+            }
+          }
 
           // Restore points
-          if (matchDetail.points && Array.isArray(matchDetail.points)) {
-            for (const pt of matchDetail.points) {
-              try {
-                const ptWinnerNick = pt.winner_player_nickname || pt.winner;
-                const ptWinnerId = ptWinnerNick === p1Name ? p1.id : p2.id;
-                await db.runAsync(
-                  `INSERT INTO points (match_id, position_x, position_y, winner_player_id, reason, my_player_pos_x, my_player_pos_y, opponent_pos_x, opponent_pos_y, game_number, point_number, player1_score, player2_score)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                  [localMatchId, pt.position_x || 0, pt.position_y || 0, ptWinnerId, pt.reason || '',
-                   pt.my_player_pos_x || 0, pt.my_player_pos_y || 0, pt.opponent_pos_x || 0, pt.opponent_pos_y || 0,
-                   pt.game_number || 1, pt.point_number || 0, pt.player1_score || 0, pt.player2_score || 0]
-                );
-              } catch (ptErr) {
-                console.error('[Sync] Error restaurando punto:', ptErr);
-              }
+          for (const pt of matchPoints) {
+            try {
+              const ptWinnerLocalId = serverToLocalPlayerMap[pt.winner_player_id] || p1Local.id;
+              await db.runAsync(
+                `INSERT INTO points (match_id, position_x, position_y, winner_player_id, reason, my_player_pos_x, my_player_pos_y, opponent_pos_x, opponent_pos_y, game_number, point_number, player1_score, player2_score, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [localMatchId, pt.position_x || 0, pt.position_y || 0, ptWinnerLocalId, pt.reason || '',
+                 pt.my_player_pos_x || 0, pt.my_player_pos_y || 0, pt.opponent_pos_x || 0, pt.opponent_pos_y || 0,
+                 pt.game_number || 1, pt.point_number || 0, pt.player1_score || 0, pt.player2_score || 0,
+                 pt.created_at || new Date().toISOString()]
+              );
+            } catch (ptErr) {
+              console.error('[Sync] Error restaurando punto:', ptErr);
             }
           }
 
           // Restore game results
-          if (matchDetail.game_results && Array.isArray(matchDetail.game_results)) {
-            for (const gr of matchDetail.game_results) {
-              try {
-                const grWinnerNick = gr.winner_nickname || gr.winner;
-                const grWinnerId = grWinnerNick === p1Name ? p1.id : p2.id;
-                await db.runAsync(
-                  `INSERT INTO game_results (match_id, game_number, player1_score, player2_score, winner_id)
-                   VALUES (?, ?, ?, ?, ?)`,
-                  [localMatchId, gr.game_number || 1, gr.player1_score || 0, gr.player2_score || 0, grWinnerId]
-                );
-              } catch (grErr) {
-                console.error('[Sync] Error restaurando game result:', grErr);
-              }
+          for (const gr of matchGameResults) {
+            try {
+              const grWinnerLocalId = gr.winner_id ? (serverToLocalPlayerMap[gr.winner_id] || null) : null;
+              await db.runAsync(
+                `INSERT INTO game_results (match_id, game_number, player1_score, player2_score, winner_id)
+                 VALUES (?, ?, ?, ?, ?)`,
+                [localMatchId, gr.game_number || 1, gr.player1_score || 0, gr.player2_score || 0, grWinnerLocalId]
+              );
+            } catch (grErr) {
+              console.error('[Sync] Error restaurando game result:', grErr);
             }
           }
 
@@ -485,6 +539,7 @@ class SyncService {
         }
       }
 
+      console.log(`[Sync] ===== RESTAURACIÓN COMPLETA: ${playersRestored} jugadores, ${matchesRestored} partidos =====`);
       return {
         success: true,
         message: `Restaurados: ${playersRestored} jugadores, ${matchesRestored} partidos`,

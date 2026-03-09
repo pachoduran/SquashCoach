@@ -94,72 +94,22 @@ export default function Index() {
         return;
       }
 
-      console.log('[Restore] Sin datos locales, intentando restaurar...');
+      console.log('[Restore] Sin datos locales, intentando restaurar desde la nube...');
       setSyncing(true);
 
-      // Get token directly from AsyncStorage  
-      const stored = await AsyncStorage.getItem('@squash_coach_auth');
-      if (!stored) {
-        console.log('[Restore] No hay token almacenado');
-        setSyncing(false);
-        return;
-      }
-      const authData = JSON.parse(stored);
-      const sessionToken = authData.sessionToken;
-      if (!sessionToken) {
-        console.log('[Restore] Token vacío');
-        setSyncing(false);
-        return;
-      }
-
-      // 1. Download players from cloud
-      let playersRestored = 0;
-      try {
-        const resp = await fetch('https://lev.jsb.mybluehost.me:8001/api/players', {
-          headers: { 'Authorization': `Bearer ${sessionToken}` }
-        });
-        if (resp.ok) {
-          const cloudPlayers = await resp.json();
-          console.log('[Restore] Jugadores en la nube:', cloudPlayers.length);
-          for (const cp of cloudPlayers) {
-            try {
-              const existing = await db.getFirstAsync('SELECT id FROM players WHERE nickname = ?', [cp.nickname]);
-              if (!existing) {
-                await db.runAsync('INSERT INTO players (nickname) VALUES (?)', [cp.nickname]);
-                playersRestored++;
-              }
-            } catch (e) {
-              console.error('[Restore] Error insertando jugador:', e);
-            }
-          }
-        }
-      } catch (e) {
-        console.error('[Restore] Error descargando jugadores:', e);
-      }
-
-      // 2. Download matches from cloud
-      let matchesRestored = 0;
-      try {
-        const resp = await fetch('https://lev.jsb.mybluehost.me:8001/api/matches', {
-          headers: { 'Authorization': `Bearer ${sessionToken}` }
-        });
-        if (resp.ok) {
-          const cloudMatches = await resp.json();
-          console.log('[Restore] Partidos en la nube:', cloudMatches.length);
-          matchesRestored = cloudMatches.length;
-        }
-      } catch (e) {
-        console.error('[Restore] Error descargando partidos:', e);
-      }
+      const result = await syncService.restoreFromCloud();
+      console.log('[Restore] Resultado:', JSON.stringify(result));
 
       setSyncing(false);
 
-      if (playersRestored > 0 || matchesRestored > 0) {
+      if (result.success && (result.playersRestored > 0 || result.matchesRestored > 0)) {
         Alert.alert(
           t('common.success'),
-          `${playersRestored} ${t('home.playersRestored')}, ${matchesRestored} ${t('home.matchesRestored')}`
+          `${result.playersRestored} ${t('home.playersRestored')}, ${result.matchesRestored} ${t('home.matchesRestored')}`
         );
         await loadActiveMatches();
+      } else if (!result.success) {
+        console.log('[Restore] Error:', result.message);
       } else {
         console.log('[Restore] Nada que restaurar de la nube');
       }

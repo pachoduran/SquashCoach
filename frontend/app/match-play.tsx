@@ -356,7 +356,9 @@ export default function MatchPlay() {
           syncService.syncPlayers().then(() => {
             return syncService.syncPendingMatches();
           }).then(result => {
-            console.log('[MatchPlay] Auto-sync result:', result);
+            console.log('[MatchPlay] Auto-sync result:', JSON.stringify(result));
+          }).catch(err => {
+            console.error('[MatchPlay] Auto-sync error:', err);
           });
 
           // Cerrar modal primero

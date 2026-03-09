@@ -1084,9 +1084,23 @@ async def get_sync_status(current_user: User = Depends(get_current_user)):
     players_count = await db.players.count_documents({"user_id": current_user.user_id})
     matches_count = await db.matches.count_documents({"user_id": current_user.user_id})
     
+    # Get player names for verification
+    players = await db.players.find(
+        {"user_id": current_user.user_id},
+        {"_id": 0, "nickname": 1, "player_id": 1}
+    ).to_list(100)
+    
+    # Get match summaries for verification
+    matches = await db.matches.find(
+        {"user_id": current_user.user_id},
+        {"_id": 0, "match_id": 1, "status": 1, "player1_id": 1, "player2_id": 1, "date": 1}
+    ).to_list(100)
+    
     return {
         "players_in_cloud": players_count,
-        "matches_in_cloud": matches_count
+        "matches_in_cloud": matches_count,
+        "players": players,
+        "matches_summary": matches
     }
 
 # =============================================================================
