@@ -16,7 +16,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#000000"
       },
-      "package": "com.sqcoach.app",
+      "package": "com.sqcoash.app",
       "versionCode": 8
     },
     "web": {
