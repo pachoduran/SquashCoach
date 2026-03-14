@@ -305,6 +305,13 @@ export default function Index() {
           >
             <Ionicons name="help-circle-outline" size={24} color="#FFF" />
           </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.helpButton} 
+            onPress={() => router.push('/settings')}
+          >
+            <Ionicons name="settings-outline" size={22} color="#FFF" />
+          </TouchableOpacity>
           
           <Text style={styles.title}>{t('home.title')}</Text>
           
