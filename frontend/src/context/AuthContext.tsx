@@ -24,6 +24,8 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateProfile: (data: { name?: string; phone?: string }) => Promise<{ success: boolean; error?: string }>;
   deleteAccount: () => Promise<{ success: boolean; error?: string }>;
+  forgotPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
+  resetPassword: (email: string, code: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   sessionToken: string | null;
 }
 
@@ -401,6 +403,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const forgotPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json();
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: 'Error de conexión' };
+    }
+  };
+
+  const resetPassword = async (email: string, code: string, newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code, new_password: newPassword })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return { success: false, error: data.detail || 'Error' };
+      }
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: 'Error de conexión' };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -413,7 +446,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         logout,
         updateProfile,
         deleteAccount,
-        sessionToken
+        sessionToken,
+        forgotPassword,
+        resetPassword
       }}
     >
       {children}

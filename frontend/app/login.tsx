@@ -18,10 +18,10 @@ import { useAuth } from '@/src/context/AuthContext';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { useRouter } from 'expo-router';
 
-type AuthMode = 'login' | 'register';
+type AuthMode = 'login' | 'register' | 'forgot' | 'reset';
 
 export default function LoginScreen() {
-  const { login, loginWithEmail, register, isLoading } = useAuth();
+  const { login, loginWithEmail, register, isLoading, forgotPassword, resetPassword } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
   
@@ -34,6 +34,11 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  
+  // Reset password fields
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
@@ -91,6 +96,51 @@ export default function LoginScreen() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      Alert.alert('Error', 'Ingresa un email válido');
+      return;
+    }
+    setLoading(true);
+    try {
+      await forgotPassword(email);
+      Alert.alert('Código enviado', 'Si el email existe, recibirás un código de recuperación');
+      setMode('reset');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetCode.trim() || resetCode.length !== 6) {
+      Alert.alert('Error', 'Ingresa el código de 6 dígitos');
+      return;
+    }
+    if (!newPassword || newPassword.length < 6) {
+      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      Alert.alert('Error', 'Las contraseñas no coinciden');
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await resetPassword(email, resetCode, newPassword);
+      if (result.success) {
+        Alert.alert('Listo', 'Contraseña actualizada. Ahora puedes iniciar sesión.');
+        setMode('login');
+        setResetCode('');
+        setNewPassword('');
+        setConfirmNewPassword('');
+      } else {
+        Alert.alert('Error', result.error || 'Código inválido o expirado');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGoogleLogin = async () => {
     await login();
   };
@@ -128,6 +178,8 @@ export default function LoginScreen() {
           </View>
 
           {/* Mode Tabs */}
+          {(mode === 'login' || mode === 'register') && (
+          <>
           <View style={styles.tabContainer}>
             <TouchableOpacity
               style={[styles.tab, mode === 'login' && styles.activeTab]}
@@ -254,7 +306,110 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
 
+            {mode === 'login' && (
+              <TouchableOpacity
+                style={styles.forgotButton}
+                onPress={() => setMode('forgot')}
+              >
+                <Text style={styles.forgotText}>Olvidé mi contraseña</Text>
+              </TouchableOpacity>
+            )}
+
           </View>
+          </>
+          )}
+
+          {/* Forgot Password Screen */}
+          {mode === 'forgot' && (
+          <>
+          <View style={styles.formContainer}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1E3A5F', marginBottom: 12 }}>
+              Recuperar Contraseña
+            </Text>
+            <Text style={{ fontSize: 14, color: '#666', marginBottom: 16 }}>
+              Ingresa tu email y te enviaremos un código de verificación
+            </Text>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Email</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="tu@email.com"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+            <TouchableOpacity
+              style={[styles.submitButton, loading && styles.buttonDisabled]}
+              onPress={handleForgotPassword}
+              disabled={loading}
+            >
+              {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitButtonText}>Enviar Código</Text>}
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.forgotButton} onPress={() => setMode('login')}>
+              <Text style={styles.forgotText}>Volver al inicio de sesión</Text>
+            </TouchableOpacity>
+          </View>
+          </>
+          )}
+
+          {/* Reset Password Screen */}
+          {mode === 'reset' && (
+          <>
+          <View style={styles.formContainer}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1E3A5F', marginBottom: 12 }}>
+              Nueva Contraseña
+            </Text>
+            <Text style={{ fontSize: 14, color: '#666', marginBottom: 16 }}>
+              Ingresa el código de 6 dígitos que enviamos a {email}
+            </Text>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Código de verificación</Text>
+              <TextInput
+                style={[styles.input, { textAlign: 'center', fontSize: 24, letterSpacing: 8 }]}
+                placeholder="000000"
+                value={resetCode}
+                onChangeText={setResetCode}
+                keyboardType="number-pad"
+                maxLength={6}
+              />
+            </View>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Nueva contraseña</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Mínimo 6 caracteres"
+                value={newPassword}
+                onChangeText={setNewPassword}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+            </View>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Confirmar contraseña</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Repetir contraseña"
+                value={confirmNewPassword}
+                onChangeText={setConfirmNewPassword}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+            </View>
+            <TouchableOpacity
+              style={[styles.submitButton, loading && styles.buttonDisabled]}
+              onPress={handleResetPassword}
+              disabled={loading}
+            >
+              {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitButtonText}>Cambiar Contraseña</Text>}
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.forgotButton} onPress={() => setMode('forgot')}>
+              <Text style={styles.forgotText}>Reenviar código</Text>
+            </TouchableOpacity>
+          </View>
+          </>
+          )}
 
           {/* Skip for now */}
           <TouchableOpacity 
@@ -467,5 +622,13 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 14,
     textDecorationLine: 'underline',
+  },
+  forgotButton: {
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  forgotText: {
+    color: '#2196F3',
+    fontSize: 14,
   },
 });

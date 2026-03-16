@@ -13,6 +13,10 @@ import uuid
 from datetime import datetime, timezone, timedelta
 import hashlib
 import secrets
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import random
 import re
 
 ROOT_DIR = Path(__file__).parent
@@ -43,6 +47,71 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Email Configuration
+SMTP_EMAIL = os.environ.get('SMTP_EMAIL', 'squashcoach1830@gmail.com')
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
+SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
+SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
+
+def send_email(to_email: str, subject: str, html_body: str):
+    """Send email via SMTP"""
+    if not SMTP_PASSWORD:
+        logger.warning("SMTP_PASSWORD not configured, skipping email")
+        return False
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = f"Squash Coach <{SMTP_EMAIL}>"
+        msg['To'] = to_email
+        msg.attach(MIMEText(html_body, 'html'))
+        
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_EMAIL, SMTP_PASSWORD)
+            server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
+        logger.info(f"Email sent to {to_email}")
+        return True
+    except Exception as e:
+        logger.error(f"Error sending email to {to_email}: {e}")
+        return False
+
+def send_welcome_email(to_email: str, name: str):
+    """Send welcome email on registration"""
+    html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2196F3;">Bienvenido a Squash Coach!</h2>
+        <p>Hola <strong>{name}</strong>,</p>
+        <p>Tu cuenta ha sido creada exitosamente. Ya puedes empezar a registrar tus partidos y analizar tu juego.</p>
+        <p>Funciones principales:</p>
+        <ul>
+            <li>Registrar partidos en tiempo real</li>
+            <li>Analizar estadisticas de juego</li>
+            <li>Sincronizar datos en la nube</li>
+            <li>Gestionar jugadores y torneos</li>
+        </ul>
+        <p>Buena suerte en la cancha!</p>
+        <p style="color: #666; font-size: 12px;">- El equipo de Squash Coach</p>
+    </div>
+    """
+    send_email(to_email, "Bienvenido a Squash Coach!", html)
+
+def send_reset_code_email(to_email: str, code: str):
+    """Send password reset code"""
+    html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2196F3;">Recuperar Contrasena</h2>
+        <p>Recibimos una solicitud para restablecer tu contrasena en Squash Coach.</p>
+        <p>Tu codigo de verificacion es:</p>
+        <div style="background: #f5f5f5; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+            <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #2196F3;">{code}</span>
+        </div>
+        <p>Este codigo expira en <strong>15 minutos</strong>.</p>
+        <p>Si no solicitaste este cambio, ignora este correo.</p>
+        <p style="color: #666; font-size: 12px;">- El equipo de Squash Coach</p>
+    </div>
+    """
+    send_email(to_email, "Squash Coach - Codigo de Recuperacion", html)
 
 # =============================================================================
 # HELPER FUNCTIONS
@@ -451,6 +520,12 @@ async def register_email(data: EmailRegisterRequest, response: Response):
     await db.users.insert_one(new_user)
     logger.info(f"New email user created: {user_id}")
     
+    # Send welcome email (non-blocking, don't fail if email fails)
+    try:
+        send_welcome_email(data.email.lower(), data.name)
+    except Exception as e:
+        logger.error(f"Failed to send welcome email: {e}")
+    
     # Create session
     session_token = secrets.token_urlsafe(32)
     expires_at = datetime.now(timezone.utc) + timedelta(days=7)
@@ -534,6 +609,70 @@ async def login_email(data: EmailLoginRequest, response: Response):
         "picture": user.get("picture"),
         "session_token": session_token
     }
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+class ResetPasswordRequest(BaseModel):
+    email: str
+    code: str
+    new_password: str
+
+@api_router.post("/auth/forgot-password")
+async def forgot_password(data: ForgotPasswordRequest):
+    """Request password reset code"""
+    user = await db.users.find_one({"email": data.email.lower()}, {"_id": 0})
+    if not user:
+        # Don't reveal if email exists
+        return {"message": "Si el email existe, recibirás un código de recuperación"}
+    
+    # Generate 6-digit code
+    code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
+    
+    # Store reset code
+    await db.password_resets.delete_many({"email": data.email.lower()})
+    await db.password_resets.insert_one({
+        "email": data.email.lower(),
+        "code": code,
+        "expires_at": expires_at,
+        "created_at": datetime.now(timezone.utc)
+    })
+    
+    # Send email
+    send_reset_code_email(data.email.lower(), code)
+    
+    return {"message": "Si el email existe, recibirás un código de recuperación"}
+
+@api_router.post("/auth/reset-password")
+async def reset_password(data: ResetPasswordRequest):
+    """Reset password with verification code"""
+    reset = await db.password_resets.find_one({
+        "email": data.email.lower(),
+        "code": data.code
+    }, {"_id": 0})
+    
+    if not reset:
+        raise HTTPException(status_code=400, detail="Código inválido")
+    
+    if datetime.now(timezone.utc) > reset["expires_at"]:
+        await db.password_resets.delete_many({"email": data.email.lower()})
+        raise HTTPException(status_code=400, detail="Código expirado")
+    
+    if len(data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 6 caracteres")
+    
+    # Update password
+    password_hash = hash_password(data.new_password)
+    await db.users.update_one(
+        {"email": data.email.lower()},
+        {"$set": {"password_hash": password_hash}}
+    )
+    
+    # Clean up
+    await db.password_resets.delete_many({"email": data.email.lower()})
+    
+    return {"message": "Contraseña actualizada exitosamente"}
 
 @api_router.put("/auth/profile")
 async def update_profile(
