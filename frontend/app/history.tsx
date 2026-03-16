@@ -84,8 +84,10 @@ export default function HistoryScreen() {
   const loadInitialData = async () => {
     try {
       const db = await getDatabase();
+      const userId = user?.user_id || '';
       const playersData = await db.getAllAsync(
-        'SELECT id, nickname FROM players ORDER BY nickname ASC'
+        'SELECT id, nickname FROM players WHERE user_id = ? OR user_id IS NULL ORDER BY nickname ASC',
+        [userId]
       );
       setPlayers(playersData as Player[]);
       

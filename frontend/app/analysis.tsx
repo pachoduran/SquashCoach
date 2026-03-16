@@ -43,6 +43,7 @@ interface PointData {
 export default function AnalysisScreen() {
   const router = useRouter();
   const { t } = useLanguage();
+  const { user } = useAuth();
   
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayer1, setSelectedPlayer1] = useState<number | null>(null);
@@ -88,7 +89,11 @@ export default function AnalysisScreen() {
   const loadTournaments = async () => {
     try {
       const db = await getDatabase();
-      const result = await db.getAllAsync('SELECT id, name FROM tournaments ORDER BY name ASC');
+      const userId = user?.user_id || '';
+      const result = await db.getAllAsync(
+        'SELECT id, name FROM tournaments WHERE user_id = ? OR user_id IS NULL ORDER BY name ASC',
+        [userId]
+      );
       setTournaments(result as Tournament[]);
     } catch (error) {
       console.error('Error cargando torneos:', error);
@@ -98,8 +103,10 @@ export default function AnalysisScreen() {
   const loadPlayers = async () => {
     try {
       const db = await getDatabase();
+      const userId = user?.user_id || '';
       const result = await db.getAllAsync(
-        'SELECT id, nickname FROM players ORDER BY nickname ASC'
+        'SELECT id, nickname FROM players WHERE user_id = ? OR user_id IS NULL ORDER BY nickname ASC',
+        [userId]
       );
       setPlayers(result as Player[]);
     } catch (error) {

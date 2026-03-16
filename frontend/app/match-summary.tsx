@@ -71,7 +71,7 @@ export default function MatchSummary() {
   const [loading, setLoading] = useState(true);
   
   // Filtro por game
-  const [selectedGame, setSelectedGame] = useState<number | 'all'>('all');
+  const [selectedGame, setSelectedGame] = useState<number>(1);
   
   // Navegación de puntos
   const [selectedPointIndex, setSelectedPointIndex] = useState(0);
@@ -208,9 +208,7 @@ export default function MatchSummary() {
   };
 
   // Filtrar puntos según el game seleccionado
-  const filteredPoints = selectedGame === 'all' 
-    ? allPoints 
-    : allPoints.filter(p => p.game_number === selectedGame);
+  const filteredPoints = allPoints.filter(p => p.game_number === selectedGame);
 
   const goToPreviousPoint = () => {
     if (selectedPointIndex > 0) {
@@ -391,14 +389,6 @@ export default function MatchSummary() {
 
         {/* Selector de Game */}
         <View style={styles.gameSelector}>
-          <TouchableOpacity
-            style={[styles.gameSelectorBtn, selectedGame === 'all' && styles.gameSelectorBtnActive]}
-            onPress={() => setSelectedGame('all')}
-          >
-            <Text style={[styles.gameSelectorText, selectedGame === 'all' && styles.gameSelectorTextActive]}>
-              {t('common.all')}
-            </Text>
-          </TouchableOpacity>
           {availableGames.map(game => (
             <TouchableOpacity
               key={game}
@@ -406,7 +396,7 @@ export default function MatchSummary() {
               onPress={() => setSelectedGame(game)}
             >
               <Text style={[styles.gameSelectorText, selectedGame === game && styles.gameSelectorTextActive]}>
-                G{game}
+                Game {game}
               </Text>
             </TouchableOpacity>
           ))}

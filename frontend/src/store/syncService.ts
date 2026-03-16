@@ -212,6 +212,9 @@ class SyncService {
         const result = JSON.parse(responseText);
         console.log('[Sync] Resultado:', result);
 
+        // Sync tournaments too
+        await this.syncTournaments();
+
         // Clear pending
         await AsyncStorage.setItem(PENDING_SYNC_KEY, JSON.stringify({ matchIds: [] }));
 
@@ -362,6 +365,94 @@ class SyncService {
     }
   }
 
+  async syncTournaments(): Promise<number> {
+    const sessionToken = await this.getSessionToken();
+    if (!sessionToken) return 0;
+
+    const isOnline = await this.isOnline();
+    if (!isOnline) return 0;
+
+    try {
+      const db = await getDatabase();
+      const localTournaments = await db.getAllAsync('SELECT id, name, user_id FROM tournaments ORDER BY name ASC');
+      console.log(`[Sync] syncTournaments: ${(localTournaments as any[]).length} torneos locales`);
+
+      // Get cloud tournaments
+      const response = await fetch(`${BACKEND_URL}/api/tournaments`, {
+        headers: { 'Authorization': `Bearer ${sessionToken}` }
+      });
+      const cloudTournaments = response.ok ? await response.json() : [];
+      const cloudNames = new Set(cloudTournaments.map((t: any) => t.name));
+
+      let uploaded = 0;
+      for (const lt of localTournaments as any[]) {
+        if (!cloudNames.has(lt.name)) {
+          try {
+            const res = await fetch(`${BACKEND_URL}/api/tournaments`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionToken}`
+              },
+              body: JSON.stringify({ name: lt.name })
+            });
+            if (res.ok) {
+              uploaded++;
+              console.log(`[Sync] Torneo subido: ${lt.name}`);
+            }
+          } catch (e) {
+            console.error(`[Sync] Error subiendo torneo ${lt.name}:`, e);
+          }
+        }
+      }
+
+      console.log(`[Sync] syncTournaments completado: ${uploaded} nuevos torneos subidos`);
+      return uploaded;
+    } catch (error) {
+      console.error('[Sync] Error sincronizando torneos:', error);
+      return 0;
+    }
+  }
+
+  async restoreTournamentsFromCloud(userId: string): Promise<number> {
+    const sessionToken = await this.getSessionToken();
+    if (!sessionToken) return 0;
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/tournaments`, {
+        headers: { 'Authorization': `Bearer ${sessionToken}` }
+      });
+      if (!response.ok) return 0;
+
+      const cloudTournaments = await response.json();
+      if (!cloudTournaments.length) return 0;
+
+      const db = await getDatabase();
+      let restored = 0;
+
+      for (const ct of cloudTournaments) {
+        const existing = await db.getFirstAsync(
+          'SELECT id FROM tournaments WHERE name = ? AND (user_id = ? OR user_id IS NULL)',
+          [ct.name, userId]
+        );
+        if (!existing) {
+          await db.runAsync(
+            'INSERT INTO tournaments (name, user_id) VALUES (?, ?)',
+            [ct.name, userId]
+          );
+          restored++;
+          console.log(`[Sync] Torneo restaurado: ${ct.name}`);
+        }
+      }
+
+      console.log(`[Sync] restoreTournaments completado: ${restored} torneos restaurados`);
+      return restored;
+    } catch (error) {
+      console.error('[Sync] Error restaurando torneos:', error);
+      return 0;
+    }
+  }
+
   async restoreFromCloud(): Promise<{ success: boolean; message: string; playersRestored: number; matchesRestored: number }> {
     const sessionToken = await this.getSessionToken();
     if (!sessionToken) {
@@ -415,7 +506,11 @@ class SyncService {
         }
       }
 
-      // 2. Restore matches from cloud
+      // 2. Restore tournaments from cloud
+      const tournamentsRestored = await this.restoreTournamentsFromCloud(userId);
+      console.log(`[Sync] Torneos restaurados: ${tournamentsRestored}`);
+
+      // 3. Restore matches from cloud
       const cloudMatches = await this.getCloudMatches();
       console.log(`[Sync] Partidos en la nube: ${cloudMatches.length}`);
 

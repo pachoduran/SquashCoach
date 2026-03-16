@@ -1098,6 +1098,46 @@ async def get_match(
     }
 
 # =============================================================================
+# TOURNAMENT ENDPOINTS
+# =============================================================================
+
+@api_router.post("/tournaments")
+async def create_tournament(
+    tournament_data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new tournament"""
+    name = tournament_data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="El nombre del torneo es obligatorio")
+    
+    # Check if tournament already exists for this user
+    existing = await db.tournaments.find_one(
+        {"user_id": current_user.user_id, "name": name}
+    )
+    if existing:
+        return {"tournament_id": existing["tournament_id"], "name": name, "already_exists": True}
+    
+    tournament_id = f"tournament_{uuid.uuid4().hex[:12]}"
+    tournament = {
+        "tournament_id": tournament_id,
+        "user_id": current_user.user_id,
+        "name": name,
+        "created_at": datetime.now(timezone.utc),
+    }
+    await db.tournaments.insert_one(tournament)
+    return {"tournament_id": tournament_id, "name": name, "user_id": current_user.user_id}
+
+@api_router.get("/tournaments")
+async def get_tournaments(current_user: User = Depends(get_current_user)):
+    """Get all tournaments for the current user"""
+    tournaments = await db.tournaments.find(
+        {"user_id": current_user.user_id},
+        {"_id": 0}
+    ).sort("name", 1).to_list(500)
+    return tournaments
+
+# =============================================================================
 # SYNC ENDPOINTS
 # =============================================================================
 
@@ -1302,12 +1342,12 @@ async def get_head_to_head(
     }
     
     if date_from:
-        query["date"] = {"$gte": datetime.fromisoformat(date_from)}
+        query["date"] = {"$gte": parse_date_safe(date_from)}
     if date_to:
         if "date" in query:
-            query["date"]["$lte"] = datetime.fromisoformat(date_to)
+            query["date"]["$lte"] = parse_date_safe(date_to)
         else:
-            query["date"] = {"$lte": datetime.fromisoformat(date_to)}
+            query["date"] = {"$lte": parse_date_safe(date_to)}
     
     matches = await db.matches.find(query, {"_id": 0}).to_list(1000)
     
