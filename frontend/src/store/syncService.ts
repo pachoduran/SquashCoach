@@ -313,7 +313,7 @@ class SyncService {
       const db = await getDatabase();
       
       // Get local players
-      const localPlayers = await db.getAllAsync('SELECT id, nickname FROM players ORDER BY nickname ASC');
+      const localPlayers = await db.getAllAsync('SELECT id, nickname, category, gender, country, city, club, COALESCE(is_mine, 0) as is_mine FROM players ORDER BY nickname ASC');
       console.log(`[Sync] syncPlayers: ${(localPlayers as any[]).length} jugadores locales`);
       
       // Get cloud players
@@ -331,7 +331,15 @@ class SyncService {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${sessionToken}`
               },
-              body: JSON.stringify({ nickname: lp.nickname })
+              body: JSON.stringify({
+                nickname: lp.nickname,
+                category: lp.category || null,
+                gender: lp.gender || null,
+                country: lp.country || null,
+                city: lp.city || null,
+                club: lp.club || null,
+                is_mine: lp.is_mine || 0,
+              })
             });
             if (response.ok) {
               uploaded++;

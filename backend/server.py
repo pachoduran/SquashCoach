@@ -19,6 +19,19 @@ from email.mime.multipart import MIMEMultipart
 import random
 import re
 
+def parse_date_safe(date_str: str) -> datetime:
+    """Parse date string safely from various formats"""
+    try:
+        return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+    except (ValueError, AttributeError):
+        try:
+            return datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S.%f')
+        except (ValueError, AttributeError):
+            try:
+                return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+            except (ValueError, AttributeError):
+                return datetime.now(timezone.utc)
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -286,7 +299,7 @@ class PointCreate(BaseModel):
     position_x: float
     position_y: float
     winner_player_local_id: int
-    reason: str
+    reason: Optional[str] = ""
     my_player_pos_x: Optional[float] = None
     my_player_pos_y: Optional[float] = None
     opponent_pos_x: Optional[float] = None
@@ -1168,7 +1181,7 @@ async def sync_data(
                 my_player_id=my_player_id,
                 best_of=match_data.best_of,
                 winner_id=winner_id,
-                date=datetime.fromisoformat(match_data.date.replace('Z', '+00:00')),
+                date=parse_date_safe(match_data.date),
                 status=match_data.status,
                 current_game=match_data.current_game,
                 player1_games=match_data.player1_games,
@@ -1352,3 +1365,11 @@ async def shutdown_db_client():
     client.close()
 
 
+
+
+# Temporary endpoint to download server.py
+@app.get("/api/download-server-py")
+async def download_server_py():
+    import os
+    file_path = os.path.join(os.path.dirname(__file__), "server.py")
+    return FileResponse(file_path, media_type="text/plain", filename="server.py")
