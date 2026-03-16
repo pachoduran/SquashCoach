@@ -28,12 +28,16 @@ Build and publish the "Squash Coach" mobile application to the Google Play Store
 - Welcome email on registration
 - Settings gear icon in header for delete account access
 
-### v3.7.1 - Analysis & Edit Enhancements (March 2026)
+### v3.7.1 - Analysis, Edit & Share (March 2026)
 - **Analysis screen**: Added tournament filter dropdown (with iOS modal picker)
 - **Analysis screen**: Added reason statistics table showing per-player breakdown
-- **Match summary**: Point editing now supports changing BOTH winner and reason
-- **Match summary**: Expanded reasons list matching match-play reasons
+- **Match summary**: Point editing supports changing BOTH winner and reason
+- **Match summary**: Expanded reasons list (19 reasons matching match-play)
+- **Match summary**: Share button in header with two options:
+  - **Share as Image**: Captures a styled dark-themed card via ViewShot and shares via system share sheet (WhatsApp, Telegram, etc.)
+  - **Share via WhatsApp (text)**: Opens WhatsApp directly with formatted match result text
 - **Match play**: Fixed duplicate style definitions, added missing headerButtons style
+- **Dependencies added**: `react-native-view-shot@4.0.3`, `expo-sharing@14.0.8`
 - **Backend**: All 30 API tests passing (100% coverage on key endpoints)
 
 ## Prioritized Backlog
@@ -42,7 +46,7 @@ Build and publish the "Squash Coach" mobile application to the Google Play Store
 - [PENDING] Deploy updated server.py to Bluehost
 - [PENDING] Configure SMTP_PASSWORD env var on Bluehost for email sending
 - [PENDING] Create Gmail app password for squashcoach1830@gmail.com
-- [PENDING] Build and test v3.7.1 on Android/iOS
+- [PENDING] Build and test v3.7.1 on Android/iOS preview builds
 - [PENDING] Submit to stores
 
 ### P1 - Remaining Issues
@@ -56,8 +60,8 @@ Build and publish the "Squash Coach" mobile application to the Google Play Store
 - Refactor new-match.tsx (1000+ lines) into smaller components
 
 ## Key Files
+- `frontend/app/match-summary.tsx` - Point editing (winner + reason) + WhatsApp share
 - `frontend/app/analysis.tsx` - Analysis with tournament filter + reason stats
-- `frontend/app/match-summary.tsx` - Point editing (winner + reason)
 - `frontend/app/match-play.tsx` - Match play with reason toggle
 - `frontend/app/new-match.tsx` - Player creation + tournament selector
 - `frontend/app/index.tsx` - Main screen with settings icon

@@ -10,6 +10,8 @@ import {
   Modal,
   TextInput,
   Alert,
+  Platform,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -19,6 +21,8 @@ import { useLanguage } from '@/src/context/LanguageContext';
 import { useAuth } from '@/src/context/AuthContext';
 import { SquashCourt } from '@/src/components/SquashCourt';
 import { format } from 'date-fns';
+import ViewShot from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -80,6 +84,10 @@ export default function MatchSummary() {
   const [editReason, setEditReason] = useState('');
   const [editWinner, setEditWinner] = useState<number | null>(null);
   const REASONS = ['Drop', 'Boast', 'Paralela', 'Cross', 'Lob', 'Volea', 'Kill', 'Error', 'Let', 'Stroke', 'No Let', 'Nick', 'Dos paredes', 'Cruzada', 'Alta', 'Chapa', 'No contestó', 'Globo', 'Saque'];
+
+  // Share
+  const shareCardRef = useRef<any>(null);
+  const [isSharing, setIsSharing] = useState(false);
 
   useEffect(() => {
     if (isCloudMatch) {
@@ -266,6 +274,68 @@ export default function MatchSummary() {
     }
   };
 
+  // Share functions
+  const getShareText = () => {
+    if (!matchData) return '';
+    const winner = matchData.winner_id === matchData.player1_id 
+      ? matchData.player1_nickname 
+      : matchData.player2_nickname;
+    const gameScores = gameResults.map(g => `${g.player1_score}-${g.player2_score}`).join(', ');
+    const dateStr = matchData.date ? format(new Date(matchData.date), 'dd/MM/yyyy') : '';
+    const tournamentStr = matchData.tournament ? `\nTorneo: ${matchData.tournament}` : '';
+    
+    return `Squash Match Result\n${matchData.player1_nickname} vs ${matchData.player2_nickname}\n${matchData.player1_games} - ${matchData.player2_games} (${gameScores})${tournamentStr}\nGanador: ${winner}\n${dateStr}\n\nSquash Coach App`;
+  };
+
+  const shareAsImage = async () => {
+    if (!shareCardRef.current) return;
+    setIsSharing(true);
+    try {
+      const uri = await shareCardRef.current.capture();
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (isAvailable) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'image/png',
+          dialogTitle: 'Compartir resultado',
+        });
+      } else {
+        Alert.alert('No disponible', 'La función de compartir no está disponible en este dispositivo');
+      }
+    } catch (error) {
+      console.error('Error sharing image:', error);
+      Alert.alert('Error', 'No se pudo compartir la imagen');
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const shareViaWhatsApp = async () => {
+    const text = getShareText();
+    const url = `whatsapp://send?text=${encodeURIComponent(text)}`;
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('WhatsApp', 'WhatsApp no está instalado');
+      }
+    } catch (error) {
+      console.error('Error opening WhatsApp:', error);
+    }
+  };
+
+  const showShareOptions = () => {
+    Alert.alert(
+      'Compartir Resultado',
+      'Elige cómo compartir',
+      [
+        { text: 'Imagen', onPress: shareAsImage },
+        { text: 'WhatsApp (texto)', onPress: shareViaWhatsApp },
+        { text: 'Cancelar', style: 'cancel' },
+      ]
+    );
+  };
+
   // Obtener lista de games disponibles
   const availableGames = [...new Set(allPoints.map(p => p.game_number))].sort();
 
@@ -289,9 +359,14 @@ export default function MatchSummary() {
           <Ionicons name="arrow-back" size={22} color="#FFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('summary.title')}</Text>
-        <TouchableOpacity onPress={() => router.push('/')} style={styles.homeButton}>
-          <Ionicons name="home" size={22} color="#FFF" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <TouchableOpacity onPress={showShareOptions} style={styles.homeButton} data-testid="share-match-btn">
+            <Ionicons name="share-social" size={22} color="#FFF" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/')} style={styles.homeButton}>
+            <Ionicons name="home" size={22} color="#FFF" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -569,6 +644,60 @@ export default function MatchSummary() {
           </View>
         </View>
       </Modal>
+
+      {/* Shareable Card - Hidden off-screen for capture */}
+      <ViewShot ref={shareCardRef} options={{ format: 'png', quality: 0.9 }}
+        style={{ position: 'absolute', left: -9999, top: 0, width: 360 }}>
+        <View style={shareStyles.card}>
+          <View style={shareStyles.headerBar}>
+            <Text style={shareStyles.appName}>SQUASH COACH</Text>
+          </View>
+          {matchData.tournament_name && (
+            <Text style={shareStyles.tournament}>{matchData.tournament_name}</Text>
+          )}
+          <Text style={shareStyles.date}>{format(new Date(matchData.date), 'dd/MM/yyyy')}</Text>
+          <View style={shareStyles.playersRow}>
+            <View style={shareStyles.playerCol}>
+              <Text style={[shareStyles.playerName, matchData.winner_id === matchData.player1_id && shareStyles.winnerName]}>
+                {matchData.player1_nickname}
+              </Text>
+            </View>
+            <View style={shareStyles.scoreCol}>
+              <Text style={shareStyles.mainScore}>
+                {matchData.player1_games} - {matchData.player2_games}
+              </Text>
+            </View>
+            <View style={shareStyles.playerCol}>
+              <Text style={[shareStyles.playerName, matchData.winner_id === matchData.player2_id && shareStyles.winnerName]}>
+                {matchData.player2_nickname}
+              </Text>
+            </View>
+          </View>
+          {gameResults.length > 0 && (
+            <View style={shareStyles.gamesRow}>
+              {gameResults.map((g, i) => (
+                <View key={i} style={shareStyles.gameChip}>
+                  <Text style={shareStyles.gameChipText}>G{g.game_number}: {g.player1_score}-{g.player2_score}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+          {reasonStats.length > 0 && (
+            <View style={shareStyles.reasonsSection}>
+              <Text style={shareStyles.reasonsTitle}>Top Motivos</Text>
+              {reasonStats.slice(0, 3).map((r, i) => (
+                <View key={i} style={shareStyles.reasonRow}>
+                  <Text style={shareStyles.reasonName}>{r.reason}</Text>
+                  <Text style={shareStyles.reasonCount}>{r.count}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+          <View style={shareStyles.footerBar}>
+            <Text style={shareStyles.footerText}>squashcoach.app</Text>
+          </View>
+        </View>
+      </ViewShot>
 
       <View style={styles.footer}>
         <TouchableOpacity style={styles.newMatchButton} onPress={() => router.push('/new-match')}>
@@ -871,5 +1000,126 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFF',
     marginLeft: 6,
+  },
+});
+
+const shareStyles = StyleSheet.create({
+  card: {
+    backgroundColor: '#1E3A5F',
+    borderRadius: 16,
+    overflow: 'hidden',
+    width: 360,
+  },
+  headerBar: {
+    backgroundColor: '#0D2137',
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  appName: {
+    color: '#4FC3F7',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 3,
+  },
+  tournament: {
+    color: '#90CAF9',
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 10,
+    fontWeight: '600',
+  },
+  date: {
+    color: '#78909C',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  playersRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  playerCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  playerName: {
+    color: '#B0BEC5',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  winnerName: {
+    color: '#4CAF50',
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  scoreCol: {
+    paddingHorizontal: 16,
+  },
+  mainScore: {
+    color: '#FFF',
+    fontSize: 36,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  gamesRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 16,
+    paddingHorizontal: 20,
+  },
+  gameChip: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  gameChipText: {
+    color: '#B0BEC5',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  reasonsSection: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    marginHorizontal: 20,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+  },
+  reasonsTitle: {
+    color: '#78909C',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  reasonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  reasonName: {
+    color: '#B0BEC5',
+    fontSize: 13,
+  },
+  reasonCount: {
+    color: '#4FC3F7',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  footerBar: {
+    backgroundColor: '#0D2137',
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  footerText: {
+    color: '#546E7A',
+    fontSize: 11,
+    letterSpacing: 1,
   },
 });
