@@ -114,7 +114,13 @@ class SyncService {
       const players = await db.getAllAsync('SELECT * FROM players');
       syncData.players = players.map((p: any) => ({
         local_id: p.id,
-        nickname: p.nickname
+        nickname: p.nickname,
+        category: p.category || null,
+        gender: p.gender || null,
+        country: p.country || null,
+        city: p.city || null,
+        club: p.club || null,
+        is_mine: p.is_mine || 0,
       }));
 
       // Get pending matches
@@ -388,8 +394,10 @@ class SyncService {
           );
           if (!existing) {
             await db.runAsync(
-              'INSERT INTO players (nickname, created_at, user_id) VALUES (?, ?, ?)',
-              [cp.nickname, cp.created_at || new Date().toISOString(), userId]
+              'INSERT INTO players (nickname, created_at, user_id, category, gender, country, city, club, is_mine) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+              [cp.nickname, cp.created_at || new Date().toISOString(), userId,
+               cp.category || null, cp.gender || null, cp.country || null,
+               cp.city || null, cp.club || null, cp.is_mine || 0]
             );
             playersRestored++;
             console.log(`[Sync] Jugador restaurado: ${cp.nickname}`);

@@ -135,6 +135,15 @@ const runMigrations = async (): Promise<void> => {
     "ALTER TABLE matches ADD COLUMN match_date TEXT",
     "ALTER TABLE matches ADD COLUMN user_id TEXT",
     "ALTER TABLE players ADD COLUMN user_id TEXT",
+    // Phase 1: Player extra fields
+    "ALTER TABLE players ADD COLUMN category TEXT",
+    "ALTER TABLE players ADD COLUMN gender TEXT",
+    "ALTER TABLE players ADD COLUMN country TEXT",
+    "ALTER TABLE players ADD COLUMN city TEXT",
+    "ALTER TABLE players ADD COLUMN club TEXT",
+    "ALTER TABLE players ADD COLUMN is_mine INTEGER DEFAULT 0",
+    // Phase 1: Match tournament_id
+    "ALTER TABLE matches ADD COLUMN tournament_id INTEGER",
   ];
   
   for (const sql of migrations) {
@@ -143,6 +152,20 @@ const runMigrations = async (): Promise<void> => {
     } catch (e) {
       // Ignorar errores de columnas existentes
     }
+  }
+  
+  // Crear tabla de torneos
+  try {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS tournaments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        user_id TEXT,
+        created_at TEXT NOT NULL
+      );
+    `);
+  } catch (e) {
+    // Tabla ya existe
   }
   
   // Migración de motivos: limpiar antiguos y agregar nuevos

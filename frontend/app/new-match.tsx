@@ -9,6 +9,7 @@ import {
   Modal,
   Alert,
   Platform,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
@@ -21,10 +22,22 @@ import { useAuth } from '@/src/context/AuthContext';
 import { syncService } from '@/src/store/syncService';
 import { format } from 'date-fns';
 import { adService } from '@/src/services/adService';
+import { PLAYER_CATEGORIES, GENDER_OPTIONS, COUNTRIES } from '@/src/utils/playerConstants';
 
 interface Player {
   id: number;
   nickname: string;
+  category?: string;
+  gender?: string;
+  country?: string;
+  city?: string;
+  club?: string;
+  is_mine: number;
+}
+
+interface Tournament {
+  id: number;
+  name: string;
 }
 
 export default function NewMatch() {
@@ -38,11 +51,29 @@ export default function NewMatch() {
   const [showAddPlayer, setShowAddPlayer] = useState(false);
   const [newPlayerNickname, setNewPlayerNickname] = useState('');
   
-  // Nuevos campos
-  const [tournamentName, setTournamentName] = useState('');
+  // New player fields
+  const [newPlayerCategory, setNewPlayerCategory] = useState('');
+  const [newPlayerGender, setNewPlayerGender] = useState('');
+  const [newPlayerCountry, setNewPlayerCountry] = useState('');
+  const [newPlayerCity, setNewPlayerCity] = useState('');
+  const [newPlayerClub, setNewPlayerClub] = useState('');
+  const [newPlayerIsMine, setNewPlayerIsMine] = useState(true);
+  
+  // Pickers for new player fields (iOS)
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [showGenderPicker, setShowGenderPicker] = useState(false);
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+  
+  // Tournament fields
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [selectedTournamentId, setSelectedTournamentId] = useState<number | null>(null);
+  const [showAddTournament, setShowAddTournament] = useState(false);
+  const [newTournamentName, setNewTournamentName] = useState('');
+  const [showTournamentPicker, setShowTournamentPicker] = useState(false);
+  
+  // Date and match fields
   const [matchDate, setMatchDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [myPlayerId, setMyPlayerId] = useState<number | null>(null);
   
   // Para iOS - modales de selección
   const [showPlayer1Picker, setShowPlayer1Picker] = useState(false);
@@ -50,42 +81,73 @@ export default function NewMatch() {
 
   useEffect(() => {
     loadPlayers();
+    loadTournaments();
   }, []);
+
+  const loadTournaments = async () => {
+    try {
+      const db = await getDatabase();
+      const userId = user?.user_id || '';
+      const result = await db.getAllAsync(
+        'SELECT id, name FROM tournaments WHERE user_id = ? OR user_id IS NULL ORDER BY name ASC',
+        [userId]
+      );
+      setTournaments(result as Tournament[]);
+    } catch (error) {
+      console.error('Error cargando torneos:', error);
+    }
+  };
+
+  const addTournament = async () => {
+    if (!newTournamentName.trim()) {
+      Alert.alert('Error', 'Ingresa el nombre del torneo');
+      return;
+    }
+    try {
+      const db = await getDatabase();
+      const userId = user?.user_id || null;
+      const result = await db.runAsync(
+        'INSERT INTO tournaments (name, user_id, created_at) VALUES (?, ?, ?)',
+        [newTournamentName.trim(), userId, new Date().toISOString()]
+      );
+      const newTournament: Tournament = { id: result.lastInsertRowId, name: newTournamentName.trim() };
+      setTournaments([...tournaments, newTournament].sort((a, b) => a.name.localeCompare(b.name)));
+      setSelectedTournamentId(result.lastInsertRowId);
+      setNewTournamentName('');
+      setShowAddTournament(false);
+    } catch (error) {
+      console.error('Error agregando torneo:', error);
+      Alert.alert('Error', 'No se pudo crear el torneo');
+    }
+  };
 
   const loadPlayers = async () => {
     try {
       const db = await getDatabase();
+      const userId = user?.user_id || '';
       
-      // Primero verificar qué columnas tiene la tabla
-      let hasName = false;
-      let hasNickname = false;
-      try {
-        const tableInfo = await db.getAllAsync("PRAGMA table_info(players)");
-        hasName = (tableInfo as any[]).some((col: any) => col.name === 'name');
-        hasNickname = (tableInfo as any[]).some((col: any) => col.name === 'nickname');
-      } catch (e) {
-        // Si falla, asumir tabla nueva
-        hasNickname = true;
-      }
-      
-      // Construir consulta según estructura - filtrar por user_id
-      let query = 'SELECT id, ';
-      if (hasNickname && hasName) {
-        query += 'COALESCE(nickname, name) as nickname';
-      } else if (hasNickname) {
-        query += 'nickname';
-      } else if (hasName) {
-        query += 'name as nickname';
-      } else {
-        query += 'nickname'; // fallback
-      }
-      query += ' FROM players WHERE user_id = ? OR user_id IS NULL ORDER BY nickname ASC';
-      
-      const result = await db.getAllAsync(query, [user?.user_id || '']);
+      // Load players with new fields, sort: mine first, then alphabetically
+      const result = await db.getAllAsync(
+        `SELECT id, nickname, category, gender, country, city, club, COALESCE(is_mine, 0) as is_mine 
+         FROM players WHERE user_id = ? OR user_id IS NULL 
+         ORDER BY is_mine DESC, nickname ASC`,
+        [userId]
+      );
       setPlayers(result as Player[]);
     } catch (error) {
       console.error('Error cargando jugadores:', error);
     }
+  };
+
+  const resetPlayerForm = () => {
+    setNewPlayerNickname('');
+    setNewPlayerCategory('');
+    setNewPlayerGender('');
+    setNewPlayerCountry('');
+    setNewPlayerCity('');
+    setNewPlayerClub('');
+    setNewPlayerIsMine(true);
+    setShowAddPlayer(false);
   };
 
   const addPlayer = async () => {
@@ -98,74 +160,50 @@ export default function NewMatch() {
       const db = await getDatabase();
       const nickname = newPlayerNickname.trim();
       
-      // Verificar si ya existe un jugador con ese nombre para este usuario
       const existingPlayer = players.find(
         p => p.nickname.toLowerCase() === nickname.toLowerCase()
       );
       
       if (existingPlayer) {
-        Alert.alert(
-          t('common.error'), 
-          t('newMatch.playerExists') || 'Ya existe un jugador con ese nombre'
-        );
+        Alert.alert(t('common.error'), t('newMatch.playerExists') || 'Ya existe un jugador con ese nombre');
         return;
       }
       
-      // Verificar estructura de la tabla para saber qué columnas usar
-      let tableInfo: any[] = [];
-      try {
-        tableInfo = await db.getAllAsync("PRAGMA table_info(players)");
-      } catch (e) {
-        tableInfo = [];
-      }
-      
-      const hasName = tableInfo.some((col: any) => col.name === 'name');
-      const hasNickname = tableInfo.some((col: any) => col.name === 'nickname');
-      const hasUserId = tableInfo.some((col: any) => col.name === 'user_id');
-      
-      let result;
       const userId = user?.user_id || null;
-      
-      if (hasName && hasNickname && hasUserId) {
-        // Tabla con todas las columnas
-        result = await db.runAsync(
-          'INSERT INTO players (name, nickname, created_at, user_id) VALUES (?, ?, ?, ?)',
-          [nickname, nickname, new Date().toISOString(), userId]
-        );
-      } else if (hasNickname && hasUserId) {
-        // Tabla nueva con nickname y user_id
-        result = await db.runAsync(
-          'INSERT INTO players (nickname, created_at, user_id) VALUES (?, ?, ?)',
-          [nickname, new Date().toISOString(), userId]
-        );
-      } else if (hasName && hasNickname) {
-        // Tabla con ambas columnas (versión intermedia)
-        result = await db.runAsync(
-          'INSERT INTO players (name, nickname, created_at) VALUES (?, ?, ?)',
-          [nickname, nickname, new Date().toISOString()]
-        );
-      } else if (hasName && !hasNickname) {
-        // Tabla antigua solo con name
-        result = await db.runAsync(
-          'INSERT INTO players (name, created_at) VALUES (?, ?)',
-          [nickname, new Date().toISOString()]
-        );
-      } else {
-        // Tabla nueva solo con nickname
-        result = await db.runAsync(
-          'INSERT INTO players (nickname, created_at) VALUES (?, ?)',
-          [nickname, new Date().toISOString()]
-        );
-      }
+      const result = await db.runAsync(
+        `INSERT INTO players (nickname, created_at, user_id, category, gender, country, city, club, is_mine) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          nickname,
+          new Date().toISOString(),
+          userId,
+          newPlayerCategory || null,
+          newPlayerGender || null,
+          newPlayerCountry || null,
+          newPlayerCity.trim() || null,
+          newPlayerClub.trim() || null,
+          newPlayerIsMine ? 1 : 0,
+        ]
+      );
       
       const newPlayer: Player = {
         id: result.lastInsertRowId,
         nickname: nickname,
+        category: newPlayerCategory || undefined,
+        gender: newPlayerGender || undefined,
+        country: newPlayerCountry || undefined,
+        city: newPlayerCity.trim() || undefined,
+        club: newPlayerClub.trim() || undefined,
+        is_mine: newPlayerIsMine ? 1 : 0,
       };
 
-      setPlayers([...players, newPlayer].sort((a, b) => a.nickname.localeCompare(b.nickname)));
-      setNewPlayerNickname('');
-      setShowAddPlayer(false);
+      // Sort: mine first, then alphabetically
+      const updated = [...players, newPlayer].sort((a, b) => {
+        if (a.is_mine !== b.is_mine) return b.is_mine - a.is_mine;
+        return a.nickname.localeCompare(b.nickname);
+      });
+      setPlayers(updated);
+      resetPlayerForm();
       
       // Auto-sync player to cloud immediately
       if (isAuthenticated) {
@@ -202,11 +240,14 @@ export default function NewMatch() {
       
       const db = await getDatabase();
       const userId = user?.user_id || null;
+      const tournamentName = selectedTournamentId 
+        ? tournaments.find(t => t.id === selectedTournamentId)?.name || null 
+        : null;
       
       const result = await db.runAsync(
         `INSERT INTO matches 
-        (player1_id, player2_id, my_player_id, best_of, date, status, current_game, player1_games, player2_games, tournament_name, match_date, user_id) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (player1_id, player2_id, my_player_id, best_of, date, status, current_game, player1_games, player2_games, tournament_name, match_date, user_id, tournament_id) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           selectedPlayer1Id,
           selectedPlayer2Id,
@@ -217,9 +258,10 @@ export default function NewMatch() {
           1,
           0,
           0,
-          tournamentName.trim() || null,
+          tournamentName,
           matchDate.toISOString().split('T')[0],
           userId,
+          selectedTournamentId,
         ]
       );
 
@@ -240,6 +282,13 @@ export default function NewMatch() {
     }
   };
 
+  // Helper to get player label with "mine" indicator
+  const getPlayerLabel = (player: Player) => {
+    const mine = player.is_mine ? ' (Mio)' : '';
+    const cat = player.category ? ` - ${player.category}` : '';
+    return `${player.nickname}${mine}${cat}`;
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -255,16 +304,44 @@ export default function NewMatch() {
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>{t('newMatch.tournament')}</Text>
           
-          <TextInput
-            style={styles.textInput}
-            placeholder={t('newMatch.tournamentPlaceholder')}
-            value={tournamentName}
-            onChangeText={setTournamentName}
-            placeholderTextColor="#999"
-          />
+          {Platform.OS === 'ios' ? (
+            <TouchableOpacity 
+              style={styles.pickerButton}
+              onPress={() => setShowTournamentPicker(true)}
+            >
+              <Text style={[styles.pickerButtonText, !selectedTournamentId && styles.pickerButtonPlaceholder]}>
+                {selectedTournamentId 
+                  ? tournaments.find(t => t.id === selectedTournamentId)?.name 
+                  : 'Seleccionar torneo (opcional)'}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color="#666" />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={selectedTournamentId}
+                onValueChange={(itemValue) => setSelectedTournamentId(itemValue)}
+                style={styles.picker}
+                dropdownIconColor="#333"
+              >
+                <Picker.Item label="Seleccionar torneo (opcional)" value={null} />
+                {tournaments.map((tour) => (
+                  <Picker.Item key={tour.id} label={tour.name} value={tour.id} />
+                ))}
+              </Picker>
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={styles.addPlayerButtonSmall}
+            onPress={() => setShowAddTournament(true)}
+          >
+            <Ionicons name="add-circle-outline" size={20} color="#2196F3" />
+            <Text style={styles.addPlayerText}>Nuevo torneo</Text>
+          </TouchableOpacity>
           
           <TouchableOpacity 
-            style={styles.dateContainer}
+            style={[styles.dateContainer, { marginTop: 12 }]}
             onPress={() => setShowDatePicker(true)}
           >
             <Ionicons name="calendar-outline" size={20} color="#2196F3" />
@@ -296,7 +373,7 @@ export default function NewMatch() {
             >
               <Text style={[styles.pickerButtonText, !selectedPlayer1Id && styles.pickerButtonPlaceholder]}>
                 {selectedPlayer1Id 
-                  ? players.find(p => p.id === selectedPlayer1Id)?.nickname 
+                  ? getPlayerLabel(players.find(p => p.id === selectedPlayer1Id)!)
                   : t('newMatch.selectPlayer')}
               </Text>
               <Ionicons name="chevron-down" size={20} color="#666" />
@@ -313,7 +390,7 @@ export default function NewMatch() {
                 {players.map((player) => (
                   <Picker.Item
                     key={player.id}
-                    label={player.nickname}
+                    label={getPlayerLabel(player)}
                     value={player.id}
                   />
                 ))}
@@ -341,7 +418,7 @@ export default function NewMatch() {
             >
               <Text style={[styles.pickerButtonText, !selectedPlayer2Id && styles.pickerButtonPlaceholder]}>
                 {selectedPlayer2Id 
-                  ? players.find(p => p.id === selectedPlayer2Id)?.nickname 
+                  ? getPlayerLabel(players.find(p => p.id === selectedPlayer2Id)!)
                   : t('newMatch.selectPlayer')}
               </Text>
               <Ionicons name="chevron-down" size={20} color="#666" />
@@ -358,7 +435,7 @@ export default function NewMatch() {
                 {players.map((player) => (
                   <Picker.Item
                     key={player.id}
-                    label={player.nickname}
+                    label={getPlayerLabel(player)}
                     value={player.id}
                   />
                 ))}
@@ -424,28 +501,107 @@ export default function NewMatch() {
         visible={showAddPlayer}
         animationType="slide"
         transparent
-        onRequestClose={() => setShowAddPlayer(false)}
+        onRequestClose={resetPlayerForm}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { maxHeight: '85%' }]}>
             <Text style={styles.modalTitle}>{t('newMatch.newPlayer')}</Text>
             
-            <TextInput
-              style={styles.input}
-              placeholder={t('newMatch.nicknamePlaceholder')}
-              value={newPlayerNickname}
-              onChangeText={setNewPlayerNickname}
-              placeholderTextColor="#999"
-              autoCapitalize="words"
-            />
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Nickname (obligatorio) */}
+              <TextInput
+                style={styles.input}
+                placeholder={t('newMatch.nicknamePlaceholder')}
+                value={newPlayerNickname}
+                onChangeText={setNewPlayerNickname}
+                placeholderTextColor="#999"
+                autoCapitalize="words"
+              />
+              
+              {/* Es mi jugador? (obligatorio) */}
+              <View style={styles.switchRow}>
+                <Text style={styles.switchLabel}>Mi jugador</Text>
+                <Switch
+                  value={newPlayerIsMine}
+                  onValueChange={setNewPlayerIsMine}
+                  trackColor={{ false: '#ccc', true: '#81b0ff' }}
+                  thumbColor={newPlayerIsMine ? '#2196F3' : '#f4f3f4'}
+                />
+                <Text style={[styles.switchValueText, { color: newPlayerIsMine ? '#2196F3' : '#999' }]}>
+                  {newPlayerIsMine ? 'Mio' : 'Contrincante'}
+                </Text>
+              </View>
+
+              {/* Categoria (opcional) */}
+              <Text style={styles.fieldLabel}>Categoria (opcional)</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={newPlayerCategory}
+                  onValueChange={setNewPlayerCategory}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Sin categoria" value="" />
+                  {PLAYER_CATEGORIES.map((cat) => (
+                    <Picker.Item key={cat} label={cat} value={cat} />
+                  ))}
+                </Picker>
+              </View>
+
+              {/* Genero (opcional) */}
+              <Text style={styles.fieldLabel}>Genero (opcional)</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={newPlayerGender}
+                  onValueChange={setNewPlayerGender}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Sin especificar" value="" />
+                  {GENDER_OPTIONS.map((g) => (
+                    <Picker.Item key={g.value} label={g.label} value={g.value} />
+                  ))}
+                </Picker>
+              </View>
+
+              {/* Pais (opcional) */}
+              <Text style={styles.fieldLabel}>Pais (opcional)</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={newPlayerCountry}
+                  onValueChange={setNewPlayerCountry}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Seleccionar pais" value="" />
+                  {COUNTRIES.map((c) => (
+                    <Picker.Item key={c} label={c} value={c} />
+                  ))}
+                </Picker>
+              </View>
+
+              {/* Ciudad (opcional) */}
+              <TextInput
+                style={styles.input}
+                placeholder="Ciudad (opcional)"
+                value={newPlayerCity}
+                onChangeText={setNewPlayerCity}
+                placeholderTextColor="#999"
+                autoCapitalize="words"
+              />
+
+              {/* Club (opcional) */}
+              <TextInput
+                style={styles.input}
+                placeholder="Club / Agrupacion (opcional)"
+                value={newPlayerClub}
+                onChangeText={setNewPlayerClub}
+                placeholderTextColor="#999"
+                autoCapitalize="words"
+              />
+            </ScrollView>
             
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={styles.modalButton}
-                onPress={() => {
-                  setShowAddPlayer(false);
-                  setNewPlayerNickname('');
-                }}
+                onPress={resetPlayerForm}
               >
                 <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
@@ -456,6 +612,42 @@ export default function NewMatch() {
                 <Text style={[styles.modalButtonText, styles.modalButtonTextPrimary]}>
                   {t('newMatch.add')}
                 </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal para agregar torneo */}
+      <Modal
+        visible={showAddTournament}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowAddTournament(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Nuevo Torneo</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Nombre del torneo"
+              value={newTournamentName}
+              onChangeText={setNewTournamentName}
+              placeholderTextColor="#999"
+              autoCapitalize="words"
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => { setShowAddTournament(false); setNewTournamentName(''); }}
+              >
+                <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonPrimary]}
+                onPress={addTournament}
+              >
+                <Text style={[styles.modalButtonText, styles.modalButtonTextPrimary]}>Crear</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -490,7 +682,7 @@ export default function NewMatch() {
               {players.map((player) => (
                 <Picker.Item
                   key={player.id}
-                  label={player.nickname}
+                  label={getPlayerLabel(player)}
                   value={player.id}
                   color="#333"
                 />
@@ -528,10 +720,43 @@ export default function NewMatch() {
               {players.map((player) => (
                 <Picker.Item
                   key={player.id}
-                  label={player.nickname}
+                  label={getPlayerLabel(player)}
                   value={player.id}
                   color="#333"
                 />
+              ))}
+            </Picker>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal para seleccionar Torneo (iOS) */}
+      <Modal
+        visible={showTournamentPicker}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowTournamentPicker(false)}
+      >
+        <View style={styles.pickerModalOverlay}>
+          <View style={styles.pickerModalContent}>
+            <View style={styles.pickerModalHeader}>
+              <TouchableOpacity onPress={() => setShowTournamentPicker(false)}>
+                <Text style={styles.pickerModalCancel}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <Text style={styles.pickerModalTitle}>Torneo</Text>
+              <TouchableOpacity onPress={() => setShowTournamentPicker(false)}>
+                <Text style={styles.pickerModalDone}>OK</Text>
+              </TouchableOpacity>
+            </View>
+            <Picker
+              selectedValue={selectedTournamentId}
+              onValueChange={(itemValue) => setSelectedTournamentId(itemValue)}
+              style={styles.iosPicker}
+              itemStyle={{ fontSize: 18, color: '#333' }}
+            >
+              <Picker.Item label="Sin torneo" value={null} color="#999" />
+              {tournaments.map((tour) => (
+                <Picker.Item key={tour.id} label={tour.name} value={tour.id} color="#333" />
               ))}
             </Picker>
           </View>
@@ -815,5 +1040,31 @@ const styles = StyleSheet.create({
   },
   modalButtonTextPrimary: {
     color: '#FFF',
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    marginBottom: 8,
+    gap: 10,
+  },
+  switchLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    flex: 1,
+  },
+  switchValueText: {
+    fontSize: 14,
+    fontWeight: '500',
+    minWidth: 90,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 4,
+    marginTop: 8,
   },
 });

@@ -131,6 +131,12 @@ class Player(BaseModel):
     player_id: str = Field(default_factory=lambda: f"player_{uuid.uuid4().hex[:12]}")
     user_id: str  # Owner
     nickname: str
+    category: Optional[str] = None
+    gender: Optional[str] = None
+    country: Optional[str] = None
+    city: Optional[str] = None
+    club: Optional[str] = None
+    is_mine: int = 0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     synced: bool = True
 
@@ -183,6 +189,12 @@ class GameResult(BaseModel):
 class PlayerCreate(BaseModel):
     nickname: str
     local_id: Optional[int] = None
+    category: Optional[str] = None
+    gender: Optional[str] = None
+    country: Optional[str] = None
+    city: Optional[str] = None
+    club: Optional[str] = None
+    is_mine: int = 0
 
 class MatchCreate(BaseModel):
     local_id: Optional[int] = None
@@ -848,7 +860,13 @@ async def create_player(
     """Create a new player"""
     player = Player(
         user_id=current_user.user_id,
-        nickname=player_data.nickname
+        nickname=player_data.nickname,
+        category=player_data.category,
+        gender=player_data.gender,
+        country=player_data.country,
+        city=player_data.city,
+        club=player_data.club,
+        is_mine=player_data.is_mine,
     )
     
     await db.players.insert_one(player.dict())
@@ -959,7 +977,13 @@ async def sync_data(
         else:
             player = Player(
                 user_id=current_user.user_id,
-                nickname=player_data.nickname
+                nickname=player_data.nickname,
+                category=player_data.category,
+                gender=player_data.gender,
+                country=player_data.country,
+                city=player_data.city,
+                club=player_data.club,
+                is_mine=player_data.is_mine,
             )
             await db.players.insert_one(player.dict())
             result["player_mappings"][player_data.local_id] = player.player_id
