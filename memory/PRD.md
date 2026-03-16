@@ -28,32 +28,51 @@ Build and publish the "Squash Coach" mobile application to the Google Play Store
 - Welcome email on registration
 - Settings gear icon in header for delete account access
 
+### v3.7.1 - Analysis & Edit Enhancements (March 2026)
+- **Analysis screen**: Added tournament filter dropdown (with iOS modal picker)
+- **Analysis screen**: Added reason statistics table showing per-player breakdown
+- **Match summary**: Point editing now supports changing BOTH winner and reason
+- **Match summary**: Expanded reasons list matching match-play reasons
+- **Match play**: Fixed duplicate style definitions, added missing headerButtons style
+- **Backend**: All 30 API tests passing (100% coverage on key endpoints)
+
 ## Prioritized Backlog
 
 ### P0 - Deploy & Config
 - [PENDING] Deploy updated server.py to Bluehost
 - [PENDING] Configure SMTP_PASSWORD env var on Bluehost for email sending
 - [PENDING] Create Gmail app password for squashcoach1830@gmail.com
-- [PENDING] Build and test v3.7.0 on Android/iOS
+- [PENDING] Build and test v3.7.1 on Android/iOS
 - [PENDING] Submit to stores
 
-### P1 - Remaining Features
-- [PENDING] Edit point position/reason in match review (Feature 6)
-- [PENDING] Analysis by time period or tournament (Feature 9)
+### P1 - Remaining Issues
+- [PENDING-USER] iOS picker verification (category, gender, country)
+- [PENDING-USER] Google Play Store signing key mismatch resolution
+- [PENDING-USER] Apple App Store resubmission (delete account discoverability)
+- [BLOCKED] Email/Password Recovery (needs Gmail App Password from user)
 
 ### P2 - Future
 - Read-only web application for match data analysis
+- Refactor new-match.tsx (1000+ lines) into smaller components
 
 ## Key Files
-- `frontend/app/login.tsx` - Login + forgot/reset password
-- `frontend/app/new-match.tsx` - Player creation + tournament selector
+- `frontend/app/analysis.tsx` - Analysis with tournament filter + reason stats
+- `frontend/app/match-summary.tsx` - Point editing (winner + reason)
 - `frontend/app/match-play.tsx` - Match play with reason toggle
+- `frontend/app/new-match.tsx` - Player creation + tournament selector
+- `frontend/app/index.tsx` - Main screen with settings icon
+- `frontend/src/store/database.native.ts` - SQLite schema with migrations
 - `frontend/src/context/AuthContext.tsx` - Auth with forgot/reset
 - `frontend/src/utils/playerConstants.ts` - Categories, genders, countries
-- `frontend/src/store/syncService.ts` - Cloud sync/restore
 - `backend/server.py` - Full API with email, auth, sync
 
 ## Test Credentials
 - App: `googleplayreview@squashcoach.app` / `ReviewSquash2025!`
 - Apple Team: `RRWRLE3C2U` | API Key: `56AQ8A85QK`
 - Email: `squashcoach1830@gmail.com` (needs app password configured)
+- Test: `test_squash@example.com` / `Test123456`
+
+## Test Reports
+- `/app/test_reports/iteration_1.json` - Backend API tests: 30/30 PASS (100%)
+- `/app/backend/tests/test_squash_coach_api.py` - Full API test suite
+- `/app/backend/tests/test_sync_flow.py` - Sync flow test suite
