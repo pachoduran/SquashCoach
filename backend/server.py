@@ -1352,9 +1352,3 @@ async def shutdown_db_client():
     client.close()
 
 
-# Temporary endpoint to download server.py
-@app.get("/api/download-server-py")
-async def download_server_py():
-    import os
-    file_path = os.path.join(os.path.dirname(__file__), "server.py")
-    return FileResponse(file_path, media_type="text/plain", filename="server.py")
