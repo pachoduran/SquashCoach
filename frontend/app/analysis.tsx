@@ -25,6 +25,8 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 interface Player {
   id: number;
   nickname: string;
+  is_mine?: number;
+  category?: string;
 }
 
 interface Tournament {
@@ -44,6 +46,13 @@ export default function AnalysisScreen() {
   const router = useRouter();
   const { t } = useLanguage();
   const { user } = useAuth();
+
+  const getPlayerLabel = (player: Player) => {
+    let label = player.nickname;
+    if (player.category) label += ` (${player.category})`;
+    if (player.is_mine) label = `★ ${label}`;
+    return label;
+  };
   
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayer1, setSelectedPlayer1] = useState<number | null>(null);
@@ -105,7 +114,7 @@ export default function AnalysisScreen() {
       const db = await getDatabase();
       const userId = user?.user_id || '';
       const result = await db.getAllAsync(
-        'SELECT id, nickname FROM players WHERE user_id = ? OR user_id IS NULL ORDER BY nickname ASC',
+        'SELECT id, nickname, COALESCE(is_mine, 0) as is_mine, category FROM players WHERE user_id = ? OR user_id IS NULL ORDER BY is_mine DESC, nickname ASC',
         [userId]
       );
       setPlayers(result as Player[]);
@@ -138,7 +147,7 @@ export default function AnalysisScreen() {
         params.push(format(dateTo, 'yyyy-MM-dd') + 'T23:59:59');
       }
       if (selectedTournament) {
-        matchQuery += ` AND tournament_id = ?`;
+        matchQuery += ` AND tournament_name = (SELECT name FROM tournaments WHERE id = ?)`;
         params.push(selectedTournament);
       }
       
@@ -267,7 +276,7 @@ export default function AnalysisScreen() {
               >
                 <Text style={[styles.iosPickerButtonText, !selectedPlayer1 && styles.iosPickerPlaceholder]}>
                   {selectedPlayer1 
-                    ? players.find(p => p.id === selectedPlayer1)?.nickname 
+                    ? getPlayerLabel(players.find(p => p.id === selectedPlayer1)!)
                     : t('newMatch.selectPlayer')}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#666" />
@@ -282,7 +291,7 @@ export default function AnalysisScreen() {
                 >
                   <Picker.Item label={t('newMatch.selectPlayer')} value={null} />
                   {players.map((player) => (
-                    <Picker.Item key={player.id} label={player.nickname} value={player.id} />
+                    <Picker.Item key={player.id} label={getPlayerLabel(player)} value={player.id} />
                   ))}
                 </Picker>
               </View>
@@ -305,7 +314,7 @@ export default function AnalysisScreen() {
               >
                 <Text style={[styles.iosPickerButtonText, !selectedPlayer2 && styles.iosPickerPlaceholder]}>
                   {selectedPlayer2 
-                    ? players.find(p => p.id === selectedPlayer2)?.nickname 
+                    ? getPlayerLabel(players.find(p => p.id === selectedPlayer2)!)
                     : t('newMatch.selectPlayer')}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#666" />
@@ -320,7 +329,7 @@ export default function AnalysisScreen() {
                 >
                   <Picker.Item label={t('newMatch.selectPlayer')} value={null} />
                   {players.filter(p => p.id !== selectedPlayer1).map((player) => (
-                    <Picker.Item key={player.id} label={player.nickname} value={player.id} />
+                    <Picker.Item key={player.id} label={getPlayerLabel(player)} value={player.id} />
                   ))}
                 </Picker>
               </View>

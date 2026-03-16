@@ -37,6 +37,8 @@ interface Match {
 interface Player {
   id: number;
   nickname: string;
+  is_mine?: number;
+  category?: string;
 }
 
 interface Tournament {
@@ -47,6 +49,13 @@ export default function HistoryScreen() {
   const router = useRouter();
   const { t } = useLanguage();
   const { user } = useAuth();
+
+  const getPlayerLabel = (player: Player) => {
+    let label = player.nickname;
+    if (player.category) label += ` (${player.category})`;
+    if (player.is_mine) label = `★ ${label}`;
+    return label;
+  };
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [players, setPlayers] = useState<Player[]>([]);
@@ -86,7 +95,7 @@ export default function HistoryScreen() {
       const db = await getDatabase();
       const userId = user?.user_id || '';
       const playersData = await db.getAllAsync(
-        'SELECT id, nickname FROM players WHERE user_id = ? OR user_id IS NULL ORDER BY nickname ASC',
+        'SELECT id, nickname, COALESCE(is_mine, 0) as is_mine, category FROM players WHERE user_id = ? OR user_id IS NULL ORDER BY is_mine DESC, nickname ASC',
         [userId]
       );
       setPlayers(playersData as Player[]);
@@ -319,11 +328,11 @@ export default function HistoryScreen() {
   // Build picker items
   const playerItems = [
     { label: t('common.all'), value: null },
-    ...players.map(p => ({ label: p.nickname, value: p.id }))
+    ...players.map(p => ({ label: getPlayerLabel(p), value: p.id }))
   ];
   const opponentItems = [
     { label: t('common.all'), value: null },
-    ...players.filter(p => p.id !== myPlayer).map(p => ({ label: p.nickname, value: p.id }))
+    ...players.filter(p => p.id !== myPlayer).map(p => ({ label: getPlayerLabel(p), value: p.id }))
   ];
   const tournamentItems = [
     { label: t('common.all'), value: null },
@@ -357,7 +366,7 @@ export default function HistoryScreen() {
               <View style={styles.pickerContainer}>
                 <Picker selectedValue={myPlayer} onValueChange={setMyPlayer} style={styles.picker} itemStyle={styles.pickerItem}>
                   <Picker.Item label={t('common.all')} value={null} color="#333" />
-                  {players.map(p => <Picker.Item key={p.id} label={p.nickname} value={p.id} color="#333" />)}
+                  {players.map(p => <Picker.Item key={p.id} label={getPlayerLabel(p)} value={p.id} color="#333" />)}
                 </Picker>
               </View>
             )}
@@ -372,7 +381,7 @@ export default function HistoryScreen() {
               <View style={styles.pickerContainer}>
                 <Picker selectedValue={opponent} onValueChange={setOpponent} style={styles.picker} itemStyle={styles.pickerItem}>
                   <Picker.Item label={t('common.all')} value={null} color="#333" />
-                  {players.filter(p => p.id !== myPlayer).map(p => <Picker.Item key={p.id} label={p.nickname} value={p.id} color="#333" />)}
+                  {players.filter(p => p.id !== myPlayer).map(p => <Picker.Item key={p.id} label={getPlayerLabel(p)} value={p.id} color="#333" />)}
                 </Picker>
               </View>
             )}

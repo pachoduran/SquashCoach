@@ -690,8 +690,8 @@ export default function NewMatch() {
         </View>
       </Modal>
 
-      {/* iOS Picker Modals */}
-      <Modal visible={showCategoryPicker} animationType="slide" transparent onRequestClose={() => setShowCategoryPicker(false)}>
+      {/* iOS Picker Modals - presentationStyle for iPad compatibility */}
+      <Modal visible={showCategoryPicker} animationType="slide" transparent presentationStyle="overFullScreen" onRequestClose={() => setShowCategoryPicker(false)}>
         <View style={styles.pickerModalOverlay}>
           <View style={styles.pickerModalContent}>
             <View style={styles.pickerModalHeader}>
@@ -711,7 +711,7 @@ export default function NewMatch() {
         </View>
       </Modal>
 
-      <Modal visible={showGenderPicker} animationType="slide" transparent onRequestClose={() => setShowGenderPicker(false)}>
+      <Modal visible={showGenderPicker} animationType="slide" transparent presentationStyle="overFullScreen" onRequestClose={() => setShowGenderPicker(false)}>
         <View style={styles.pickerModalOverlay}>
           <View style={styles.pickerModalContent}>
             <View style={styles.pickerModalHeader}>
@@ -731,7 +731,7 @@ export default function NewMatch() {
         </View>
       </Modal>
 
-      <Modal visible={showCountryPicker} animationType="slide" transparent onRequestClose={() => setShowCountryPicker(false)}>
+      <Modal visible={showCountryPicker} animationType="slide" transparent presentationStyle="overFullScreen" onRequestClose={() => setShowCountryPicker(false)}>
         <View style={styles.pickerModalOverlay}>
           <View style={styles.pickerModalContent}>
             <View style={styles.pickerModalHeader}>
