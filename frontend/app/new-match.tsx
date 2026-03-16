@@ -534,48 +534,84 @@ export default function NewMatch() {
 
               {/* Categoria (opcional) */}
               <Text style={styles.fieldLabel}>Categoria (opcional)</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={newPlayerCategory}
-                  onValueChange={setNewPlayerCategory}
-                  style={styles.picker}
+              {Platform.OS === 'ios' ? (
+                <TouchableOpacity
+                  style={styles.pickerButton}
+                  onPress={() => setShowCategoryPicker(true)}
                 >
-                  <Picker.Item label="Sin categoria" value="" />
-                  {PLAYER_CATEGORIES.map((cat) => (
-                    <Picker.Item key={cat} label={cat} value={cat} />
-                  ))}
-                </Picker>
-              </View>
+                  <Text style={[styles.pickerButtonText, !newPlayerCategory && styles.pickerButtonPlaceholder]}>
+                    {newPlayerCategory || 'Sin categoria'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={20} color="#666" />
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.pickerContainer}>
+                  <Picker
+                    selectedValue={newPlayerCategory}
+                    onValueChange={setNewPlayerCategory}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Sin categoria" value="" />
+                    {PLAYER_CATEGORIES.map((cat) => (
+                      <Picker.Item key={cat} label={cat} value={cat} />
+                    ))}
+                  </Picker>
+                </View>
+              )}
 
               {/* Genero (opcional) */}
               <Text style={styles.fieldLabel}>Genero (opcional)</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={newPlayerGender}
-                  onValueChange={setNewPlayerGender}
-                  style={styles.picker}
+              {Platform.OS === 'ios' ? (
+                <TouchableOpacity
+                  style={styles.pickerButton}
+                  onPress={() => setShowGenderPicker(true)}
                 >
-                  <Picker.Item label="Sin especificar" value="" />
-                  {GENDER_OPTIONS.map((g) => (
-                    <Picker.Item key={g.value} label={g.label} value={g.value} />
-                  ))}
-                </Picker>
-              </View>
+                  <Text style={[styles.pickerButtonText, !newPlayerGender && styles.pickerButtonPlaceholder]}>
+                    {newPlayerGender ? GENDER_OPTIONS.find(g => g.value === newPlayerGender)?.label : 'Sin especificar'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={20} color="#666" />
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.pickerContainer}>
+                  <Picker
+                    selectedValue={newPlayerGender}
+                    onValueChange={setNewPlayerGender}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Sin especificar" value="" />
+                    {GENDER_OPTIONS.map((g) => (
+                      <Picker.Item key={g.value} label={g.label} value={g.value} />
+                    ))}
+                  </Picker>
+                </View>
+              )}
 
               {/* Pais (opcional) */}
               <Text style={styles.fieldLabel}>Pais (opcional)</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={newPlayerCountry}
-                  onValueChange={setNewPlayerCountry}
-                  style={styles.picker}
+              {Platform.OS === 'ios' ? (
+                <TouchableOpacity
+                  style={styles.pickerButton}
+                  onPress={() => setShowCountryPicker(true)}
                 >
-                  <Picker.Item label="Seleccionar pais" value="" />
-                  {COUNTRIES.map((c) => (
-                    <Picker.Item key={c} label={c} value={c} />
-                  ))}
-                </Picker>
-              </View>
+                  <Text style={[styles.pickerButtonText, !newPlayerCountry && styles.pickerButtonPlaceholder]}>
+                    {newPlayerCountry || 'Seleccionar pais'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={20} color="#666" />
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.pickerContainer}>
+                  <Picker
+                    selectedValue={newPlayerCountry}
+                    onValueChange={setNewPlayerCountry}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Seleccionar pais" value="" />
+                    {COUNTRIES.map((c) => (
+                      <Picker.Item key={c} label={c} value={c} />
+                    ))}
+                  </Picker>
+                </View>
+              )}
 
               {/* Ciudad (opcional) */}
               <TextInput
@@ -650,6 +686,67 @@ export default function NewMatch() {
                 <Text style={[styles.modalButtonText, styles.modalButtonTextPrimary]}>Crear</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* iOS Picker Modals */}
+      <Modal visible={showCategoryPicker} animationType="slide" transparent onRequestClose={() => setShowCategoryPicker(false)}>
+        <View style={styles.pickerModalOverlay}>
+          <View style={styles.pickerModalContent}>
+            <View style={styles.pickerModalHeader}>
+              <TouchableOpacity onPress={() => setShowCategoryPicker(false)}>
+                <Text style={styles.pickerModalCancel}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <Text style={styles.pickerModalTitle}>Categoria</Text>
+              <TouchableOpacity onPress={() => setShowCategoryPicker(false)}>
+                <Text style={styles.pickerModalDone}>OK</Text>
+              </TouchableOpacity>
+            </View>
+            <Picker selectedValue={newPlayerCategory} onValueChange={setNewPlayerCategory} style={styles.iosPicker} itemStyle={{ fontSize: 18, color: '#333' }}>
+              <Picker.Item label="Sin categoria" value="" />
+              {PLAYER_CATEGORIES.map((cat) => (<Picker.Item key={cat} label={cat} value={cat} />))}
+            </Picker>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={showGenderPicker} animationType="slide" transparent onRequestClose={() => setShowGenderPicker(false)}>
+        <View style={styles.pickerModalOverlay}>
+          <View style={styles.pickerModalContent}>
+            <View style={styles.pickerModalHeader}>
+              <TouchableOpacity onPress={() => setShowGenderPicker(false)}>
+                <Text style={styles.pickerModalCancel}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <Text style={styles.pickerModalTitle}>Genero</Text>
+              <TouchableOpacity onPress={() => setShowGenderPicker(false)}>
+                <Text style={styles.pickerModalDone}>OK</Text>
+              </TouchableOpacity>
+            </View>
+            <Picker selectedValue={newPlayerGender} onValueChange={setNewPlayerGender} style={styles.iosPicker} itemStyle={{ fontSize: 18, color: '#333' }}>
+              <Picker.Item label="Sin especificar" value="" />
+              {GENDER_OPTIONS.map((g) => (<Picker.Item key={g.value} label={g.label} value={g.value} />))}
+            </Picker>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={showCountryPicker} animationType="slide" transparent onRequestClose={() => setShowCountryPicker(false)}>
+        <View style={styles.pickerModalOverlay}>
+          <View style={styles.pickerModalContent}>
+            <View style={styles.pickerModalHeader}>
+              <TouchableOpacity onPress={() => setShowCountryPicker(false)}>
+                <Text style={styles.pickerModalCancel}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <Text style={styles.pickerModalTitle}>Pais</Text>
+              <TouchableOpacity onPress={() => setShowCountryPicker(false)}>
+                <Text style={styles.pickerModalDone}>OK</Text>
+              </TouchableOpacity>
+            </View>
+            <Picker selectedValue={newPlayerCountry} onValueChange={setNewPlayerCountry} style={styles.iosPicker} itemStyle={{ fontSize: 18, color: '#333' }}>
+              <Picker.Item label="Seleccionar pais" value="" />
+              {COUNTRIES.map((c) => (<Picker.Item key={c} label={c} value={c} />))}
+            </Picker>
           </View>
         </View>
       </Modal>

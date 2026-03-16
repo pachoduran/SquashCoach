@@ -9,6 +9,7 @@ import {
   Alert,
   Pressable,
   ActivityIndicator,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -74,6 +75,7 @@ export default function MatchPlay() {
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editingPointId, setEditingPointId] = useState<number | null>(null);
+  const [reasonEnabled, setReasonEnabled] = useState(true);
 
   useEffect(() => {
     loadMatch();
@@ -245,10 +247,16 @@ export default function MatchPlay() {
   };
 
   const savePoint = async () => {
-    // No mostrar alerta, el botón ya está deshabilitado si faltan datos
-    if (!currentPoint || !currentPoint.winnerPlayerId || !currentPoint.reason) {
+    if (!currentPoint || !currentPoint.winnerPlayerId) {
       return;
     }
+    
+    // If reason toggle is off, auto-assign "no reason"
+    if (!reasonEnabled && !currentPoint.reason) {
+      currentPoint.reason = reasons[0] || t('matchPlay.noReason');
+    }
+    
+    if (!currentPoint.reason) return;
 
     if (!match || isSaving) return;
 
@@ -673,11 +681,25 @@ export default function MatchPlay() {
               </TouchableOpacity>
             </View>
 
-            {/* Motivo */}
-            <Text style={styles.modalLabel}>{t('matchPlay.selectReason')}</Text>
+            {/* Motivo Toggle + Grid */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, justifyContent: 'space-between' }}>
+              <Text style={styles.modalLabel}>{t('matchPlay.selectReason')}</Text>
+              <Switch
+                value={reasonEnabled}
+                onValueChange={(val) => {
+                  setReasonEnabled(val);
+                  if (!val) {
+                    setCurrentPoint({ ...currentPoint!, reason: reasons[0] || t('matchPlay.noReason') });
+                  }
+                }}
+                trackColor={{ false: '#ccc', true: '#81b0ff' }}
+                thumbColor={reasonEnabled ? '#2196F3' : '#f4f3f4'}
+              />
+            </View>
+            {reasonEnabled && (
             <ScrollView style={styles.reasonsScroll} nestedScrollEnabled>
               <View style={styles.reasonsGrid}>
-                {reasons.map((reason) => (
+                {reasons.filter(r => r !== reasons[0]).map((reason) => (
                   <TouchableOpacity
                     key={reason}
                     style={[
@@ -698,6 +720,7 @@ export default function MatchPlay() {
                 ))}
               </View>
             </ScrollView>
+            )}
 
             {/* Posiciones - OCULTO para futura actualización
             <Text style={styles.modalLabel}>{t('matchPlay.pointLocation')}</Text>
@@ -740,10 +763,10 @@ export default function MatchPlay() {
                 style={[
                   styles.modalButton, 
                   styles.modalButtonPrimary,
-                  (!currentPoint?.winnerPlayerId || !currentPoint?.reason || isSaving) && styles.modalButtonDisabled
+                  (!currentPoint?.winnerPlayerId || (reasonEnabled && !currentPoint?.reason) || isSaving) && styles.modalButtonDisabled
                 ]}
                 onPress={savePoint}
-                disabled={!currentPoint?.winnerPlayerId || !currentPoint?.reason || isSaving}
+                disabled={!currentPoint?.winnerPlayerId || (reasonEnabled && !currentPoint?.reason) || isSaving}
               >
                 {isSaving ? (
                   <ActivityIndicator size="small" color="#FFF" />
@@ -751,7 +774,7 @@ export default function MatchPlay() {
                   <Text style={[
                     styles.modalButtonText, 
                     styles.modalButtonTextPrimary,
-                    (!currentPoint?.winnerPlayerId || !currentPoint?.reason) && styles.modalButtonTextDisabled
+                    (!currentPoint?.winnerPlayerId || (reasonEnabled && !currentPoint?.reason)) && styles.modalButtonTextDisabled
                   ]}>
                     {t('common.save')}
                   </Text>
