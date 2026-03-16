@@ -9,13 +9,16 @@ End-to-end test for cloud sync flow:
 """
 import requests
 import json
+import os
+import uuid
 
-API_URL = "http://localhost:8001"
+API_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://match-analysis-test.preview.emergentagent.com').rstrip('/')
 
 def test_full_sync_and_restore_flow():
+    unique_email = f"pytest_sync_{uuid.uuid4().hex[:8]}@test.com"
     # 1. Register
     resp = requests.post(f"{API_URL}/api/auth/register", json={
-        "email": "pytest_sync@test.com",
+        "email": unique_email,
         "password": "test123456",
         "name": "Pytest User"
     })
@@ -168,8 +171,9 @@ def test_full_sync_and_restore_flow():
 
 def test_duplicate_sync_no_duplicates():
     """Syncing the same data twice should not create duplicates"""
+    unique_email = f"pytest_dup_{uuid.uuid4().hex[:8]}@test.com"
     resp = requests.post(f"{API_URL}/api/auth/register", json={
-        "email": "pytest_dup@test.com",
+        "email": unique_email,
         "password": "test123456",
         "name": "Dup User"
     })

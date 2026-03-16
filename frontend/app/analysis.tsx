@@ -27,11 +27,17 @@ interface Player {
   nickname: string;
 }
 
+interface Tournament {
+  id: number;
+  name: string;
+}
+
 interface PointData {
   position_x: number;
   position_y: number;
   winner_player_id: number;
   player1_id: number;
+  reason: string;
 }
 
 export default function AnalysisScreen() {
@@ -61,6 +67,14 @@ export default function AnalysisScreen() {
   // Estadísticas
   const [player1Wins, setPlayer1Wins] = useState(0);
   const [player2Wins, setPlayer2Wins] = useState(0);
+  
+  // Tournament filter
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [selectedTournament, setSelectedTournament] = useState<number | null>(null);
+  const [showTournamentPicker, setShowTournamentPicker] = useState(false);
+  
+  // Reason stats
+  const [reasonStats, setReasonStats] = useState<{ reason: string; p1Count: number; p2Count: number }[]>([]);
 
   // Para iOS - modales de selección
   const [showPlayer1Picker, setShowPlayer1Picker] = useState(false);
@@ -68,7 +82,18 @@ export default function AnalysisScreen() {
 
   useEffect(() => {
     loadPlayers();
+    loadTournaments();
   }, []);
+
+  const loadTournaments = async () => {
+    try {
+      const db = await getDatabase();
+      const result = await db.getAllAsync('SELECT id, name FROM tournaments ORDER BY name ASC');
+      setTournaments(result as Tournament[]);
+    } catch (error) {
+      console.error('Error cargando torneos:', error);
+    }
+  };
 
   const loadPlayers = async () => {
     try {
@@ -105,6 +130,10 @@ export default function AnalysisScreen() {
         matchQuery += ` AND date <= ?`;
         params.push(format(dateTo, 'yyyy-MM-dd') + 'T23:59:59');
       }
+      if (selectedTournament) {
+        matchQuery += ` AND tournament_id = ?`;
+        params.push(selectedTournament);
+      }
       
       const matches = await db.getAllAsync(matchQuery, params) as any[];
       setMatchCount(matches.length);
@@ -121,7 +150,7 @@ export default function AnalysisScreen() {
       const placeholders = matchIds.map(() => '?').join(',');
       
       const pointsData = await db.getAllAsync(
-        `SELECT p.position_x, p.position_y, p.winner_player_id, m.player1_id
+        `SELECT p.position_x, p.position_y, p.winner_player_id, p.reason, m.player1_id
          FROM points p
          JOIN matches m ON p.match_id = m.id
          WHERE p.match_id IN (${placeholders})`,
@@ -132,20 +161,34 @@ export default function AnalysisScreen() {
       
       let p1Wins = 0;
       let p2Wins = 0;
+      const reasonMap: { [key: string]: { p1: number; p2: number } } = {};
       
       pointsData.forEach(point => {
         const isPlayer1InMatch = point.player1_id === selectedPlayer1;
         const pointWonByPlayer1InMatch = point.winner_player_id === point.player1_id;
+        const wonByP1 = (isPlayer1InMatch && pointWonByPlayer1InMatch) || (!isPlayer1InMatch && !pointWonByPlayer1InMatch);
         
-        if ((isPlayer1InMatch && pointWonByPlayer1InMatch) || (!isPlayer1InMatch && !pointWonByPlayer1InMatch)) {
+        if (wonByP1) {
           p1Wins++;
         } else {
           p2Wins++;
         }
+        
+        // Track reason stats
+        const reason = point.reason || 'Sin motivo';
+        if (!reasonMap[reason]) reasonMap[reason] = { p1: 0, p2: 0 };
+        if (wonByP1) reasonMap[reason].p1++;
+        else reasonMap[reason].p2++;
       });
       
       setPlayer1Wins(p1Wins);
       setPlayer2Wins(p2Wins);
+      
+      // Build reason stats sorted by total
+      const rStats = Object.entries(reasonMap)
+        .map(([reason, counts]) => ({ reason, p1Count: counts.p1, p2Count: counts.p2 }))
+        .sort((a, b) => (b.p1Count + b.p2Count) - (a.p1Count + a.p2Count));
+      setReasonStats(rStats);
       
     } catch (error) {
       console.error('Error cargando análisis:', error);
@@ -333,6 +376,40 @@ export default function AnalysisScreen() {
             />
           )}
           
+          {/* Tournament filter */}
+          {tournaments.length > 0 && (
+            <>
+              <Text style={[styles.pickerLabel, { marginTop: 16 }]}>Torneo (opcional)</Text>
+              {Platform.OS === 'ios' ? (
+                <TouchableOpacity 
+                  style={styles.iosPickerButton}
+                  onPress={() => setShowTournamentPicker(true)}
+                >
+                  <Text style={[styles.iosPickerButtonText, !selectedTournament && styles.iosPickerPlaceholder]}>
+                    {selectedTournament 
+                      ? tournaments.find(t => t.id === selectedTournament)?.name 
+                      : 'Todos los torneos'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={20} color="#666" />
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.pickerContainer}>
+                  <Picker
+                    selectedValue={selectedTournament}
+                    onValueChange={(value) => setSelectedTournament(value)}
+                    style={styles.picker}
+                    itemStyle={styles.pickerItem}
+                  >
+                    <Picker.Item label="Todos los torneos" value={null} />
+                    {tournaments.map((tour) => (
+                      <Picker.Item key={tour.id} label={tour.name} value={tour.id} />
+                    ))}
+                  </Picker>
+                </View>
+              )}
+            </>
+          )}
+
           <TouchableOpacity
             style={[styles.analyzeButton, (!selectedPlayer1 || !selectedPlayer2) && styles.analyzeButtonDisabled]}
             onPress={loadAnalysis}
@@ -413,7 +490,7 @@ export default function AnalysisScreen() {
               />
             </View>
 
-            <View style={[styles.heatmapSection, { marginBottom: 20 }]}>
+            <View style={[styles.heatmapSection, { marginBottom: 12 }]}>
               <Text style={styles.heatmapTitle}>Todos los puntos</Text>
               <Text style={styles.heatmapSubtitle}>Distribución general</Text>
               <HeatmapCourt 
@@ -421,6 +498,32 @@ export default function AnalysisScreen() {
                 color="#9C27B0"
               />
             </View>
+
+            {/* Reason Statistics */}
+            {reasonStats.length > 0 && (
+              <View style={styles.reasonStatsCard}>
+                <Text style={styles.reasonStatsTitle}>Estadísticas por Motivo</Text>
+                <View style={styles.reasonStatsHeader}>
+                  <Text style={styles.reasonHeaderLabel}>Motivo</Text>
+                  <Text style={[styles.reasonHeaderValue, { color: '#2196F3' }]}>{player1Data?.nickname?.substring(0, 8)}</Text>
+                  <Text style={[styles.reasonHeaderValue, { color: '#FF5722' }]}>{player2Data?.nickname?.substring(0, 8)}</Text>
+                  <Text style={styles.reasonHeaderValue}>Total</Text>
+                </View>
+                {reasonStats.map((stat, index) => {
+                  const total = stat.p1Count + stat.p2Count;
+                  const maxTotal = Math.max(...reasonStats.map(s => s.p1Count + s.p2Count));
+                  const pct = maxTotal > 0 ? (total / maxTotal) * 100 : 0;
+                  return (
+                    <View key={index} style={styles.reasonStatRow}>
+                      <Text style={styles.reasonStatName}>{stat.reason}</Text>
+                      <Text style={[styles.reasonStatValue, { color: '#2196F3' }]}>{stat.p1Count}</Text>
+                      <Text style={[styles.reasonStatValue, { color: '#FF5722' }]}>{stat.p2Count}</Text>
+                      <Text style={styles.reasonStatTotal}>{total}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
           </>
         )}
 
@@ -489,6 +592,34 @@ export default function AnalysisScreen() {
               <Picker.Item label={t('newMatch.selectPlayer')} value={null} color="#999" />
               {players.filter(p => p.id !== selectedPlayer1).map((player) => (
                 <Picker.Item key={player.id} label={player.nickname} value={player.id} color="#333" />
+              ))}
+            </Picker>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal Picker Torneo (iOS) */}
+      <Modal visible={showTournamentPicker} animationType="slide" transparent onRequestClose={() => setShowTournamentPicker(false)}>
+        <View style={styles.pickerModalOverlay}>
+          <View style={styles.pickerModalContent}>
+            <View style={styles.pickerModalHeader}>
+              <TouchableOpacity onPress={() => setShowTournamentPicker(false)}>
+                <Text style={styles.pickerModalCancel}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <Text style={styles.pickerModalTitle}>Torneo</Text>
+              <TouchableOpacity onPress={() => setShowTournamentPicker(false)}>
+                <Text style={styles.pickerModalDone}>OK</Text>
+              </TouchableOpacity>
+            </View>
+            <Picker
+              selectedValue={selectedTournament}
+              onValueChange={(value) => setSelectedTournament(value)}
+              style={styles.iosModalPicker}
+              itemStyle={styles.iosModalPickerItem}
+            >
+              <Picker.Item label="Todos los torneos" value={null} color="#999" />
+              {tournaments.map((tour) => (
+                <Picker.Item key={tour.id} label={tour.name} value={tour.id} color="#333" />
               ))}
             </Picker>
           </View>
@@ -824,5 +955,64 @@ const styles = StyleSheet.create({
   iosModalPickerItem: {
     fontSize: 18,
     color: '#333',
+  },
+  reasonStatsCard: {
+    backgroundColor: '#FFF',
+    marginTop: 12,
+    marginBottom: 20,
+    padding: 16,
+    borderRadius: 12,
+  },
+  reasonStatsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+  },
+  reasonStatsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+    marginBottom: 8,
+  },
+  reasonHeaderLabel: {
+    flex: 2,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
+  },
+  reasonHeaderValue: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
+    textAlign: 'center',
+  },
+  reasonStatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#F0F0F0',
+  },
+  reasonStatName: {
+    flex: 2,
+    fontSize: 13,
+    color: '#333',
+  },
+  reasonStatValue: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  reasonStatTotal: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
   },
 });

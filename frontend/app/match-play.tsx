@@ -812,6 +812,11 @@ const styles = StyleSheet.create({
   headerButton: {
     padding: 4,
   },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -864,19 +869,6 @@ const styles = StyleSheet.create({
   instructionContainer: {
     paddingHorizontal: 20,
     paddingVertical: 16,
-  },
-  instruction: {
-    backgroundColor: '#E3F2FD',
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  instructionText: {
-    fontSize: 16,
-    color: '#1976D2',
-    marginLeft: 12,
-    flex: 1,
   },
   registerPointButton: {
     backgroundColor: '#4CAF50',

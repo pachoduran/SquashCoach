@@ -7,6 +7,9 @@ import {
   TouchableOpacity,
   Dimensions,
   Animated,
+  Modal,
+  TextInput,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -71,6 +74,12 @@ export default function MatchSummary() {
   
   // Filtro de estadísticas por jugador
   const [statsFilter, setStatsFilter] = useState<'all' | 'player1' | 'player2'>('all');
+  
+  // Edit point
+  const [showEditPoint, setShowEditPoint] = useState(false);
+  const [editReason, setEditReason] = useState('');
+  const [editWinner, setEditWinner] = useState<number | null>(null);
+  const REASONS = ['Drop', 'Boast', 'Paralela', 'Cross', 'Lob', 'Volea', 'Kill', 'Error', 'Let', 'Stroke', 'No Let', 'Nick', 'Dos paredes', 'Cruzada', 'Alta', 'Chapa', 'No contestó', 'Globo', 'Saque'];
 
   useEffect(() => {
     if (isCloudMatch) {
@@ -229,6 +238,34 @@ export default function MatchSummary() {
       .slice(0, 5); // Top 5
   };
 
+  const openEditPoint = () => {
+    if (!selectedPoint || isCloudMatch) return;
+    setEditReason(selectedPoint.reason || '');
+    setEditWinner(selectedPoint.winner_player_id);
+    setShowEditPoint(true);
+  };
+
+  const saveEditPoint = async () => {
+    if (!selectedPoint || !editWinner) return;
+    try {
+      const db = await getDatabase();
+      await db.runAsync(
+        'UPDATE points SET reason = ?, winner_player_id = ? WHERE id = ?',
+        [editReason, editWinner, selectedPoint.id]
+      );
+      // Update local state
+      const updated = allPoints.map(p => 
+        p.id === selectedPoint.id ? { ...p, reason: editReason, winner_player_id: editWinner } : p
+      );
+      setAllPoints(updated);
+      setShowEditPoint(false);
+      Alert.alert('Listo', 'Punto actualizado');
+    } catch (error) {
+      console.error('Error editando punto:', error);
+      Alert.alert('Error', 'No se pudo actualizar el punto');
+    }
+  };
+
   // Obtener lista de games disponibles
   const availableGames = [...new Set(allPoints.map(p => p.game_number))].sort();
 
@@ -344,6 +381,12 @@ export default function MatchSummary() {
                     : matchData.player2_nickname} • {selectedPoint?.reason}
                 </Text>
               </View>
+
+              {!isCloudMatch && (
+                <TouchableOpacity style={styles.navBtnSmall} onPress={openEditPoint}>
+                  <Ionicons name="pencil" size={18} color="#FF9800" />
+                </TouchableOpacity>
+              )}
               
               <TouchableOpacity 
                 style={styles.navBtnSmall}
@@ -455,6 +498,77 @@ export default function MatchSummary() {
           </View>
         )}
       </ScrollView>
+
+      {/* Modal editar punto */}
+      <Modal visible={showEditPoint} animationType="slide" transparent onRequestClose={() => setShowEditPoint(false)}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View style={{ backgroundColor: '#FFF', borderRadius: 12, padding: 20, width: '85%', maxHeight: '80%' }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1E3A5F', marginBottom: 12 }}>
+              Editar Punto
+            </Text>
+            <Text style={{ fontSize: 14, color: '#666', marginBottom: 12 }}>
+              Punto {selectedPointIndex + 1} - Score: {selectedPoint?.player1_score}-{selectedPoint?.player2_score}
+            </Text>
+            
+            {/* Winner selector */}
+            <Text style={{ fontSize: 13, fontWeight: '600', color: '#333', marginBottom: 8 }}>Ganador:</Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
+              <TouchableOpacity
+                onPress={() => setEditWinner(matchData!.player1_id)}
+                style={{
+                  flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center',
+                  backgroundColor: editWinner === matchData?.player1_id ? '#E8F5E9' : '#f0f0f0',
+                  borderWidth: 2,
+                  borderColor: editWinner === matchData?.player1_id ? '#4CAF50' : '#E0E0E0',
+                }}
+              >
+                <Text style={{ color: editWinner === matchData?.player1_id ? '#4CAF50' : '#666', fontWeight: '600', fontSize: 14 }}>
+                  {matchData?.player1_nickname}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setEditWinner(matchData!.player2_id)}
+                style={{
+                  flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center',
+                  backgroundColor: editWinner === matchData?.player2_id ? '#E8F5E9' : '#f0f0f0',
+                  borderWidth: 2,
+                  borderColor: editWinner === matchData?.player2_id ? '#4CAF50' : '#E0E0E0',
+                }}
+              >
+                <Text style={{ color: editWinner === matchData?.player2_id ? '#4CAF50' : '#666', fontWeight: '600', fontSize: 14 }}>
+                  {matchData?.player2_nickname}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={{ fontSize: 13, fontWeight: '600', color: '#333', marginBottom: 8 }}>Motivo:</Text>
+            <ScrollView style={{ maxHeight: 200 }}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {REASONS.map(r => (
+                  <TouchableOpacity
+                    key={r}
+                    onPress={() => setEditReason(r)}
+                    style={{
+                      paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+                      backgroundColor: editReason === r ? '#2196F3' : '#f0f0f0',
+                    }}
+                  >
+                    <Text style={{ color: editReason === r ? '#FFF' : '#333', fontSize: 14 }}>{r}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 16 }}>
+              <TouchableOpacity onPress={() => setShowEditPoint(false)} style={{ padding: 10 }}>
+                <Text style={{ color: '#666', fontSize: 16 }}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={saveEditPoint} style={{ backgroundColor: '#2196F3', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 }}>
+                <Text style={{ color: '#FFF', fontSize: 16, fontWeight: '600' }}>Guardar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <View style={styles.footer}>
         <TouchableOpacity style={styles.newMatchButton} onPress={() => router.push('/new-match')}>
