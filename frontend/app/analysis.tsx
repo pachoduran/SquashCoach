@@ -8,6 +8,7 @@ import {
   Dimensions,
   Platform,
   Modal,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -125,7 +126,10 @@ export default function AnalysisScreen() {
   };
 
   const loadAnalysis = async () => {
-    if (!selectedPlayer1 || !selectedPlayer2) return;
+    if (!selectedPlayer1 && !selectedPlayer2 && !selectedTournament) {
+      Alert.alert('Filtro requerido', 'Selecciona al menos un jugador o un torneo');
+      return;
+    }
     
     setLoading(true);
     setHasSearched(true);
@@ -135,9 +139,19 @@ export default function AnalysisScreen() {
       let matchQuery = `
         SELECT id, player1_id, player2_id FROM matches 
         WHERE status = 'finished'
-        AND ((player1_id = ? AND player2_id = ?) OR (player1_id = ? AND player2_id = ?))
       `;
-      let params: any[] = [selectedPlayer1, selectedPlayer2, selectedPlayer2, selectedPlayer1];
+      let params: any[] = [];
+      
+      if (selectedPlayer1 && selectedPlayer2) {
+        matchQuery += ` AND ((player1_id = ? AND player2_id = ?) OR (player1_id = ? AND player2_id = ?))`;
+        params.push(selectedPlayer1, selectedPlayer2, selectedPlayer2, selectedPlayer1);
+      } else if (selectedPlayer1) {
+        matchQuery += ` AND (player1_id = ? OR player2_id = ?)`;
+        params.push(selectedPlayer1, selectedPlayer1);
+      } else if (selectedPlayer2) {
+        matchQuery += ` AND (player1_id = ? OR player2_id = ?)`;
+        params.push(selectedPlayer2, selectedPlayer2);
+      }
       
       if (dateFrom) {
         matchQuery += ` AND date >= ?`;
@@ -428,9 +442,9 @@ export default function AnalysisScreen() {
           )}
 
           <TouchableOpacity
-            style={[styles.analyzeButton, (!selectedPlayer1 || !selectedPlayer2) && styles.analyzeButtonDisabled]}
+            style={[styles.analyzeButton, (!selectedPlayer1 && !selectedPlayer2 && !selectedTournament) && styles.analyzeButtonDisabled]}
             onPress={loadAnalysis}
-            disabled={!selectedPlayer1 || !selectedPlayer2 || loading}
+            disabled={(!selectedPlayer1 && !selectedPlayer2 && !selectedTournament) || loading}
           >
             <Ionicons name="analytics" size={20} color="#FFF" />
             <Text style={styles.analyzeButtonText}>
@@ -504,15 +518,6 @@ export default function AnalysisScreen() {
               <HeatmapCourt 
                 points={getHeatmapData('player2')} 
                 color="#FF5722"
-              />
-            </View>
-
-            <View style={[styles.heatmapSection, { marginBottom: 12 }]}>
-              <Text style={styles.heatmapTitle}>Todos los puntos</Text>
-              <Text style={styles.heatmapSubtitle}>Distribución general</Text>
-              <HeatmapCourt 
-                points={getHeatmapData('all')} 
-                color="#9C27B0"
               />
             </View>
 

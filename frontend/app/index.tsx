@@ -192,6 +192,9 @@ export default function Index() {
     // First sync players to cloud
     await syncService.syncPlayers();
     
+    // Sync tournaments to cloud
+    await syncService.syncTournaments();
+    
     // Then sync matches
     const result = await syncService.syncPendingMatches();
     setSyncing(false);

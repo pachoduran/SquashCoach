@@ -419,6 +419,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const resetPassword = async (email: string, code: string, newPassword: string): Promise<{ success: boolean; error?: string }> => {
     try {
+      console.log('[Auth] Resetting password for:', email);
       const response = await fetch(`${BACKEND_URL}/api/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -430,7 +431,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       return { success: true };
     } catch (error: any) {
-      return { success: false, error: 'Error de conexión' };
+      console.error('[Auth] Reset password error:', error?.message || error);
+      return { success: false, error: `Error de conexión: ${error?.message || 'Intenta de nuevo'}` };
     }
   };
 
