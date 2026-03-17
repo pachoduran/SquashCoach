@@ -422,17 +422,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log('[Auth] Resetting password for:', email);
       const response = await fetch(`${BACKEND_URL}/api/auth/reset-password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code, new_password: newPassword })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), code: code.trim(), new_password: newPassword })
       });
-      const data = await response.json();
-      if (!response.ok) {
-        return { success: false, error: data.detail || 'Error' };
+      const text = await response.text();
+      console.log('[Auth] Reset response:', text);
+      try {
+        const data = JSON.parse(text);
+        if (!response.ok) {
+          return { success: false, error: data.detail || 'Error' };
+        }
+        return { success: true };
+      } catch (parseError) {
+        console.error('[Auth] JSON parse error:', text);
+        return { success: false, error: 'Error del servidor. Intenta de nuevo.' };
       }
-      return { success: true };
     } catch (error: any) {
       console.error('[Auth] Reset password error:', error?.message || error);
-      return { success: false, error: `Error de conexión: ${error?.message || 'Intenta de nuevo'}` };
+      return { success: false, error: `Error de conexión: ${error?.message || 'Verifica tu internet'}` };
     }
   };
 

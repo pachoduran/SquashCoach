@@ -408,10 +408,15 @@ export default function AnalysisScreen() {
           )}
           
           {/* Tournament filter */}
-          {tournaments.length > 0 && (
-            <>
-              <Text style={[styles.pickerLabel, { marginTop: 16 }]}>Torneo (opcional)</Text>
-              {Platform.OS === 'ios' ? (
+          <>
+            <Text style={[styles.pickerLabel, { marginTop: 16 }]}>Torneo (opcional)</Text>
+            {tournaments.length === 0 ? (
+              <View style={[styles.iosPickerButton, { backgroundColor: '#f5f5f5' }]}>
+                <Text style={[styles.iosPickerButtonText, styles.iosPickerPlaceholder]}>
+                  No hay torneos registrados
+                </Text>
+              </View>
+            ) : Platform.OS === 'ios' ? (
                 <TouchableOpacity 
                   style={styles.iosPickerButton}
                   onPress={() => setShowTournamentPicker(true)}
@@ -438,8 +443,7 @@ export default function AnalysisScreen() {
                   </Picker>
                 </View>
               )}
-            </>
-          )}
+          </>
 
           <TouchableOpacity
             style={[styles.analyzeButton, (!selectedPlayer1 && !selectedPlayer2 && !selectedTournament) && styles.analyzeButtonDisabled]}
