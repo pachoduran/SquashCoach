@@ -50,7 +50,7 @@ export default function HistoryScreen() {
   const { t } = useLanguage();
   const { user } = useAuth();
 
-  const getPlayerLabel = (player: Player) => {
+  const formatPlayerLabel = (player: Player) => {
     let label = player.nickname;
     if (player.category) label += ` (${player.category})`;
     if (player.is_mine) label = `★ ${label}`;
@@ -328,11 +328,11 @@ export default function HistoryScreen() {
   // Build picker items
   const playerItems = [
     { label: t('common.all'), value: null },
-    ...players.map(p => ({ label: getPlayerLabel(p), value: p.id }))
+    ...players.map(p => ({ label: formatPlayerLabel(p), value: p.id }))
   ];
   const opponentItems = [
     { label: t('common.all'), value: null },
-    ...players.filter(p => p.id !== myPlayer).map(p => ({ label: getPlayerLabel(p), value: p.id }))
+    ...players.filter(p => p.id !== myPlayer).map(p => ({ label: formatPlayerLabel(p), value: p.id }))
   ];
   const tournamentItems = [
     { label: t('common.all'), value: null },
@@ -366,7 +366,7 @@ export default function HistoryScreen() {
               <View style={styles.pickerContainer}>
                 <Picker selectedValue={myPlayer} onValueChange={setMyPlayer} style={styles.picker} itemStyle={styles.pickerItem}>
                   <Picker.Item label={t('common.all')} value={null} color="#333" />
-                  {players.map(p => <Picker.Item key={p.id} label={getPlayerLabel(p)} value={p.id} color="#333" />)}
+                  {players.map(p => <Picker.Item key={p.id} label={formatPlayerLabel(p)} value={p.id} color="#333" />)}
                 </Picker>
               </View>
             )}
@@ -381,7 +381,7 @@ export default function HistoryScreen() {
               <View style={styles.pickerContainer}>
                 <Picker selectedValue={opponent} onValueChange={setOpponent} style={styles.picker} itemStyle={styles.pickerItem}>
                   <Picker.Item label={t('common.all')} value={null} color="#333" />
-                  {players.filter(p => p.id !== myPlayer).map(p => <Picker.Item key={p.id} label={getPlayerLabel(p)} value={p.id} color="#333" />)}
+                  {players.filter(p => p.id !== myPlayer).map(p => <Picker.Item key={p.id} label={formatPlayerLabel(p)} value={p.id} color="#333" />)}
                 </Picker>
               </View>
             )}

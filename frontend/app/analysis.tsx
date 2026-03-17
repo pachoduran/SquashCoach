@@ -16,6 +16,7 @@ import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { getDatabase } from '@/src/store/database';
 import { useLanguage } from '@/src/context/LanguageContext';
+import { useAuth } from '@/src/context/AuthContext';
 import { HeatmapCourt } from '@/src/components/HeatmapCourt';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
