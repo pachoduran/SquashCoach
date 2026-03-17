@@ -650,10 +650,10 @@ class SyncService {
         }
       }
 
-      console.log(`[Sync] ===== RESTAURACIÓN COMPLETA: ${playersRestored} jugadores, ${matchesRestored} partidos =====`);
+      console.log(`[Sync] ===== RESTAURACIÓN COMPLETA: ${playersRestored} jugadores, ${tournamentsRestored} torneos, ${matchesRestored} partidos =====`);
       return {
         success: true,
-        message: `Restaurados: ${playersRestored} jugadores, ${matchesRestored} partidos`,
+        message: `Restaurados: ${playersRestored} jugadores, ${tournamentsRestored} torneos, ${matchesRestored} partidos`,
         playersRestored,
         matchesRestored
       };
