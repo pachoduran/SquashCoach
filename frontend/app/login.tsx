@@ -411,13 +411,7 @@ export default function LoginScreen() {
           </>
           )}
 
-          {/* Skip for now */}
-          <TouchableOpacity 
-            style={styles.skipButton}
-            onPress={() => router.replace('/')}
-          >
-            <Text style={styles.skipText}>{t('login.skipForNow')}</Text>
-          </TouchableOpacity>
+          {/* Skip for now - removed */}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
