@@ -419,30 +419,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const resetPassword = async (email: string, code: string, newPassword: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      console.log('[Auth] Resetting password for:', email);
+      console.log('[Auth] Resetting password for:', email, 'code:', code);
       const response = await fetch(`${BACKEND_URL}/api/auth/reset-password`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), code: code.trim(), new_password: newPassword })
+        body: JSON.stringify({ 
+          email: email.trim().toLowerCase(), 
+          code: code.trim(), 
+          new_password: newPassword 
+        })
       });
       const text = await response.text();
-      console.log('[Auth] Reset response:', text);
+      console.log('[Auth] Reset response status:', response.status, 'body:', text);
+      
+      let data: any = {};
       try {
-        const data = JSON.parse(text);
-        if (!response.ok) {
-          return { success: false, error: data.detail || 'Error' };
-        }
-        return { success: true };
-      } catch (parseError) {
-        console.error('[Auth] JSON parse error:', text);
-        return { success: false, error: 'Error del servidor. Intenta de nuevo.' };
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error('[Auth] Failed to parse response:', text);
+        return { success: false, error: 'Error del servidor' };
       }
+      
+      if (!response.ok) {
+        return { success: false, error: data.detail || data.message || 'Error' };
+      }
+      return { success: true };
     } catch (error: any) {
-      console.error('[Auth] Reset password error:', error?.message || error);
-      return { success: false, error: `Error de conexión: ${error?.message || 'Verifica tu internet'}` };
+      console.error('[Auth] Reset password network error:', error);
+      return { success: false, error: 'Error de conexion. Verifica tu internet.' };
     }
   };
 
