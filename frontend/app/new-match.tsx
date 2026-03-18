@@ -115,6 +115,14 @@ export default function NewMatch() {
       setSelectedTournamentId(result.lastInsertRowId);
       setNewTournamentName('');
       setShowAddTournament(false);
+      
+      // Auto-sync tournament to cloud
+      try {
+        await syncService.syncTournaments();
+        console.log('[Tournament] Synced to cloud');
+      } catch (e) {
+        console.log('[Tournament] Sync failed, will retry later');
+      }
     } catch (error) {
       console.error('Error agregando torneo:', error);
       Alert.alert('Error', 'No se pudo crear el torneo');

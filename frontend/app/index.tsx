@@ -88,14 +88,30 @@ export default function Index() {
       const db = await getDatabase();
       const localPlayers = await db.getAllAsync('SELECT COUNT(*) as count FROM players');
       const playerCount = (localPlayers as any[])[0]?.count || 0;
+      const localTournaments = await db.getAllAsync('SELECT COUNT(*) as count FROM tournaments');
+      const tournamentCount = (localTournaments as any[])[0]?.count || 0;
       
-      if (playerCount > 0) {
-        console.log('[Restore] Ya hay datos locales, no restaurar');
+      if (playerCount > 0 && tournamentCount > 0) {
+        console.log('[Restore] Ya hay datos locales y torneos, no restaurar');
+        // Still sync tournaments in case there are new ones from another device
+        await syncService.syncTournaments();
         return;
       }
 
-      console.log('[Restore] Sin datos locales, intentando restaurar desde la nube...');
+      console.log('[Restore] Datos faltantes, intentando restaurar desde la nube...');
       setSyncing(true);
+
+      // Always try to restore tournaments even if players exist
+      if (playerCount > 0 && tournamentCount === 0) {
+        console.log('[Restore] Hay jugadores pero no torneos, restaurando solo torneos...');
+        const userId = user?.user_id || '';
+        const tournamentsRestored = await syncService.restoreTournamentsFromCloud(userId);
+        setSyncing(false);
+        if (tournamentsRestored > 0) {
+          Alert.alert(t('common.success'), `${tournamentsRestored} torneos restaurados`);
+        }
+        return;
+      }
 
       const result = await syncService.restoreFromCloud();
       console.log('[Restore] Resultado:', JSON.stringify(result));
