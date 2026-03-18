@@ -17,6 +17,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '@/src/store/database';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { useAuth } from '@/src/context/AuthContext';
 import { syncService } from '@/src/store/syncService';
@@ -88,30 +89,60 @@ export default function NewMatch() {
     try {
       const db = await getDatabase();
       const userId = user?.user_id || '';
+      
+      // 1. Load local tournaments
       let result = await db.getAllAsync(
         'SELECT id, name FROM tournaments WHERE user_id = ? OR user_id IS NULL ORDER BY name ASC',
         [userId]
       ) as Tournament[];
       
-      // If no local tournaments, try to restore from cloud
-      if (result.length === 0 && userId) {
-        console.log('[NewMatch] No local tournaments, trying cloud restore...');
-        const restored = await syncService.restoreTournamentsFromCloud(userId);
-        if (restored > 0) {
-          result = await db.getAllAsync(
-            'SELECT id, name FROM tournaments WHERE user_id = ? OR user_id IS NULL ORDER BY name ASC',
-            [userId]
-          ) as Tournament[];
-          console.log(`[NewMatch] Restored ${restored} tournaments from cloud`);
+      // 2. Always try to fetch from cloud and merge
+      if (userId) {
+        try {
+          const authData = await AsyncStorage.getItem('@squash_coach_auth');
+          if (authData) {
+            const { sessionToken } = JSON.parse(authData);
+            if (sessionToken) {
+              const response = await fetch('https://lev.jsb.mybluehost.me:8001/api/tournaments', {
+                headers: { 'Authorization': `Bearer ${sessionToken}` }
+              });
+              if (response.ok) {
+                const cloudTournaments = await response.json();
+                // Insert cloud tournaments that don't exist locally
+                for (const ct of cloudTournaments) {
+                  const exists = await db.getFirstAsync(
+                    'SELECT id FROM tournaments WHERE name = ? AND (user_id = ? OR user_id IS NULL)',
+                    [ct.name, userId]
+                  );
+                  if (!exists) {
+                    await db.runAsync(
+                      'INSERT INTO tournaments (name, user_id) VALUES (?, ?)',
+                      [ct.name, userId]
+                    );
+                  }
+                }
+                // Reload after merge
+                result = await db.getAllAsync(
+                  'SELECT id, name FROM tournaments WHERE user_id = ? OR user_id IS NULL ORDER BY name ASC',
+                  [userId]
+                ) as Tournament[];
+              }
+            }
+          }
+        } catch (cloudErr) {
+          console.log('[Tournaments] Cloud fetch failed, using local only');
         }
         
-        // Also extract from matches as fallback
+        // 3. Fallback: extract from matches
         if (result.length === 0) {
           const matchTournaments = await db.getAllAsync(
             "SELECT DISTINCT tournament_name FROM matches WHERE tournament_name IS NOT NULL AND tournament_name != ''"
           ) as any[];
           for (const mt of matchTournaments) {
-            await db.runAsync('INSERT OR IGNORE INTO tournaments (name, user_id) VALUES (?, ?)', [mt.tournament_name, userId]);
+            const exists = await db.getFirstAsync('SELECT id FROM tournaments WHERE name = ?', [mt.tournament_name]);
+            if (!exists) {
+              await db.runAsync('INSERT INTO tournaments (name, user_id) VALUES (?, ?)', [mt.tournament_name, userId]);
+            }
           }
           if (matchTournaments.length > 0) {
             result = await db.getAllAsync(
@@ -146,12 +177,29 @@ export default function NewMatch() {
       setNewTournamentName('');
       setShowAddTournament(false);
       
-      // Auto-sync tournament to cloud
+      // Upload directly to cloud
       try {
-        await syncService.syncTournaments();
-        console.log('[Tournament] Synced to cloud');
-      } catch (e) {
-        console.log('[Tournament] Sync failed, will retry later');
+        const authData = await AsyncStorage.getItem('@squash_coach_auth');
+        if (authData) {
+          const { sessionToken } = JSON.parse(authData);
+          if (sessionToken) {
+            const res = await fetch('https://lev.jsb.mybluehost.me:8001/api/tournaments', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionToken}`
+              },
+              body: JSON.stringify({ name: newTournamentName.trim() })
+            });
+            if (res.ok) {
+              console.log('[Tournament] Uploaded to cloud successfully');
+            } else {
+              console.log('[Tournament] Cloud upload failed:', res.status);
+            }
+          }
+        }
+      } catch (uploadErr) {
+        console.log('[Tournament] Cloud upload error, will sync later');
       }
     } catch (error) {
       console.error('Error agregando torneo:', error);
@@ -573,15 +621,31 @@ export default function NewMatch() {
               {/* Categoria (opcional) */}
               <Text style={styles.fieldLabel}>Categoria (opcional)</Text>
               {Platform.OS === 'ios' ? (
-                <TouchableOpacity
-                  style={styles.pickerButton}
-                  onPress={() => setShowCategoryPicker(true)}
-                >
-                  <Text style={[styles.pickerButtonText, !newPlayerCategory && styles.pickerButtonPlaceholder]}>
-                    {newPlayerCategory || 'Sin categoria'}
-                  </Text>
-                  <Ionicons name="chevron-down" size={20} color="#666" />
-                </TouchableOpacity>
+                <>
+                  <TouchableOpacity
+                    style={styles.pickerButton}
+                    onPress={() => setShowCategoryPicker(!showCategoryPicker)}
+                  >
+                    <Text style={[styles.pickerButtonText, !newPlayerCategory && styles.pickerButtonPlaceholder]}>
+                      {newPlayerCategory || 'Sin categoria'}
+                    </Text>
+                    <Ionicons name={showCategoryPicker ? "chevron-up" : "chevron-down"} size={20} color="#666" />
+                  </TouchableOpacity>
+                  {showCategoryPicker && (
+                    <View style={{ maxHeight: 150, backgroundColor: '#f9f9f9', borderRadius: 8, marginBottom: 8 }}>
+                      <ScrollView nestedScrollEnabled>
+                        <TouchableOpacity style={{ padding: 12, borderBottomWidth: 0.5, borderColor: '#ddd' }} onPress={() => { setNewPlayerCategory(''); setShowCategoryPicker(false); }}>
+                          <Text style={{ color: '#999' }}>Sin categoria</Text>
+                        </TouchableOpacity>
+                        {PLAYER_CATEGORIES.map(cat => (
+                          <TouchableOpacity key={cat} style={{ padding: 12, borderBottomWidth: 0.5, borderColor: '#ddd', backgroundColor: newPlayerCategory === cat ? '#e3f2fd' : 'transparent' }} onPress={() => { setNewPlayerCategory(cat); setShowCategoryPicker(false); }}>
+                            <Text style={{ color: '#333', fontWeight: newPlayerCategory === cat ? '600' : '400' }}>{cat}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </>
               ) : (
                 <View style={styles.pickerContainer}>
                   <Picker
@@ -600,15 +664,31 @@ export default function NewMatch() {
               {/* Genero (opcional) */}
               <Text style={styles.fieldLabel}>Genero (opcional)</Text>
               {Platform.OS === 'ios' ? (
-                <TouchableOpacity
-                  style={styles.pickerButton}
-                  onPress={() => setShowGenderPicker(true)}
-                >
-                  <Text style={[styles.pickerButtonText, !newPlayerGender && styles.pickerButtonPlaceholder]}>
-                    {newPlayerGender ? GENDER_OPTIONS.find(g => g.value === newPlayerGender)?.label : 'Sin especificar'}
-                  </Text>
-                  <Ionicons name="chevron-down" size={20} color="#666" />
-                </TouchableOpacity>
+                <>
+                  <TouchableOpacity
+                    style={styles.pickerButton}
+                    onPress={() => setShowGenderPicker(!showGenderPicker)}
+                  >
+                    <Text style={[styles.pickerButtonText, !newPlayerGender && styles.pickerButtonPlaceholder]}>
+                      {newPlayerGender ? GENDER_OPTIONS.find(g => g.value === newPlayerGender)?.label : 'Sin especificar'}
+                    </Text>
+                    <Ionicons name={showGenderPicker ? "chevron-up" : "chevron-down"} size={20} color="#666" />
+                  </TouchableOpacity>
+                  {showGenderPicker && (
+                    <View style={{ maxHeight: 120, backgroundColor: '#f9f9f9', borderRadius: 8, marginBottom: 8 }}>
+                      <ScrollView nestedScrollEnabled>
+                        <TouchableOpacity style={{ padding: 12, borderBottomWidth: 0.5, borderColor: '#ddd' }} onPress={() => { setNewPlayerGender(''); setShowGenderPicker(false); }}>
+                          <Text style={{ color: '#999' }}>Sin especificar</Text>
+                        </TouchableOpacity>
+                        {GENDER_OPTIONS.map(g => (
+                          <TouchableOpacity key={g.value} style={{ padding: 12, borderBottomWidth: 0.5, borderColor: '#ddd', backgroundColor: newPlayerGender === g.value ? '#e3f2fd' : 'transparent' }} onPress={() => { setNewPlayerGender(g.value); setShowGenderPicker(false); }}>
+                            <Text style={{ color: '#333', fontWeight: newPlayerGender === g.value ? '600' : '400' }}>{g.label}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </>
               ) : (
                 <View style={styles.pickerContainer}>
                   <Picker
@@ -627,15 +707,31 @@ export default function NewMatch() {
               {/* Pais (opcional) */}
               <Text style={styles.fieldLabel}>Pais (opcional)</Text>
               {Platform.OS === 'ios' ? (
-                <TouchableOpacity
-                  style={styles.pickerButton}
-                  onPress={() => setShowCountryPicker(true)}
-                >
-                  <Text style={[styles.pickerButtonText, !newPlayerCountry && styles.pickerButtonPlaceholder]}>
-                    {newPlayerCountry || 'Seleccionar pais'}
-                  </Text>
-                  <Ionicons name="chevron-down" size={20} color="#666" />
-                </TouchableOpacity>
+                <>
+                  <TouchableOpacity
+                    style={styles.pickerButton}
+                    onPress={() => setShowCountryPicker(!showCountryPicker)}
+                  >
+                    <Text style={[styles.pickerButtonText, !newPlayerCountry && styles.pickerButtonPlaceholder]}>
+                      {newPlayerCountry || 'Seleccionar pais'}
+                    </Text>
+                    <Ionicons name={showCountryPicker ? "chevron-up" : "chevron-down"} size={20} color="#666" />
+                  </TouchableOpacity>
+                  {showCountryPicker && (
+                    <View style={{ maxHeight: 200, backgroundColor: '#f9f9f9', borderRadius: 8, marginBottom: 8 }}>
+                      <ScrollView nestedScrollEnabled>
+                        <TouchableOpacity style={{ padding: 12, borderBottomWidth: 0.5, borderColor: '#ddd' }} onPress={() => { setNewPlayerCountry(''); setShowCountryPicker(false); }}>
+                          <Text style={{ color: '#999' }}>Sin seleccionar</Text>
+                        </TouchableOpacity>
+                        {COUNTRIES.map(c => (
+                          <TouchableOpacity key={c} style={{ padding: 12, borderBottomWidth: 0.5, borderColor: '#ddd', backgroundColor: newPlayerCountry === c ? '#e3f2fd' : 'transparent' }} onPress={() => { setNewPlayerCountry(c); setShowCountryPicker(false); }}>
+                            <Text style={{ color: '#333', fontWeight: newPlayerCountry === c ? '600' : '400' }}>{c}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </>
               ) : (
                 <View style={styles.pickerContainer}>
                   <Picker
@@ -724,67 +820,6 @@ export default function NewMatch() {
                 <Text style={[styles.modalButtonText, styles.modalButtonTextPrimary]}>Crear</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* iOS Picker Modals - presentationStyle for iPad compatibility */}
-      <Modal visible={showCategoryPicker} animationType="slide" transparent presentationStyle="overFullScreen" onRequestClose={() => setShowCategoryPicker(false)}>
-        <View style={styles.pickerModalOverlay}>
-          <View style={styles.pickerModalContent}>
-            <View style={styles.pickerModalHeader}>
-              <TouchableOpacity onPress={() => setShowCategoryPicker(false)}>
-                <Text style={styles.pickerModalCancel}>{t('common.cancel')}</Text>
-              </TouchableOpacity>
-              <Text style={styles.pickerModalTitle}>Categoria</Text>
-              <TouchableOpacity onPress={() => setShowCategoryPicker(false)}>
-                <Text style={styles.pickerModalDone}>OK</Text>
-              </TouchableOpacity>
-            </View>
-            <Picker selectedValue={newPlayerCategory} onValueChange={setNewPlayerCategory} style={styles.iosPicker} itemStyle={{ fontSize: 18, color: '#333' }}>
-              <Picker.Item label="Sin categoria" value="" />
-              {PLAYER_CATEGORIES.map((cat) => (<Picker.Item key={cat} label={cat} value={cat} />))}
-            </Picker>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal visible={showGenderPicker} animationType="slide" transparent presentationStyle="overFullScreen" onRequestClose={() => setShowGenderPicker(false)}>
-        <View style={styles.pickerModalOverlay}>
-          <View style={styles.pickerModalContent}>
-            <View style={styles.pickerModalHeader}>
-              <TouchableOpacity onPress={() => setShowGenderPicker(false)}>
-                <Text style={styles.pickerModalCancel}>{t('common.cancel')}</Text>
-              </TouchableOpacity>
-              <Text style={styles.pickerModalTitle}>Genero</Text>
-              <TouchableOpacity onPress={() => setShowGenderPicker(false)}>
-                <Text style={styles.pickerModalDone}>OK</Text>
-              </TouchableOpacity>
-            </View>
-            <Picker selectedValue={newPlayerGender} onValueChange={setNewPlayerGender} style={styles.iosPicker} itemStyle={{ fontSize: 18, color: '#333' }}>
-              <Picker.Item label="Sin especificar" value="" />
-              {GENDER_OPTIONS.map((g) => (<Picker.Item key={g.value} label={g.label} value={g.value} />))}
-            </Picker>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal visible={showCountryPicker} animationType="slide" transparent presentationStyle="overFullScreen" onRequestClose={() => setShowCountryPicker(false)}>
-        <View style={styles.pickerModalOverlay}>
-          <View style={styles.pickerModalContent}>
-            <View style={styles.pickerModalHeader}>
-              <TouchableOpacity onPress={() => setShowCountryPicker(false)}>
-                <Text style={styles.pickerModalCancel}>{t('common.cancel')}</Text>
-              </TouchableOpacity>
-              <Text style={styles.pickerModalTitle}>Pais</Text>
-              <TouchableOpacity onPress={() => setShowCountryPicker(false)}>
-                <Text style={styles.pickerModalDone}>OK</Text>
-              </TouchableOpacity>
-            </View>
-            <Picker selectedValue={newPlayerCountry} onValueChange={setNewPlayerCountry} style={styles.iosPicker} itemStyle={{ fontSize: 18, color: '#333' }}>
-              <Picker.Item label="Seleccionar pais" value="" />
-              {COUNTRIES.map((c) => (<Picker.Item key={c} label={c} value={c} />))}
-            </Picker>
           </View>
         </View>
       </Modal>
