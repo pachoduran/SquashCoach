@@ -650,6 +650,28 @@ class SyncService {
         }
       }
 
+      // 3.5 Extract tournaments from restored matches (backup method)
+      try {
+        const matchTournaments = await db.getAllAsync(
+          "SELECT DISTINCT tournament_name FROM matches WHERE tournament_name IS NOT NULL AND tournament_name != ''"
+        );
+        for (const mt of matchTournaments as any[]) {
+          const exists = await db.getFirstAsync(
+            'SELECT id FROM tournaments WHERE name = ?',
+            [mt.tournament_name]
+          );
+          if (!exists) {
+            await db.runAsync(
+              'INSERT INTO tournaments (name, user_id) VALUES (?, ?)',
+              [mt.tournament_name, userId]
+            );
+            console.log(`[Sync] Torneo extraído de partidos: ${mt.tournament_name}`);
+          }
+        }
+      } catch (extractErr) {
+        console.error('[Sync] Error extrayendo torneos de partidos:', extractErr);
+      }
+
       console.log(`[Sync] ===== RESTAURACIÓN COMPLETA: ${playersRestored} jugadores, ${tournamentsRestored} torneos, ${matchesRestored} partidos =====`);
       return {
         success: true,

@@ -88,11 +88,41 @@ export default function NewMatch() {
     try {
       const db = await getDatabase();
       const userId = user?.user_id || '';
-      const result = await db.getAllAsync(
+      let result = await db.getAllAsync(
         'SELECT id, name FROM tournaments WHERE user_id = ? OR user_id IS NULL ORDER BY name ASC',
         [userId]
-      );
-      setTournaments(result as Tournament[]);
+      ) as Tournament[];
+      
+      // If no local tournaments, try to restore from cloud
+      if (result.length === 0 && userId) {
+        console.log('[NewMatch] No local tournaments, trying cloud restore...');
+        const restored = await syncService.restoreTournamentsFromCloud(userId);
+        if (restored > 0) {
+          result = await db.getAllAsync(
+            'SELECT id, name FROM tournaments WHERE user_id = ? OR user_id IS NULL ORDER BY name ASC',
+            [userId]
+          ) as Tournament[];
+          console.log(`[NewMatch] Restored ${restored} tournaments from cloud`);
+        }
+        
+        // Also extract from matches as fallback
+        if (result.length === 0) {
+          const matchTournaments = await db.getAllAsync(
+            "SELECT DISTINCT tournament_name FROM matches WHERE tournament_name IS NOT NULL AND tournament_name != ''"
+          ) as any[];
+          for (const mt of matchTournaments) {
+            await db.runAsync('INSERT OR IGNORE INTO tournaments (name, user_id) VALUES (?, ?)', [mt.tournament_name, userId]);
+          }
+          if (matchTournaments.length > 0) {
+            result = await db.getAllAsync(
+              'SELECT id, name FROM tournaments WHERE user_id = ? OR user_id IS NULL ORDER BY name ASC',
+              [userId]
+            ) as Tournament[];
+          }
+        }
+      }
+      
+      setTournaments(result);
     } catch (error) {
       console.error('Error cargando torneos:', error);
     }

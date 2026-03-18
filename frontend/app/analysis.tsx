@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { getDatabase } from '@/src/store/database';
+import { syncService } from '@/src/store/syncService';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { useAuth } from '@/src/context/AuthContext';
 import { HeatmapCourt } from '@/src/components/HeatmapCourt';
@@ -101,11 +102,28 @@ export default function AnalysisScreen() {
     try {
       const db = await getDatabase();
       const userId = user?.user_id || '';
-      const result = await db.getAllAsync(
+      let result = await db.getAllAsync(
         'SELECT id, name FROM tournaments WHERE user_id = ? OR user_id IS NULL ORDER BY name ASC',
         [userId]
-      );
-      setTournaments(result as Tournament[]);
+      ) as Tournament[];
+      
+      // If no local tournaments, try to restore from cloud and extract from matches
+      if (result.length === 0 && userId) {
+        await syncService.restoreTournamentsFromCloud(userId);
+        // Also extract from matches
+        const matchTournaments = await db.getAllAsync(
+          "SELECT DISTINCT tournament_name FROM matches WHERE tournament_name IS NOT NULL AND tournament_name != ''"
+        ) as any[];
+        for (const mt of matchTournaments) {
+          await db.runAsync('INSERT OR IGNORE INTO tournaments (name, user_id) VALUES (?, ?)', [mt.tournament_name, userId]);
+        }
+        result = await db.getAllAsync(
+          'SELECT id, name FROM tournaments WHERE user_id = ? OR user_id IS NULL ORDER BY name ASC',
+          [userId]
+        ) as Tournament[];
+      }
+      
+      setTournaments(result);
     } catch (error) {
       console.error('Error cargando torneos:', error);
     }
