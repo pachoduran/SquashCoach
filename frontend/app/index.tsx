@@ -21,7 +21,7 @@ import { syncService } from '@/src/store/syncService';
 import { format } from 'date-fns';
 import { TutorialModal } from '@/src/components/TutorialModal';
 
-const APP_VERSION = 'v3.8.0-b3';
+const APP_VERSION = 'v3.9.0';
 
 interface Match {
   id: number;
