@@ -92,7 +92,6 @@ export default function NewMatch() {
   const loadTournaments = async () => {
     const userId = user?.user_id || '';
     const token = sessionToken;
-    let debugInfo = `userId: ${userId ? userId.substring(0,10) : 'VACIO'}\ntoken: ${token ? 'SI(' + token.substring(0,8) + '...)' : 'NO'}`;
     
     try {
       const db = await getDatabase();
@@ -105,22 +104,14 @@ export default function NewMatch() {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 30000);
           
-          const url = `${BACKEND_URL}/api/tournaments`;
-          debugInfo += `\nURL: ${url}`;
-          
-          const response = await fetch(url, {
+          const response = await fetch(`${BACKEND_URL}/api/tournaments`, {
             headers: { 'Authorization': `Bearer ${token}` },
             signal: controller.signal,
           });
           clearTimeout(timeoutId);
           
-          debugInfo += `\nHTTP: ${response.status}`;
-          
           if (response.ok) {
             const cloudTournaments = await response.json();
-            debugInfo += `\nNube: ${cloudTournaments.length} torneos`;
-            
-            // Merge cloud tournaments into local DB
             let inserted = 0;
             for (const ct of cloudTournaments) {
               const exists = await db.getFirstAsync(
@@ -135,27 +126,17 @@ export default function NewMatch() {
                 inserted++;
               }
             }
-            debugInfo += `\nInsertados: ${inserted}`;
             setTournamentStatus(`${cloudTournaments.length} torneos sincronizados`);
-          } else if (response.status === 401) {
-            const errText = await response.text();
-            debugInfo += `\n401 Error: ${errText}`;
-            setTournamentStatus('Sesion expirada - usando datos locales');
           } else {
-            const errText = await response.text();
-            debugInfo += `\nError ${response.status}: ${errText.substring(0,100)}`;
-            setTournamentStatus(`Error del servidor (${response.status})`);
+            setTournamentStatus('Error sincronizando torneos');
           }
         } catch (cloudErr: any) {
-          debugInfo += `\nExcepcion: ${cloudErr.name}: ${cloudErr.message}`;
           if (cloudErr.name === 'AbortError') {
             setTournamentStatus('Timeout - usando datos locales');
           } else {
             setTournamentStatus('Sin conexion - usando datos locales');
           }
         }
-      } else {
-        debugInfo += '\nSin autenticar, solo local';
       }
       
       // STEP 2: Also extract tournament names from existing matches (backup)
@@ -165,7 +146,6 @@ export default function NewMatch() {
             "SELECT DISTINCT tournament_name FROM matches WHERE tournament_name IS NOT NULL AND tournament_name != '' AND (user_id = ? OR user_id IS NULL)",
             [userId]
           ) as any[];
-          debugInfo += `\nDe partidos: ${matchTournaments.length}`;
           for (const mt of matchTournaments) {
             const exists = await db.getFirstAsync(
               'SELECT id FROM tournaments WHERE name = ? AND user_id = ?',
@@ -179,7 +159,7 @@ export default function NewMatch() {
             }
           }
         } catch (matchErr: any) {
-          debugInfo += `\nError partidos: ${matchErr.message}`;
+          console.warn('[Tournaments] Error extracting from matches:', matchErr.message);
         }
       }
       
@@ -189,20 +169,11 @@ export default function NewMatch() {
         [userId]
       ) as Tournament[];
       
-      debugInfo += `\nTotal local: ${result.length}`;
-      if (result.length > 0) {
-        debugInfo += '\n' + result.map(t => t.name).join(', ');
-      }
-      
       setTournaments(result);
-      
-      // DIAGNOSTIC ALERT - remove after debugging
-      Alert.alert('DEBUG Torneos v3.8.0-b1', debugInfo);
       
       setTimeout(() => setTournamentStatus(''), 5000);
     } catch (error: any) {
-      debugInfo += `\nERROR GENERAL: ${error.message}`;
-      Alert.alert('DEBUG Error Torneos', debugInfo);
+      console.error('[Tournaments] Error general:', error.message);
       setTournamentStatus('Error cargando torneos');
     }
   };

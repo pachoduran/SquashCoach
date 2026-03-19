@@ -18,6 +18,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { getDatabase } from '@/src/store/database';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { useAuth } from '@/src/context/AuthContext';
+
+const BACKEND_URL = 'https://lev.jsb.mybluehost.me:8001';
 import { format } from 'date-fns';
 
 interface Match {
@@ -48,7 +50,7 @@ interface Tournament {
 export default function HistoryScreen() {
   const router = useRouter();
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { user, sessionToken } = useAuth();
 
   const formatPlayerLabel = (player: Player) => {
     let label = player.nickname;
@@ -94,14 +96,47 @@ export default function HistoryScreen() {
     try {
       const db = await getDatabase();
       const userId = user?.user_id || '';
+      const token = sessionToken;
+      const now = new Date().toISOString();
+      
       const playersData = await db.getAllAsync(
         'SELECT id, nickname, COALESCE(is_mine, 0) as is_mine, category FROM players WHERE user_id = ? OR user_id IS NULL ORDER BY is_mine DESC, nickname ASC',
         [userId]
       );
       setPlayers(playersData as Player[]);
       
+      // Load tournaments from tournaments table + cloud
+      if (token && userId) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000);
+          const response = await fetch(`${BACKEND_URL}/api/tournaments`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+          if (response.ok) {
+            const cloudTournaments = await response.json();
+            for (const ct of cloudTournaments) {
+              const exists = await db.getFirstAsync(
+                'SELECT id FROM tournaments WHERE name = ? AND user_id = ?',
+                [ct.name, userId]
+              );
+              if (!exists) {
+                await db.runAsync(
+                  'INSERT INTO tournaments (name, user_id, created_at) VALUES (?, ?, ?)',
+                  [ct.name, userId, ct.created_at || now]
+                );
+              }
+            }
+          }
+        } catch (e) {}
+      }
+      
+      // Load from local tournaments table
       const tournamentsData = await db.getAllAsync(
-        "SELECT DISTINCT tournament_name as name FROM matches WHERE tournament_name IS NOT NULL AND tournament_name != '' ORDER BY tournament_name ASC"
+        'SELECT DISTINCT name FROM tournaments WHERE user_id = ? OR user_id IS NULL ORDER BY name ASC',
+        [userId]
       );
       setTournaments(tournamentsData as Tournament[]);
       await loadMatches();
