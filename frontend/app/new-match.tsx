@@ -92,6 +92,7 @@ export default function NewMatch() {
   const loadTournaments = async () => {
     const userId = user?.user_id || '';
     const token = sessionToken;
+    let debugInfo = `userId: ${userId ? userId.substring(0,10) : 'VACIO'}\ntoken: ${token ? 'SI(' + token.substring(0,8) + '...)' : 'NO'}`;
     
     try {
       const db = await getDatabase();
@@ -101,19 +102,25 @@ export default function NewMatch() {
         setTournamentStatus('Sincronizando torneos...');
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000);
+          const timeoutId = setTimeout(() => controller.abort(), 15000);
           
-          const response = await fetch(`${BACKEND_URL}/api/tournaments`, {
+          const url = `${BACKEND_URL}/api/tournaments`;
+          debugInfo += `\nURL: ${url}`;
+          
+          const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${token}` },
             signal: controller.signal,
           });
           clearTimeout(timeoutId);
           
+          debugInfo += `\nHTTP: ${response.status}`;
+          
           if (response.ok) {
             const cloudTournaments = await response.json();
-            console.log(`[Tournaments] ${cloudTournaments.length} torneos desde la nube`);
+            debugInfo += `\nNube: ${cloudTournaments.length} torneos`;
             
             // Merge cloud tournaments into local DB
+            let inserted = 0;
             for (const ct of cloudTournaments) {
               const exists = await db.getFirstAsync(
                 'SELECT id FROM tournaments WHERE name = ? AND user_id = ?',
@@ -124,27 +131,30 @@ export default function NewMatch() {
                   'INSERT INTO tournaments (name, user_id) VALUES (?, ?)',
                   [ct.name, userId]
                 );
-                console.log(`[Tournaments] Insertado desde nube: ${ct.name}`);
+                inserted++;
               }
             }
+            debugInfo += `\nInsertados: ${inserted}`;
             setTournamentStatus(`${cloudTournaments.length} torneos sincronizados`);
           } else if (response.status === 401) {
-            console.warn('[Tournaments] Sesion expirada (401). Usando datos locales.');
+            const errText = await response.text();
+            debugInfo += `\n401 Error: ${errText}`;
             setTournamentStatus('Sesion expirada - usando datos locales');
           } else {
             const errText = await response.text();
-            console.warn(`[Tournaments] Error ${response.status}: ${errText}`);
+            debugInfo += `\nError ${response.status}: ${errText.substring(0,100)}`;
             setTournamentStatus(`Error del servidor (${response.status})`);
           }
         } catch (cloudErr: any) {
+          debugInfo += `\nExcepcion: ${cloudErr.name}: ${cloudErr.message}`;
           if (cloudErr.name === 'AbortError') {
-            console.warn('[Tournaments] Timeout conectando al servidor');
-            setTournamentStatus('Sin conexion - usando datos locales');
+            setTournamentStatus('Sin conexion - timeout');
           } else {
-            console.warn('[Tournaments] Error de red:', cloudErr.message);
-            setTournamentStatus('Sin conexion - usando datos locales');
+            setTournamentStatus('Sin conexion - error de red');
           }
         }
+      } else {
+        debugInfo += '\nSin autenticar, solo local';
       }
       
       // STEP 2: Also extract tournament names from existing matches (backup)
@@ -153,6 +163,7 @@ export default function NewMatch() {
           "SELECT DISTINCT tournament_name FROM matches WHERE tournament_name IS NOT NULL AND tournament_name != '' AND (user_id = ? OR user_id IS NULL)",
           [userId]
         ) as any[];
+        debugInfo += `\nDe partidos: ${matchTournaments.length}`;
         for (const mt of matchTournaments) {
           const exists = await db.getFirstAsync(
             'SELECT id FROM tournaments WHERE name = ? AND user_id = ?',
@@ -160,7 +171,6 @@ export default function NewMatch() {
           );
           if (!exists) {
             await db.runAsync('INSERT INTO tournaments (name, user_id) VALUES (?, ?)', [mt.tournament_name, userId]);
-            console.log(`[Tournaments] Extraido de partidos: ${mt.tournament_name}`);
           }
         }
       }
@@ -171,13 +181,20 @@ export default function NewMatch() {
         [userId]
       ) as Tournament[];
       
-      setTournaments(result);
-      console.log(`[Tournaments] Total cargados: ${result.length}`);
+      debugInfo += `\nTotal local: ${result.length}`;
+      if (result.length > 0) {
+        debugInfo += '\n' + result.map(t => t.name).join(', ');
+      }
       
-      // Clear status after 3 seconds
-      setTimeout(() => setTournamentStatus(''), 3000);
-    } catch (error) {
-      console.error('[Tournaments] Error general:', error);
+      setTournaments(result);
+      
+      // DIAGNOSTIC ALERT - remove after debugging
+      Alert.alert('DEBUG Torneos v3.8.0-b1', debugInfo);
+      
+      setTimeout(() => setTournamentStatus(''), 5000);
+    } catch (error: any) {
+      debugInfo += `\nERROR GENERAL: ${error.message}`;
+      Alert.alert('DEBUG Error Torneos', debugInfo);
       setTournamentStatus('Error cargando torneos');
     }
   };
