@@ -354,7 +354,7 @@ async def get_current_user(request: Request) -> User:
     )
     
     if not session:
-        raise HTTPException(status_code=401, detail="Sesión inválida")
+        raise HTTPException(status_code=401, detail="Sesion invalida")
     
     # Check expiry
     expires_at = session["expires_at"]
@@ -362,7 +362,16 @@ async def get_current_user(request: Request) -> User:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
     
     if expires_at < datetime.now(timezone.utc):
-        raise HTTPException(status_code=401, detail="Sesión expirada")
+        raise HTTPException(status_code=401, detail="Sesion expirada")
+    
+    # Auto-refresh: extend session if it expires within 30 days
+    days_until_expiry = (expires_at - datetime.now(timezone.utc)).days
+    if days_until_expiry < 30:
+        new_expires = datetime.now(timezone.utc) + timedelta(days=90)
+        await db.user_sessions.update_one(
+            {"session_token": session_token},
+            {"$set": {"expires_at": new_expires}}
+        )
     
     # Get user
     user_doc = await db.users.find_one(
@@ -435,7 +444,7 @@ async def exchange_session(request: Request, response: Response):
     # Create session
     session_token = user_data["session_token"]
     from datetime import timedelta
-    expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+    expires_at = datetime.now(timezone.utc) + timedelta(days=90)
     
     session = {
         "user_id": user_id,
@@ -457,7 +466,7 @@ async def exchange_session(request: Request, response: Response):
         secure=True,
         samesite="none",
         path="/",
-        max_age=7 * 24 * 60 * 60  # 7 days
+        max_age=90 * 24 * 60 * 60  # 90 days
     )
     
     return {
@@ -541,7 +550,7 @@ async def register_email(data: EmailRegisterRequest, response: Response):
     
     # Create session
     session_token = secrets.token_urlsafe(32)
-    expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+    expires_at = datetime.now(timezone.utc) + timedelta(days=90)
     
     session = {
         "user_id": user_id,
@@ -560,7 +569,7 @@ async def register_email(data: EmailRegisterRequest, response: Response):
         secure=True,
         samesite="none",
         path="/",
-        max_age=7 * 24 * 60 * 60
+        max_age=90 * 24 * 60 * 60
     )
     
     return {
@@ -590,7 +599,7 @@ async def login_email(data: EmailLoginRequest, response: Response):
     
     # Create session
     session_token = secrets.token_urlsafe(32)
-    expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+    expires_at = datetime.now(timezone.utc) + timedelta(days=90)
     
     session = {
         "user_id": user["user_id"],
@@ -611,7 +620,7 @@ async def login_email(data: EmailLoginRequest, response: Response):
         secure=True,
         samesite="none",
         path="/",
-        max_age=7 * 24 * 60 * 60
+        max_age=90 * 24 * 60 * 60
     )
     
     return {

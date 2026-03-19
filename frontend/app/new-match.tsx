@@ -10,6 +10,7 @@ import {
   Alert,
   Platform,
   Switch,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
@@ -24,6 +25,8 @@ import { syncService } from '@/src/store/syncService';
 import { format } from 'date-fns';
 import { adService } from '@/src/services/adService';
 import { PLAYER_CATEGORIES, GENDER_OPTIONS, COUNTRIES } from '@/src/utils/playerConstants';
+
+const BACKEND_URL = 'https://lev.jsb.mybluehost.me:8001';
 
 interface Player {
   id: number;
@@ -44,7 +47,7 @@ interface Tournament {
 export default function NewMatch() {
   const router = useRouter();
   const { t } = useLanguage();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, sessionToken } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayer1Id, setSelectedPlayer1Id] = useState<number | null>(null);
   const [selectedPlayer2Id, setSelectedPlayer2Id] = useState<number | null>(null);
@@ -71,6 +74,7 @@ export default function NewMatch() {
   const [showAddTournament, setShowAddTournament] = useState(false);
   const [newTournamentName, setNewTournamentName] = useState('');
   const [showTournamentPicker, setShowTournamentPicker] = useState(false);
+  const [tournamentStatus, setTournamentStatus] = useState<string>('');
   
   // Date and match fields
   const [matchDate, setMatchDate] = useState(new Date());
@@ -83,79 +87,98 @@ export default function NewMatch() {
   useEffect(() => {
     loadPlayers();
     loadTournaments();
-  }, []);
+  }, [sessionToken]);
 
   const loadTournaments = async () => {
+    const userId = user?.user_id || '';
+    const token = sessionToken;
+    
     try {
       const db = await getDatabase();
-      const userId = user?.user_id || '';
       
-      // 1. Load local tournaments
-      let result = await db.getAllAsync(
-        'SELECT id, name FROM tournaments WHERE user_id = ? OR user_id IS NULL ORDER BY name ASC',
-        [userId]
-      ) as Tournament[];
-      
-      // 2. Always try to fetch from cloud and merge
-      if (userId) {
+      // STEP 1: Try cloud first if authenticated
+      if (token && userId) {
+        setTournamentStatus('Sincronizando torneos...');
         try {
-          const authData = await AsyncStorage.getItem('@squash_coach_auth');
-          if (authData) {
-            const { sessionToken } = JSON.parse(authData);
-            if (sessionToken) {
-              const response = await fetch('https://lev.jsb.mybluehost.me:8001/api/tournaments', {
-                headers: { 'Authorization': `Bearer ${sessionToken}` }
-              });
-              if (response.ok) {
-                const cloudTournaments = await response.json();
-                // Insert cloud tournaments that don't exist locally
-                for (const ct of cloudTournaments) {
-                  const exists = await db.getFirstAsync(
-                    'SELECT id FROM tournaments WHERE name = ? AND (user_id = ? OR user_id IS NULL)',
-                    [ct.name, userId]
-                  );
-                  if (!exists) {
-                    await db.runAsync(
-                      'INSERT INTO tournaments (name, user_id) VALUES (?, ?)',
-                      [ct.name, userId]
-                    );
-                  }
-                }
-                // Reload after merge
-                result = await db.getAllAsync(
-                  'SELECT id, name FROM tournaments WHERE user_id = ? OR user_id IS NULL ORDER BY name ASC',
-                  [userId]
-                ) as Tournament[];
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000);
+          
+          const response = await fetch(`${BACKEND_URL}/api/tournaments`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+          
+          if (response.ok) {
+            const cloudTournaments = await response.json();
+            console.log(`[Tournaments] ${cloudTournaments.length} torneos desde la nube`);
+            
+            // Merge cloud tournaments into local DB
+            for (const ct of cloudTournaments) {
+              const exists = await db.getFirstAsync(
+                'SELECT id FROM tournaments WHERE name = ? AND user_id = ?',
+                [ct.name, userId]
+              );
+              if (!exists) {
+                await db.runAsync(
+                  'INSERT INTO tournaments (name, user_id) VALUES (?, ?)',
+                  [ct.name, userId]
+                );
+                console.log(`[Tournaments] Insertado desde nube: ${ct.name}`);
               }
             }
+            setTournamentStatus(`${cloudTournaments.length} torneos sincronizados`);
+          } else if (response.status === 401) {
+            console.warn('[Tournaments] Sesion expirada (401). Usando datos locales.');
+            setTournamentStatus('Sesion expirada - usando datos locales');
+          } else {
+            const errText = await response.text();
+            console.warn(`[Tournaments] Error ${response.status}: ${errText}`);
+            setTournamentStatus(`Error del servidor (${response.status})`);
           }
-        } catch (cloudErr) {
-          console.log('[Tournaments] Cloud fetch failed, using local only');
-        }
-        
-        // 3. Fallback: extract from matches
-        if (result.length === 0) {
-          const matchTournaments = await db.getAllAsync(
-            "SELECT DISTINCT tournament_name FROM matches WHERE tournament_name IS NOT NULL AND tournament_name != ''"
-          ) as any[];
-          for (const mt of matchTournaments) {
-            const exists = await db.getFirstAsync('SELECT id FROM tournaments WHERE name = ?', [mt.tournament_name]);
-            if (!exists) {
-              await db.runAsync('INSERT INTO tournaments (name, user_id) VALUES (?, ?)', [mt.tournament_name, userId]);
-            }
-          }
-          if (matchTournaments.length > 0) {
-            result = await db.getAllAsync(
-              'SELECT id, name FROM tournaments WHERE user_id = ? OR user_id IS NULL ORDER BY name ASC',
-              [userId]
-            ) as Tournament[];
+        } catch (cloudErr: any) {
+          if (cloudErr.name === 'AbortError') {
+            console.warn('[Tournaments] Timeout conectando al servidor');
+            setTournamentStatus('Sin conexion - usando datos locales');
+          } else {
+            console.warn('[Tournaments] Error de red:', cloudErr.message);
+            setTournamentStatus('Sin conexion - usando datos locales');
           }
         }
       }
       
+      // STEP 2: Also extract tournament names from existing matches (backup)
+      if (userId) {
+        const matchTournaments = await db.getAllAsync(
+          "SELECT DISTINCT tournament_name FROM matches WHERE tournament_name IS NOT NULL AND tournament_name != '' AND (user_id = ? OR user_id IS NULL)",
+          [userId]
+        ) as any[];
+        for (const mt of matchTournaments) {
+          const exists = await db.getFirstAsync(
+            'SELECT id FROM tournaments WHERE name = ? AND user_id = ?',
+            [mt.tournament_name, userId]
+          );
+          if (!exists) {
+            await db.runAsync('INSERT INTO tournaments (name, user_id) VALUES (?, ?)', [mt.tournament_name, userId]);
+            console.log(`[Tournaments] Extraido de partidos: ${mt.tournament_name}`);
+          }
+        }
+      }
+      
+      // STEP 3: Load all local tournaments
+      const result = await db.getAllAsync(
+        'SELECT id, name FROM tournaments WHERE user_id = ? OR user_id IS NULL ORDER BY name ASC',
+        [userId]
+      ) as Tournament[];
+      
       setTournaments(result);
+      console.log(`[Tournaments] Total cargados: ${result.length}`);
+      
+      // Clear status after 3 seconds
+      setTimeout(() => setTournamentStatus(''), 3000);
     } catch (error) {
-      console.error('Error cargando torneos:', error);
+      console.error('[Tournaments] Error general:', error);
+      setTournamentStatus('Error cargando torneos');
     }
   };
 
@@ -167,6 +190,39 @@ export default function NewMatch() {
     try {
       const db = await getDatabase();
       const userId = user?.user_id || null;
+      const token = sessionToken;
+      
+      // STEP 1: Upload to cloud FIRST if authenticated
+      let cloudSuccess = false;
+      if (token) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000);
+          
+          const res = await fetch(`${BACKEND_URL}/api/tournaments`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ name: newTournamentName.trim() }),
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+          
+          if (res.ok) {
+            cloudSuccess = true;
+            console.log('[Tournament] Subido a la nube OK');
+          } else {
+            const errText = await res.text();
+            console.warn(`[Tournament] Error nube ${res.status}: ${errText}`);
+          }
+        } catch (uploadErr: any) {
+          console.warn('[Tournament] Error subiendo:', uploadErr.message);
+        }
+      }
+      
+      // STEP 2: Save locally
       const result = await db.runAsync(
         'INSERT INTO tournaments (name, user_id, created_at) VALUES (?, ?, ?)',
         [newTournamentName.trim(), userId, new Date().toISOString()]
@@ -177,29 +233,8 @@ export default function NewMatch() {
       setNewTournamentName('');
       setShowAddTournament(false);
       
-      // Upload directly to cloud
-      try {
-        const authData = await AsyncStorage.getItem('@squash_coach_auth');
-        if (authData) {
-          const { sessionToken } = JSON.parse(authData);
-          if (sessionToken) {
-            const res = await fetch('https://lev.jsb.mybluehost.me:8001/api/tournaments', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${sessionToken}`
-              },
-              body: JSON.stringify({ name: newTournamentName.trim() })
-            });
-            if (res.ok) {
-              console.log('[Tournament] Uploaded to cloud successfully');
-            } else {
-              console.log('[Tournament] Cloud upload failed:', res.status);
-            }
-          }
-        }
-      } catch (uploadErr) {
-        console.log('[Tournament] Cloud upload error, will sync later');
+      if (!cloudSuccess && token) {
+        Alert.alert('Aviso', 'Torneo guardado localmente. Se sincronizara cuando haya conexion.');
       }
     } catch (error) {
       console.error('Error agregando torneo:', error);
@@ -426,6 +461,10 @@ export default function NewMatch() {
             <Text style={styles.addPlayerText}>Nuevo torneo</Text>
           </TouchableOpacity>
           
+          {tournamentStatus ? (
+            <Text style={styles.tournamentStatusText}>{tournamentStatus}</Text>
+          ) : null}
+          
           <TouchableOpacity 
             style={[styles.dateContainer, { marginTop: 12 }]}
             onPress={() => setShowDatePicker(true)}
@@ -624,7 +663,8 @@ export default function NewMatch() {
                 <>
                   <TouchableOpacity
                     style={styles.pickerButton}
-                    onPress={() => setShowCategoryPicker(!showCategoryPicker)}
+                    onPress={() => { setShowCategoryPicker(!showCategoryPicker); setShowGenderPicker(false); setShowCountryPicker(false); }}
+                    activeOpacity={0.6}
                   >
                     <Text style={[styles.pickerButtonText, !newPlayerCategory && styles.pickerButtonPlaceholder]}>
                       {newPlayerCategory || 'Sin categoria'}
@@ -632,14 +672,14 @@ export default function NewMatch() {
                     <Ionicons name={showCategoryPicker ? "chevron-up" : "chevron-down"} size={20} color="#666" />
                   </TouchableOpacity>
                   {showCategoryPicker && (
-                    <View style={{ maxHeight: 150, backgroundColor: '#f9f9f9', borderRadius: 8, marginBottom: 8 }}>
-                      <ScrollView nestedScrollEnabled>
-                        <TouchableOpacity style={{ padding: 12, borderBottomWidth: 0.5, borderColor: '#ddd' }} onPress={() => { setNewPlayerCategory(''); setShowCategoryPicker(false); }}>
-                          <Text style={{ color: '#999' }}>Sin categoria</Text>
+                    <View style={styles.iosPickerList}>
+                      <ScrollView nestedScrollEnabled showsVerticalScrollIndicator>
+                        <TouchableOpacity style={styles.iosPickerItem} onPress={() => { setNewPlayerCategory(''); setShowCategoryPicker(false); }}>
+                          <Text style={styles.iosPickerItemPlaceholder}>Sin categoria</Text>
                         </TouchableOpacity>
                         {PLAYER_CATEGORIES.map(cat => (
-                          <TouchableOpacity key={cat} style={{ padding: 12, borderBottomWidth: 0.5, borderColor: '#ddd', backgroundColor: newPlayerCategory === cat ? '#e3f2fd' : 'transparent' }} onPress={() => { setNewPlayerCategory(cat); setShowCategoryPicker(false); }}>
-                            <Text style={{ color: '#333', fontWeight: newPlayerCategory === cat ? '600' : '400' }}>{cat}</Text>
+                          <TouchableOpacity key={cat} style={[styles.iosPickerItem, newPlayerCategory === cat && styles.iosPickerItemSelected]} onPress={() => { setNewPlayerCategory(cat); setShowCategoryPicker(false); }}>
+                            <Text style={[styles.iosPickerItemText, newPlayerCategory === cat && styles.iosPickerItemTextSelected]}>{cat}</Text>
                           </TouchableOpacity>
                         ))}
                       </ScrollView>
@@ -667,7 +707,8 @@ export default function NewMatch() {
                 <>
                   <TouchableOpacity
                     style={styles.pickerButton}
-                    onPress={() => setShowGenderPicker(!showGenderPicker)}
+                    onPress={() => { setShowGenderPicker(!showGenderPicker); setShowCategoryPicker(false); setShowCountryPicker(false); }}
+                    activeOpacity={0.6}
                   >
                     <Text style={[styles.pickerButtonText, !newPlayerGender && styles.pickerButtonPlaceholder]}>
                       {newPlayerGender ? GENDER_OPTIONS.find(g => g.value === newPlayerGender)?.label : 'Sin especificar'}
@@ -675,14 +716,14 @@ export default function NewMatch() {
                     <Ionicons name={showGenderPicker ? "chevron-up" : "chevron-down"} size={20} color="#666" />
                   </TouchableOpacity>
                   {showGenderPicker && (
-                    <View style={{ maxHeight: 120, backgroundColor: '#f9f9f9', borderRadius: 8, marginBottom: 8 }}>
-                      <ScrollView nestedScrollEnabled>
-                        <TouchableOpacity style={{ padding: 12, borderBottomWidth: 0.5, borderColor: '#ddd' }} onPress={() => { setNewPlayerGender(''); setShowGenderPicker(false); }}>
-                          <Text style={{ color: '#999' }}>Sin especificar</Text>
+                    <View style={[styles.iosPickerList, { maxHeight: 140 }]}>
+                      <ScrollView nestedScrollEnabled showsVerticalScrollIndicator>
+                        <TouchableOpacity style={styles.iosPickerItem} onPress={() => { setNewPlayerGender(''); setShowGenderPicker(false); }}>
+                          <Text style={styles.iosPickerItemPlaceholder}>Sin especificar</Text>
                         </TouchableOpacity>
                         {GENDER_OPTIONS.map(g => (
-                          <TouchableOpacity key={g.value} style={{ padding: 12, borderBottomWidth: 0.5, borderColor: '#ddd', backgroundColor: newPlayerGender === g.value ? '#e3f2fd' : 'transparent' }} onPress={() => { setNewPlayerGender(g.value); setShowGenderPicker(false); }}>
-                            <Text style={{ color: '#333', fontWeight: newPlayerGender === g.value ? '600' : '400' }}>{g.label}</Text>
+                          <TouchableOpacity key={g.value} style={[styles.iosPickerItem, newPlayerGender === g.value && styles.iosPickerItemSelected]} onPress={() => { setNewPlayerGender(g.value); setShowGenderPicker(false); }}>
+                            <Text style={[styles.iosPickerItemText, newPlayerGender === g.value && styles.iosPickerItemTextSelected]}>{g.label}</Text>
                           </TouchableOpacity>
                         ))}
                       </ScrollView>
@@ -710,7 +751,8 @@ export default function NewMatch() {
                 <>
                   <TouchableOpacity
                     style={styles.pickerButton}
-                    onPress={() => setShowCountryPicker(!showCountryPicker)}
+                    onPress={() => { setShowCountryPicker(!showCountryPicker); setShowCategoryPicker(false); setShowGenderPicker(false); }}
+                    activeOpacity={0.6}
                   >
                     <Text style={[styles.pickerButtonText, !newPlayerCountry && styles.pickerButtonPlaceholder]}>
                       {newPlayerCountry || 'Seleccionar pais'}
@@ -718,14 +760,14 @@ export default function NewMatch() {
                     <Ionicons name={showCountryPicker ? "chevron-up" : "chevron-down"} size={20} color="#666" />
                   </TouchableOpacity>
                   {showCountryPicker && (
-                    <View style={{ maxHeight: 200, backgroundColor: '#f9f9f9', borderRadius: 8, marginBottom: 8 }}>
-                      <ScrollView nestedScrollEnabled>
-                        <TouchableOpacity style={{ padding: 12, borderBottomWidth: 0.5, borderColor: '#ddd' }} onPress={() => { setNewPlayerCountry(''); setShowCountryPicker(false); }}>
-                          <Text style={{ color: '#999' }}>Sin seleccionar</Text>
+                    <View style={[styles.iosPickerList, { maxHeight: 250 }]}>
+                      <ScrollView nestedScrollEnabled showsVerticalScrollIndicator>
+                        <TouchableOpacity style={styles.iosPickerItem} onPress={() => { setNewPlayerCountry(''); setShowCountryPicker(false); }}>
+                          <Text style={styles.iosPickerItemPlaceholder}>Sin seleccionar</Text>
                         </TouchableOpacity>
                         {COUNTRIES.map(c => (
-                          <TouchableOpacity key={c} style={{ padding: 12, borderBottomWidth: 0.5, borderColor: '#ddd', backgroundColor: newPlayerCountry === c ? '#e3f2fd' : 'transparent' }} onPress={() => { setNewPlayerCountry(c); setShowCountryPicker(false); }}>
-                            <Text style={{ color: '#333', fontWeight: newPlayerCountry === c ? '600' : '400' }}>{c}</Text>
+                          <TouchableOpacity key={c} style={[styles.iosPickerItem, newPlayerCountry === c && styles.iosPickerItemSelected]} onPress={() => { setNewPlayerCountry(c); setShowCountryPicker(false); }}>
+                            <Text style={[styles.iosPickerItemText, newPlayerCountry === c && styles.iosPickerItemTextSelected]}>{c}</Text>
                           </TouchableOpacity>
                         ))}
                       </ScrollView>
@@ -1236,5 +1278,44 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 4,
     marginTop: 8,
+  },
+  tournamentStatusText: {
+    fontSize: 11,
+    color: '#4CAF50',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  iosPickerList: {
+    maxHeight: 180,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    overflow: 'hidden',
+  },
+  iosPickerItem: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: '#ddd',
+    minHeight: 48,
+    justifyContent: 'center',
+  },
+  iosPickerItemSelected: {
+    backgroundColor: '#e3f2fd',
+  },
+  iosPickerItemText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  iosPickerItemTextSelected: {
+    fontWeight: '600',
+    color: '#1976D2',
+  },
+  iosPickerItemPlaceholder: {
+    fontSize: 16,
+    color: '#999',
+    fontStyle: 'italic',
   },
 });

@@ -21,6 +21,8 @@ import { syncService } from '@/src/store/syncService';
 import { format } from 'date-fns';
 import { TutorialModal } from '@/src/components/TutorialModal';
 
+const APP_VERSION = 'v3.8.0-b1';
+
 interface Match {
   id: number;
   player1_nickname: string;
@@ -92,18 +94,18 @@ export default function Index() {
       const tournamentCount = (localTournaments as any[])[0]?.count || 0;
       
       if (playerCount > 0 && tournamentCount > 0) {
-        console.log('[Restore] Ya hay datos locales y torneos, no restaurar');
-        // Still sync tournaments in case there are new ones from another device
+        console.log('[Restore] Ya hay datos locales y torneos, sincronizando...');
+        // Always sync tournaments to/from cloud to keep in sync
         await syncService.syncTournaments();
         return;
       }
 
-      console.log('[Restore] Datos faltantes, intentando restaurar desde la nube...');
+      console.log(`[Restore] Players: ${playerCount}, Tournaments: ${tournamentCount}. Restaurando...`);
       setSyncing(true);
 
-      // Always try to restore tournaments even if players exist
+      // Always try to restore tournaments if missing
       if (playerCount > 0 && tournamentCount === 0) {
-        console.log('[Restore] Hay jugadores pero no torneos, restaurando solo torneos...');
+        console.log('[Restore] Hay jugadores pero no torneos, restaurando torneos...');
         const userId = user?.user_id || '';
         const tournamentsRestored = await syncService.restoreTournamentsFromCloud(userId);
         setSyncing(false);
@@ -456,6 +458,7 @@ export default function Index() {
             <Text style={styles.loginRequiredText}>{t('home.loginRequired')}</Text>
           </TouchableOpacity>
         )}
+        <Text style={styles.versionText}>{APP_VERSION}</Text>
       </View>
 
       {/* Modal de selección de idioma */}
@@ -927,5 +930,11 @@ const styles = StyleSheet.create({
   },
   modalLangTextActive: {
     color: '#FFF',
+  },
+  versionText: {
+    fontSize: 10,
+    color: '#B0BEC5',
+    textAlign: 'center',
+    marginTop: 6,
   },
 });

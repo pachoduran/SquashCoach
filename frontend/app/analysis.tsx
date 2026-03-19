@@ -16,13 +16,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { getDatabase } from '@/src/store/database';
-import { syncService } from '@/src/store/syncService';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { useAuth } from '@/src/context/AuthContext';
 import { HeatmapCourt } from '@/src/components/HeatmapCourt';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+const BACKEND_URL = 'https://lev.jsb.mybluehost.me:8001';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface Player {
@@ -48,7 +48,7 @@ interface PointData {
 export default function AnalysisScreen() {
   const router = useRouter();
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { user, sessionToken } = useAuth();
 
   const getPlayerLabel = (player: Player) => {
     let label = player.nickname;
@@ -96,32 +96,64 @@ export default function AnalysisScreen() {
   useEffect(() => {
     loadPlayers();
     loadTournaments();
-  }, []);
+  }, [sessionToken]);
 
   const loadTournaments = async () => {
     try {
       const db = await getDatabase();
       const userId = user?.user_id || '';
-      let result = await db.getAllAsync(
+      const token = sessionToken;
+      
+      // Cloud-first: fetch from API and merge into local
+      if (token && userId) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000);
+          
+          const response = await fetch(`${BACKEND_URL}/api/tournaments`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+          
+          if (response.ok) {
+            const cloudTournaments = await response.json();
+            for (const ct of cloudTournaments) {
+              const exists = await db.getFirstAsync(
+                'SELECT id FROM tournaments WHERE name = ? AND user_id = ?',
+                [ct.name, userId]
+              );
+              if (!exists) {
+                await db.runAsync('INSERT INTO tournaments (name, user_id) VALUES (?, ?)', [ct.name, userId]);
+              }
+            }
+          } else {
+            console.warn(`[Analysis] Tournaments API error: ${response.status}`);
+          }
+        } catch (cloudErr: any) {
+          console.warn('[Analysis] Cloud tournaments fetch failed:', cloudErr.message);
+        }
+        
+        // Also extract from matches
+        const matchTournaments = await db.getAllAsync(
+          "SELECT DISTINCT tournament_name FROM matches WHERE tournament_name IS NOT NULL AND tournament_name != '' AND (user_id = ? OR user_id IS NULL)",
+          [userId]
+        ) as any[];
+        for (const mt of matchTournaments) {
+          const exists = await db.getFirstAsync(
+            'SELECT id FROM tournaments WHERE name = ? AND user_id = ?',
+            [mt.tournament_name, userId]
+          );
+          if (!exists) {
+            await db.runAsync('INSERT INTO tournaments (name, user_id) VALUES (?, ?)', [mt.tournament_name, userId]);
+          }
+        }
+      }
+      
+      const result = await db.getAllAsync(
         'SELECT id, name FROM tournaments WHERE user_id = ? OR user_id IS NULL ORDER BY name ASC',
         [userId]
       ) as Tournament[];
-      
-      // If no local tournaments, try to restore from cloud and extract from matches
-      if (result.length === 0 && userId) {
-        await syncService.restoreTournamentsFromCloud(userId);
-        // Also extract from matches
-        const matchTournaments = await db.getAllAsync(
-          "SELECT DISTINCT tournament_name FROM matches WHERE tournament_name IS NOT NULL AND tournament_name != ''"
-        ) as any[];
-        for (const mt of matchTournaments) {
-          await db.runAsync('INSERT OR IGNORE INTO tournaments (name, user_id) VALUES (?, ?)', [mt.tournament_name, userId]);
-        }
-        result = await db.getAllAsync(
-          'SELECT id, name FROM tournaments WHERE user_id = ? OR user_id IS NULL ORDER BY name ASC',
-          [userId]
-        ) as Tournament[];
-      }
       
       setTournaments(result);
     } catch (error) {

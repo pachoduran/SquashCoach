@@ -1,82 +1,56 @@
 # Squash Coach - PRD
 
 ## Original Problem Statement
-Build and publish the "Squash Coach" mobile application to the Google Play Store and Apple App Store.
+Build and publish a "Squash Coach" mobile application for Google Play and App Store. Fix all outstanding bugs and implement final features for app store submission.
 
-## Current Architecture
-- **Frontend**: React Native with Expo SDK 54
-- **Backend**: FastAPI + MongoDB on Bluehost (`https://lev.jsb.mybluehost.me:8001`)
-- **Build System**: EAS Build
-- **Package Android**: `com.sqcoash.app` | **Bundle iOS**: `com.sqcoach.app`
-- **Current Version**: 3.7.0 (versionCode 10)
+## Architecture
+- **Frontend**: React Native (Expo) - `/app/frontend/`
+- **Backend**: FastAPI + MongoDB - `/app/backend/server.py`
+- **Production Backend**: Hosted on Bluehost (`https://lev.jsb.mybluehost.me:8001`)
+- **Build System**: EAS (Expo Application Services)
 
-## What's Been Implemented
-### Core App
-- Real-time match scoring with position tracking
-- Player management with cloud sync
-- Statistics analysis, multi-language (EN/ES), tutorial modal
+## Current Version: 3.8.0-b1
 
-### v3.6.0 - Player & Tournament Features
-- Player expanded data: category, gender, country (selector), city, club, is_mine
-- Player sorting: mine first, then opponents alphabetically
-- Tournament registration and selector
+## Key Changes in v3.8.0
+1. **Session Duration**: Extended from 7 days to 90 days with auto-refresh (when <30 days remaining)
+2. **Tournament Sync Rewrite**: Cloud-first approach using `sessionToken` from auth context (not AsyncStorage)
+3. **Version Indicator**: Visible `v3.8.0-b1` on home screen for build verification
+4. **Tournament Status Messages**: Visible feedback during sync ("Sincronizando torneos...", "3 torneos sincronizados", "Sin conexion - usando datos locales")
+5. **iOS Picker Improvements**: Better styled inline lists with 48px touch targets and proper selected state
 
-### v3.7.0 - Auth, Match & iOS Fixes
-- iOS picker fix: category, gender, country use modal pickers on iOS
-- Toggle for point reason: switch on/off during match, persists
-- Password recovery: forgot password flow with 6-digit email code
-- Welcome email on registration
-- Settings gear icon in header for delete account access
+## Root Cause Analysis (Tournament Sync)
+- Sessions expired after 7 days (too short for mobile app usage)
+- Frontend silently swallowed 401 errors when fetching tournaments
+- Used `AsyncStorage.getItem('@squash_coach_auth')` instead of `sessionToken` from auth context
+- All fixed in v3.8.0
 
-### v3.7.1 - Analysis, Edit & Share (March 2026)
-- **Analysis screen**: Added tournament filter dropdown (with iOS modal picker)
-- **Analysis screen**: Added reason statistics table showing per-player breakdown
-- **Match summary**: Point editing supports changing BOTH winner and reason
-- **Match summary**: Expanded reasons list (19 reasons matching match-play)
-- **Match summary**: Share button in header with two options:
-  - **Share as Image**: Captures a styled dark-themed card via ViewShot and shares via system share sheet (WhatsApp, Telegram, etc.)
-  - **Share via WhatsApp (text)**: Opens WhatsApp directly with formatted match result text
-- **Match play**: Fixed duplicate style definitions, added missing headerButtons style
-- **Dependencies added**: `react-native-view-shot@4.0.3`, `expo-sharing@14.0.8`
-- **Backend**: All 30 API tests passing (100% coverage on key endpoints)
+## What's Implemented
+- Player management (category, gender, country, city, club, is_mine)
+- Tournament management with cloud sync
+- Match recording with point-by-point tracking
+- Analysis screen with filtering by tournament/player
+- History screen with search and filters
+- Cloud backup/restore
+- Email registration with welcome email
+- Password reset via email
+- Share match summary via WhatsApp
+- Multi-language support (Spanish/English)
 
-## Prioritized Backlog
+## Pending Verification (by user)
+- [ ] Tournament sync between devices
+- [ ] iOS/iPad pickers for player creation
+- [ ] Password reset flow
+- [ ] Analysis screen stability
 
-### P0 - Deploy & Config
-- [PENDING] Deploy updated server.py to Bluehost
-- [PENDING] Configure SMTP_PASSWORD env var on Bluehost for email sending
-- [PENDING] Create Gmail app password for squashcoach1830@gmail.com
-- [PENDING] Build and test v3.7.1 on Android/iOS preview builds
-- [PENDING] Submit to stores
+## Upcoming Tasks
+- P0: User testing of v3.8.0 build
+- P1: App Store / Google Play submission
+- P2: Read-only web analysis application
+- P3: Refactor new-match.tsx into smaller modules
 
-### P1 - Remaining Issues
-- [PENDING-USER] iOS picker verification (category, gender, country)
-- [PENDING-USER] Google Play Store signing key mismatch resolution
-- [PENDING-USER] Apple App Store resubmission (delete account discoverability)
-- [BLOCKED] Email/Password Recovery (needs Gmail App Password from user)
-
-### P2 - Future
-- Read-only web application for match data analysis
-- Refactor new-match.tsx (1000+ lines) into smaller components
-
-## Key Files
-- `frontend/app/match-summary.tsx` - Point editing (winner + reason) + WhatsApp share
-- `frontend/app/analysis.tsx` - Analysis with tournament filter + reason stats
-- `frontend/app/match-play.tsx` - Match play with reason toggle
-- `frontend/app/new-match.tsx` - Player creation + tournament selector
-- `frontend/app/index.tsx` - Main screen with settings icon
-- `frontend/src/store/database.native.ts` - SQLite schema with migrations
-- `frontend/src/context/AuthContext.tsx` - Auth with forgot/reset
-- `frontend/src/utils/playerConstants.ts` - Categories, genders, countries
-- `backend/server.py` - Full API with email, auth, sync
-
-## Test Credentials
-- App: `googleplayreview@squashcoach.app` / `ReviewSquash2025!`
-- Apple Team: `RRWRLE3C2U` | API Key: `56AQ8A85QK`
-- Email: `squashcoach1830@gmail.com` (needs app password configured)
-- Test: `test_squash@example.com` / `Test123456`
-
-## Test Reports
-- `/app/test_reports/iteration_1.json` - Backend API tests: 30/30 PASS (100%)
-- `/app/backend/tests/test_squash_coach_api.py` - Full API test suite
-- `/app/backend/tests/test_sync_flow.py` - Sync flow test suite
+## Files of Reference
+- `frontend/app/new-match.tsx` - Tournament sync + iOS pickers
+- `frontend/app/analysis.tsx` - Analysis with tournament filtering
+- `frontend/app/index.tsx` - Home screen with version display
+- `backend/server.py` - All API endpoints with 90-day sessions
+- `frontend/src/context/AuthContext.tsx` - Auth context with sessionToken
