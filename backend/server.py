@@ -1386,6 +1386,25 @@ async def root():
 async def health():
     return {"status": "ok"}
 
+@api_router.delete("/user-data")
+async def clear_user_data(current_user: User = Depends(get_current_user)):
+    """Clear ALL data for the current user"""
+    uid = current_user.user_id
+    r_players = await db.players.delete_many({"user_id": uid})
+    r_matches = await db.matches.delete_many({"user_id": uid})
+    r_points = await db.points.delete_many({"user_id": uid})
+    r_games = await db.game_results.delete_many({"user_id": uid})
+    r_tournaments = await db.tournaments.delete_many({"user_id": uid})
+    return {
+        "deleted": {
+            "players": r_players.deleted_count,
+            "matches": r_matches.deleted_count,
+            "points": r_points.deleted_count,
+            "game_results": r_games.deleted_count,
+            "tournaments": r_tournaments.deleted_count
+        }
+    }
+
 # Include the router in the main app
 app.include_router(api_router)
 
@@ -1412,6 +1431,7 @@ app.add_middleware(
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
 
 
 
