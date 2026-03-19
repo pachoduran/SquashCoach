@@ -103,12 +103,13 @@ export default function AnalysisScreen() {
       const db = await getDatabase();
       const userId = user?.user_id || '';
       const token = sessionToken;
+      const now = new Date().toISOString();
       
       // Cloud-first: fetch from API and merge into local
       if (token && userId) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000);
+          const timeoutId = setTimeout(() => controller.abort(), 30000);
           
           const response = await fetch(`${BACKEND_URL}/api/tournaments`, {
             headers: { 'Authorization': `Bearer ${token}` },
@@ -124,29 +125,37 @@ export default function AnalysisScreen() {
                 [ct.name, userId]
               );
               if (!exists) {
-                await db.runAsync('INSERT INTO tournaments (name, user_id) VALUES (?, ?)', [ct.name, userId]);
+                await db.runAsync(
+                  'INSERT INTO tournaments (name, user_id, created_at) VALUES (?, ?, ?)',
+                  [ct.name, userId, ct.created_at || now]
+                );
               }
             }
-          } else {
-            console.warn(`[Analysis] Tournaments API error: ${response.status}`);
           }
         } catch (cloudErr: any) {
           console.warn('[Analysis] Cloud tournaments fetch failed:', cloudErr.message);
         }
         
         // Also extract from matches
-        const matchTournaments = await db.getAllAsync(
-          "SELECT DISTINCT tournament_name FROM matches WHERE tournament_name IS NOT NULL AND tournament_name != '' AND (user_id = ? OR user_id IS NULL)",
-          [userId]
-        ) as any[];
-        for (const mt of matchTournaments) {
-          const exists = await db.getFirstAsync(
-            'SELECT id FROM tournaments WHERE name = ? AND user_id = ?',
-            [mt.tournament_name, userId]
-          );
-          if (!exists) {
-            await db.runAsync('INSERT INTO tournaments (name, user_id) VALUES (?, ?)', [mt.tournament_name, userId]);
+        try {
+          const matchTournaments = await db.getAllAsync(
+            "SELECT DISTINCT tournament_name FROM matches WHERE tournament_name IS NOT NULL AND tournament_name != '' AND (user_id = ? OR user_id IS NULL)",
+            [userId]
+          ) as any[];
+          for (const mt of matchTournaments) {
+            const exists = await db.getFirstAsync(
+              'SELECT id FROM tournaments WHERE name = ? AND user_id = ?',
+              [mt.tournament_name, userId]
+            );
+            if (!exists) {
+              await db.runAsync(
+                'INSERT INTO tournaments (name, user_id, created_at) VALUES (?, ?, ?)',
+                [mt.tournament_name, userId, now]
+              );
+            }
           }
+        } catch (matchErr: any) {
+          console.warn('[Analysis] Error extracting from matches:', matchErr.message);
         }
       }
       

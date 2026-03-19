@@ -437,8 +437,8 @@ class SyncService {
         );
         if (!existing) {
           await db.runAsync(
-            'INSERT INTO tournaments (name, user_id) VALUES (?, ?)',
-            [ct.name, userId]
+            'INSERT INTO tournaments (name, user_id, created_at) VALUES (?, ?, ?)',
+            [ct.name, userId, ct.created_at || new Date().toISOString()]
           );
           restored++;
           console.log(`[Sync] Torneo restaurado: ${ct.name}`);
@@ -662,8 +662,8 @@ class SyncService {
           );
           if (!exists) {
             await db.runAsync(
-              'INSERT INTO tournaments (name, user_id) VALUES (?, ?)',
-              [mt.tournament_name, userId]
+              'INSERT INTO tournaments (name, user_id, created_at) VALUES (?, ?, ?)',
+              [mt.tournament_name, userId, new Date().toISOString()]
             );
             console.log(`[Sync] Torneo extraído de partidos: ${mt.tournament_name}`);
           }

@@ -96,13 +96,14 @@ export default function NewMatch() {
     
     try {
       const db = await getDatabase();
+      const now = new Date().toISOString();
       
       // STEP 1: Try cloud first if authenticated
       if (token && userId) {
         setTournamentStatus('Sincronizando torneos...');
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 15000);
+          const timeoutId = setTimeout(() => controller.abort(), 30000);
           
           const url = `${BACKEND_URL}/api/tournaments`;
           debugInfo += `\nURL: ${url}`;
@@ -128,8 +129,8 @@ export default function NewMatch() {
               );
               if (!exists) {
                 await db.runAsync(
-                  'INSERT INTO tournaments (name, user_id) VALUES (?, ?)',
-                  [ct.name, userId]
+                  'INSERT INTO tournaments (name, user_id, created_at) VALUES (?, ?, ?)',
+                  [ct.name, userId, ct.created_at || now]
                 );
                 inserted++;
               }
@@ -148,9 +149,9 @@ export default function NewMatch() {
         } catch (cloudErr: any) {
           debugInfo += `\nExcepcion: ${cloudErr.name}: ${cloudErr.message}`;
           if (cloudErr.name === 'AbortError') {
-            setTournamentStatus('Sin conexion - timeout');
+            setTournamentStatus('Timeout - usando datos locales');
           } else {
-            setTournamentStatus('Sin conexion - error de red');
+            setTournamentStatus('Sin conexion - usando datos locales');
           }
         }
       } else {
@@ -159,19 +160,26 @@ export default function NewMatch() {
       
       // STEP 2: Also extract tournament names from existing matches (backup)
       if (userId) {
-        const matchTournaments = await db.getAllAsync(
-          "SELECT DISTINCT tournament_name FROM matches WHERE tournament_name IS NOT NULL AND tournament_name != '' AND (user_id = ? OR user_id IS NULL)",
-          [userId]
-        ) as any[];
-        debugInfo += `\nDe partidos: ${matchTournaments.length}`;
-        for (const mt of matchTournaments) {
-          const exists = await db.getFirstAsync(
-            'SELECT id FROM tournaments WHERE name = ? AND user_id = ?',
-            [mt.tournament_name, userId]
-          );
-          if (!exists) {
-            await db.runAsync('INSERT INTO tournaments (name, user_id) VALUES (?, ?)', [mt.tournament_name, userId]);
+        try {
+          const matchTournaments = await db.getAllAsync(
+            "SELECT DISTINCT tournament_name FROM matches WHERE tournament_name IS NOT NULL AND tournament_name != '' AND (user_id = ? OR user_id IS NULL)",
+            [userId]
+          ) as any[];
+          debugInfo += `\nDe partidos: ${matchTournaments.length}`;
+          for (const mt of matchTournaments) {
+            const exists = await db.getFirstAsync(
+              'SELECT id FROM tournaments WHERE name = ? AND user_id = ?',
+              [mt.tournament_name, userId]
+            );
+            if (!exists) {
+              await db.runAsync(
+                'INSERT INTO tournaments (name, user_id, created_at) VALUES (?, ?, ?)',
+                [mt.tournament_name, userId, now]
+              );
+            }
           }
+        } catch (matchErr: any) {
+          debugInfo += `\nError partidos: ${matchErr.message}`;
         }
       }
       
@@ -214,7 +222,7 @@ export default function NewMatch() {
       if (token) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000);
+          const timeoutId = setTimeout(() => controller.abort(), 30000);
           
           const res = await fetch(`${BACKEND_URL}/api/tournaments`, {
             method: 'POST',
@@ -229,7 +237,6 @@ export default function NewMatch() {
           
           if (res.ok) {
             cloudSuccess = true;
-            console.log('[Tournament] Subido a la nube OK');
           } else {
             const errText = await res.text();
             console.warn(`[Tournament] Error nube ${res.status}: ${errText}`);
