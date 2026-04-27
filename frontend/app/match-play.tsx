@@ -77,6 +77,18 @@ export default function MatchPlay() {
   const [editingPointId, setEditingPointId] = useState<number | null>(null);
   const [reasonEnabled, setReasonEnabled] = useState(true);
 
+  // Game Review Modal
+  const [showGameReviewModal, setShowGameReviewModal] = useState(false);
+  const [reviewGameData, setReviewGameData] = useState<{
+    gameNumber: number;
+    player1Score: number;
+    player2Score: number;
+    points: Array<{ x: number; y: number; isWin: boolean; score: string }>;
+    reasonStats: Array<{ reason: string; count: number }>;
+    player1Points: number;
+    player2Points: number;
+  } | null>(null);
+
   useEffect(() => {
     loadMatch();
     loadReasons();
@@ -397,6 +409,33 @@ export default function MatchPlay() {
         } else {
           console.log('[MatchPlay] Iniciando siguiente game');
           
+          // Capturar datos del game terminado ANTES de resetear el estado
+          const finishedGamePoints = await db.getAllAsync(
+            `SELECT * FROM points WHERE match_id = ? AND game_number = ? ORDER BY point_number ASC`,
+            [matchId, match.currentGame]
+          );
+          
+          const reviewPoints = (finishedGamePoints as any[]).map((p: any) => ({
+            x: p.position_x,
+            y: p.position_y,
+            isWin: p.winner_player_id === match.player1.id,
+            score: `${p.player1_score}-${p.player2_score}`,
+          }));
+          
+          const reasonCounts: { [key: string]: number } = {};
+          (finishedGamePoints as any[]).forEach((p: any) => {
+            if (p.reason && p.reason !== 'Ninguna' && p.reason !== 'None' && p.reason !== t('matchPlay.noReason')) {
+              reasonCounts[p.reason] = (reasonCounts[p.reason] || 0) + 1;
+            }
+          });
+          const reviewReasonStats = Object.entries(reasonCounts)
+            .map(([reason, count]) => ({ reason, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5);
+          
+          const p1Pts = (finishedGamePoints as any[]).filter((p: any) => p.winner_player_id === match.player1.id).length;
+          const p2Pts = (finishedGamePoints as any[]).filter((p: any) => p.winner_player_id === match.player2.id).length;
+          
           // Actualizar en BD el nuevo game
           console.log('[MatchPlay] Actualizando match para siguiente game...');
           await db.runAsync(
@@ -419,19 +458,22 @@ export default function MatchPlay() {
             player2Score: 0,
           });
 
-          // Cerrar modal primero
+          // Cerrar modal de punto
           setShowPointModal(false);
           setCurrentPoint(null);
           setSelectingPosition(null);
 
-          // Mostrar alerta
-          setTimeout(() => {
-            Alert.alert(
-              'Game Finalizado',
-              `Game ${match.currentGame} terminado. Iniciando Game ${match.currentGame + 1}`,
-              [{ text: 'OK' }]
-            );
-          }, 300);
+          // Mostrar modal de revisión del set
+          setReviewGameData({
+            gameNumber: match.currentGame,
+            player1Score: newPlayer1Score,
+            player2Score: newPlayer2Score,
+            points: reviewPoints,
+            reasonStats: reviewReasonStats,
+            player1Points: p1Pts,
+            player2Points: p2Pts,
+          });
+          setShowGameReviewModal(true);
           
           return;
         }
@@ -784,9 +826,311 @@ export default function MatchPlay() {
           </View>
         </View>
       </Modal>
+      {/* Modal de Revisión de Set */}
+      <Modal
+        visible={showGameReviewModal}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => {
+          setShowGameReviewModal(false);
+          setReviewGameData(null);
+        }}
+      >
+        <SafeAreaView style={reviewStyles.container}>
+          <View style={reviewStyles.header}>
+            <Text style={reviewStyles.headerTitle}>
+              Game {reviewGameData?.gameNumber} {t('matchPlay.matchFinished') ? 'Finalizado' : 'Finished'}
+            </Text>
+          </View>
+
+          <ScrollView style={reviewStyles.content} showsVerticalScrollIndicator={false}>
+            {/* Score del Game */}
+            <View style={reviewStyles.scoreCard}>
+              <View style={reviewStyles.scoreRow}>
+                <View style={reviewStyles.playerCol}>
+                  <Text style={[
+                    reviewStyles.playerName,
+                    (reviewGameData?.player1Score || 0) > (reviewGameData?.player2Score || 0) && reviewStyles.winnerName
+                  ]}>
+                    {match?.player1.nickname}
+                  </Text>
+                </View>
+                <View style={reviewStyles.scoreBox}>
+                  <Text style={reviewStyles.scoreText}>
+                    {reviewGameData?.player1Score} - {reviewGameData?.player2Score}
+                  </Text>
+                </View>
+                <View style={reviewStyles.playerCol}>
+                  <Text style={[
+                    reviewStyles.playerName,
+                    (reviewGameData?.player2Score || 0) > (reviewGameData?.player1Score || 0) && reviewStyles.winnerName
+                  ]}>
+                    {match?.player2.nickname}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Games ganados hasta ahora */}
+              <Text style={reviewStyles.gamesStatus}>
+                Games: {match?.player1Games} - {match?.player2Games}
+              </Text>
+            </View>
+
+            {/* Cancha con puntos del game */}
+            {reviewGameData && reviewGameData.points.length > 0 && (
+              <View style={reviewStyles.courtCard}>
+                <SquashCourt
+                  points={reviewGameData.points}
+                  compact={true}
+                  player1Color="#2196F3"
+                  player2Color="#FF5722"
+                />
+              </View>
+            )}
+
+            {/* Estadísticas rápidas */}
+            <View style={reviewStyles.statsRow}>
+              <View style={[reviewStyles.statBox, { borderLeftColor: '#2196F3', borderLeftWidth: 3 }]}>
+                <Text style={[reviewStyles.statValue, { color: '#2196F3' }]}>{reviewGameData?.player1Points || 0}</Text>
+                <Text style={reviewStyles.statLabel}>{match?.player1.nickname?.substring(0, 8)}</Text>
+              </View>
+              <View style={reviewStyles.statBox}>
+                <Text style={reviewStyles.statValue}>{(reviewGameData?.player1Points || 0) + (reviewGameData?.player2Points || 0)}</Text>
+                <Text style={reviewStyles.statLabel}>Total</Text>
+              </View>
+              <View style={[reviewStyles.statBox, { borderRightColor: '#FF5722', borderRightWidth: 3 }]}>
+                <Text style={[reviewStyles.statValue, { color: '#FF5722' }]}>{reviewGameData?.player2Points || 0}</Text>
+                <Text style={reviewStyles.statLabel}>{match?.player2.nickname?.substring(0, 8)}</Text>
+              </View>
+            </View>
+
+            {/* Top motivos */}
+            {reviewGameData && reviewGameData.reasonStats.length > 0 && (
+              <View style={reviewStyles.reasonsCard}>
+                <Text style={reviewStyles.reasonsTitle}>Top Motivos</Text>
+                {reviewGameData.reasonStats.map((stat, index) => {
+                  const maxCount = Math.max(...reviewGameData.reasonStats.map(s => s.count));
+                  const colors = ['#4CAF50', '#2196F3', '#FF9800', '#F44336', '#9C27B0'];
+                  const pct = maxCount > 0 ? (stat.count / maxCount) * 100 : 0;
+                  return (
+                    <View key={index} style={reviewStyles.reasonRow}>
+                      <Text style={reviewStyles.reasonName}>{stat.reason}</Text>
+                      <View style={reviewStyles.reasonBarBg}>
+                        <View style={[reviewStyles.reasonBarFill, { width: `${pct}%`, backgroundColor: colors[index % colors.length] }]} />
+                      </View>
+                      <Text style={reviewStyles.reasonCount}>{stat.count}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+
+            <View style={{ height: 100 }} />
+          </ScrollView>
+
+          {/* Botón fijo para continuar */}
+          <View style={reviewStyles.footer}>
+            <TouchableOpacity
+              style={reviewStyles.continueButton}
+              onPress={() => {
+                setShowGameReviewModal(false);
+                setReviewGameData(null);
+              }}
+              data-testid="continue-next-game-btn"
+            >
+              <Ionicons name="play-circle" size={24} color="#FFF" />
+              <Text style={reviewStyles.continueButtonText}>
+                Continuar al Game {(reviewGameData?.gameNumber || 0) + 1}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
+
+const reviewStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F5F7FA',
+  },
+  header: {
+    backgroundColor: '#1E3A5F',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFF',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  scoreCard: {
+    backgroundColor: '#FFF',
+    marginTop: 12,
+    padding: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  scoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  playerCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  playerName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#666',
+    textAlign: 'center',
+  },
+  winnerName: {
+    color: '#4CAF50',
+    fontWeight: '800',
+    fontSize: 16,
+  },
+  scoreBox: {
+    backgroundColor: '#1E3A5F',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 10,
+    marginHorizontal: 8,
+  },
+  scoreText: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#FFF',
+  },
+  gamesStatus: {
+    textAlign: 'center',
+    marginTop: 10,
+    fontSize: 13,
+    color: '#999',
+    fontWeight: '600',
+  },
+  courtCard: {
+    backgroundColor: '#FFF',
+    marginTop: 12,
+    padding: 10,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 8,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  statLabel: {
+    fontSize: 11,
+    color: '#666',
+    marginTop: 2,
+  },
+  reasonsCard: {
+    backgroundColor: '#FFF',
+    marginTop: 12,
+    padding: 14,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  reasonsTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 10,
+  },
+  reasonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+    gap: 8,
+  },
+  reasonName: {
+    fontSize: 12,
+    color: '#666',
+    width: 90,
+  },
+  reasonBarBg: {
+    flex: 1,
+    height: 18,
+    backgroundColor: '#F0F0F0',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  reasonBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  reasonCount: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#333',
+    width: 26,
+    textAlign: 'right',
+  },
+  footer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  continueButton: {
+    backgroundColor: '#4CAF50',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 12,
+    shadowColor: '#4CAF50',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  continueButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFF',
+    marginLeft: 10,
+  },
+});
 
 const styles = StyleSheet.create({
   container: {
