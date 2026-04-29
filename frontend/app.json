@@ -2,7 +2,7 @@
   "expo": {
     "name": "Squash Coach",
     "slug": "squash-coach",
-    "version": "3.9.0",
+    "version": "3.10.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "squash-coach",
@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sqcoach.app",
-      "buildNumber": "4"
+      "buildNumber": "5"
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +18,7 @@
         "backgroundColor": "#000000"
       },
       "package": "com.sqcoash.app",
-      "versionCode": 12,
+      "versionCode": 13,
       "allowBackup": false
     },
     "web": {
