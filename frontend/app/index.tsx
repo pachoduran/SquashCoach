@@ -399,55 +399,73 @@ export default function Index() {
         )}
       </View>
 
-      {/* Botones inferiores */}
+      {/* Botones inferiores - Hub de funcionalidades */}
       <View style={styles.bottomButtons}>
         {isAuthenticated ? (
           <>
-            {/* Primera fila: Historial y Análisis */}
+            {/* Fila principal: Partido y Sombras */}
             <View style={styles.buttonRow}>
               <TouchableOpacity
-                style={styles.historyButton}
+                style={styles.mainFeatureBtn}
+                onPress={() => router.push('/new-match')}
+                data-testid="new-match-btn"
+              >
+                <View style={[styles.featureIcon, { backgroundColor: '#2196F3' }]}>
+                  <Ionicons name="tennisball-outline" size={24} color="#FFF" />
+                </View>
+                <Text style={styles.featureBtnText}>{t('home.newMatch')}</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.mainFeatureBtn}
+                onPress={() => router.push('/shadow-training')}
+                data-testid="shadow-training-btn"
+              >
+                <View style={[styles.featureIcon, { backgroundColor: '#FF5722' }]}>
+                  <Ionicons name="footsteps-outline" size={24} color="#FFF" />
+                </View>
+                <Text style={styles.featureBtnText}>Sombras</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Segunda fila: Historial, Análisis, Compartir, Nube */}
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={styles.secondaryBtn}
                 onPress={() => router.push('/history')}
+                data-testid="history-btn"
               >
                 <Ionicons name="time-outline" size={20} color="#1E3A5F" />
-                <Text style={styles.historyButtonText}>{t('home.history')}</Text>
+                <Text style={styles.secondaryBtnText}>{t('home.history')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
-                style={styles.analysisButton}
+                style={styles.secondaryBtn}
                 onPress={() => router.push('/analysis')}
+                data-testid="analysis-btn"
               >
                 <Ionicons name="analytics" size={20} color="#1E3A5F" />
-                <Text style={styles.analysisButtonText}>{t('home.analysis')}</Text>
+                <Text style={styles.secondaryBtnText}>{t('home.analysis')}</Text>
               </TouchableOpacity>
-            </View>
-            
-            {/* Segunda fila: Compartir y Nube */}
-            <View style={styles.buttonRow}>
+
               <TouchableOpacity
-                style={styles.shareButton}
+                style={styles.secondaryBtn}
                 onPress={() => router.push('/share')}
+                data-testid="share-btn"
               >
                 <Ionicons name="share-social-outline" size={20} color="#1E3A5F" />
-                <Text style={styles.shareButtonText}>{t('home.sharing')}</Text>
+                <Text style={styles.secondaryBtnText}>{t('home.sharing')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
-                style={styles.cloudButton}
+                style={styles.secondaryBtn}
                 onPress={() => router.push('/cloud-matches')}
+                data-testid="cloud-btn"
               >
                 <Ionicons name="cloud-outline" size={20} color="#1E3A5F" />
-                <Text style={styles.cloudButtonText}>{t('home.cloud')}</Text>
+                <Text style={styles.secondaryBtnText}>{t('home.cloud')}</Text>
               </TouchableOpacity>
             </View>
-            
-            <TouchableOpacity
-              style={styles.newMatchButton}
-              onPress={() => router.push('/new-match')}
-            >
-              <Ionicons name="add-circle" size={22} color="#FFF" />
-              <Text style={styles.newMatchText}>{t('home.newMatch')}</Text>
-            </TouchableOpacity>
           </>
         ) : (
           <TouchableOpacity
@@ -795,84 +813,44 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 8,
   },
-  historyButton: {
+  mainFeatureBtn: {
     flex: 1,
-    backgroundColor: '#E3F2FD',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 4,
-  },
-  historyButtonText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#1E3A5F',
-  },
-  analysisButton: {
-    flex: 1,
-    backgroundColor: '#E3F2FD',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 4,
-  },
-  analysisButtonText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#1E3A5F',
-  },
-  cloudButton: {
-    flex: 1,
-    backgroundColor: '#E3F2FD',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 4,
-  },
-  cloudButtonText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#1E3A5F',
-  },
-  shareButton: {
-    flex: 1,
-    backgroundColor: '#FFF3E0',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 4,
-  },
-  shareButtonText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#1E3A5F',
-  },
-  newMatchButton: {
-    backgroundColor: '#2196F3',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
+    backgroundColor: '#FFF',
     borderRadius: 12,
-    shadowColor: '#2196F3',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    paddingVertical: 14,
+    alignItems: 'center',
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  newMatchText: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#FFF',
-    marginLeft: 8,
+  featureIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  featureBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#333',
+  },
+  secondaryBtn: {
+    flex: 1,
+    backgroundColor: '#E3F2FD',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 2,
+  },
+  secondaryBtnText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#1E3A5F',
   },
   loginRequiredButton: {
     backgroundColor: '#4CAF50',

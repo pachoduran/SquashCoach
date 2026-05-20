@@ -167,6 +167,27 @@ const runMigrations = async (): Promise<void> => {
   } catch (e) {
     // Tabla ya existe
   }
+
+  // Crear tabla de rutinas de sombras
+  try {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS shadow_routines (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT,
+        date TEXT NOT NULL,
+        zone_mode INTEGER NOT NULL,
+        interval_time INTEGER NOT NULL,
+        set_duration INTEGER NOT NULL,
+        rest_duration INTEGER NOT NULL,
+        number_of_sets INTEGER NOT NULL,
+        completed_sets INTEGER NOT NULL,
+        total_zones_visited INTEGER NOT NULL,
+        created_at TEXT NOT NULL
+      );
+    `);
+  } catch (e) {
+    // Tabla ya existe
+  }
   
   // Migración de motivos: limpiar antiguos y agregar nuevos
   try {

@@ -66,6 +66,7 @@ export default function RootLayout() {
               <Stack.Screen name="share" />
               <Stack.Screen name="shared-with-me" />
               <Stack.Screen name="shared-match-detail" />
+              <Stack.Screen name="shadow-training" />
             </Stack>
           </GestureHandlerRootView>
         </AuthProvider>
