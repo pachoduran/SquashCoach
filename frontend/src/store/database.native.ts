@@ -6,6 +6,7 @@ import * as SQLite from 'expo-sqlite';
 
 let db: SQLite.SQLiteDatabase | null = null;
 let isInitialized = false;
+let initPromise: Promise<void> | null = null;
 
 // Inicialización de la base de datos
 const initializeDatabase = async (): Promise<void> => {
@@ -13,7 +14,13 @@ const initializeDatabase = async (): Promise<void> => {
     return;
   }
   
-  try {
+  // Si ya hay una inicialización en curso, esperar a que termine
+  if (initPromise) {
+    return initPromise;
+  }
+  
+  initPromise = (async () => {
+    try {
     console.log('[DB] Inicializando base de datos...');
     
     // SDK 51: usar openDatabaseSync (API nueva)
@@ -122,10 +129,13 @@ const initializeDatabase = async (): Promise<void> => {
     console.error('[DB] ❌ Error inicializando:', error);
     db = null;
     isInitialized = false;
+    initPromise = null;
     throw error;
   }
+  })();
+  
+  return initPromise;
 };
-
 // Migraciones
 const runMigrations = async (): Promise<void> => {
   if (!db) return;
