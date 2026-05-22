@@ -64,3 +64,4 @@ yarn.lock
 # Testing
 /coverage
 test_reports/
+.credentials
