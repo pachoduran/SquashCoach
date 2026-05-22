@@ -18,8 +18,8 @@ import { getDatabase } from '@/src/store/database';
 import { useAuth } from '@/src/context/AuthContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const COURT_WIDTH = Math.min(SCREEN_WIDTH - 40, 320);
-const COURT_HEIGHT = COURT_WIDTH; // Cancha cuadrada como la imagen
+const COURT_WIDTH = Math.min(SCREEN_WIDTH - 24, 360);
+const COURT_HEIGHT = COURT_WIDTH * 1.51; // Ratio real de la imagen
 
 // 12 zonas como un reloj sobre la cancha (posiciones exactas de la imagen del usuario)
 const ZONES_12: { id: number; x: number; y: number }[] = [
@@ -786,8 +786,8 @@ const styles = StyleSheet.create({
   // TRAINING
   trainingHeader: {
     backgroundColor: '#1E3A5F',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -815,7 +815,7 @@ const styles = StyleSheet.create({
   },
   trainingTimer: {
     color: '#FFF',
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: '900',
     fontVariant: ['tabular-nums'],
   },
@@ -823,12 +823,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 2,
   },
   statsBar: {
     flexDirection: 'row',
     backgroundColor: '#FFF',
-    paddingVertical: 10,
+    paddingVertical: 4,
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
   },
@@ -837,28 +837,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statNumber: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#1E3A5F',
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: 9,
     color: '#666',
   },
   controlsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 40,
-    paddingVertical: 14,
+    paddingVertical: 8,
     backgroundColor: '#1E3A5F',
   },
   controlBtn: {
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
   },
   controlLabel: {
     color: '#FFF',
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '600',
   },
   // REST
