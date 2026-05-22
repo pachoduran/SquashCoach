@@ -276,7 +276,7 @@ export default function ShadowTraining() {
 
     return (
       <ImageBackground
-        source={require('@/assets/court-shadow.jpg')}
+        source={require('@/assets/court-shadow.png')}
         style={[courtStyles.court, { width: COURT_WIDTH, height: COURT_HEIGHT }]}
         imageStyle={{ borderRadius: 4 }}
         resizeMode="cover"
