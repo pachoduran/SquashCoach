@@ -371,102 +371,42 @@ export default function Index() {
       </View>
 
       <View style={styles.content}>
-        {/* Partidos en curso */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t('home.matchesInProgress')}</Text>
-        </View>
-
-        {activeMatches.length > 0 ? (
-          <FlatList
-            data={activeMatches}
-            renderItem={renderActiveMatch}
-            keyExtractor={(item) => item.id.toString()}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
+        {/* Logo central */}
+        <View style={styles.homeCenter}>
+          <Image 
+            source={require('@/assets/images/icon.png')} 
+            style={styles.homeLogo}
+            resizeMode="contain"
           />
-        ) : (
-          <View style={styles.emptyState}>
-            <Image 
-              source={require('@/assets/images/icon.png')} 
-              style={styles.emptyLogo}
-              resizeMode="contain"
-            />
-            <Text style={styles.emptyText}>{t('home.noMatches')}</Text>
-            <Text style={styles.emptySubtext}>
-              {t('home.startMatch')}
-            </Text>
-          </View>
-        )}
+        </View>
       </View>
 
-      {/* Botones inferiores - Hub de funcionalidades */}
+      {/* Hub principal - Solo 2 botones grandes */}
       <View style={styles.bottomButtons}>
         {isAuthenticated ? (
-          <>
-            {/* Fila principal: Partido y Sombras */}
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={styles.mainFeatureBtn}
-                onPress={() => router.push('/new-match')}
-                data-testid="new-match-btn"
-              >
-                <View style={[styles.featureIcon, { backgroundColor: '#2196F3' }]}>
-                  <Ionicons name="tennisball-outline" size={24} color="#FFF" />
-                </View>
-                <Text style={styles.featureBtnText}>{t('home.newMatch')}</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={styles.mainFeatureBtn}
-                onPress={() => router.push('/shadow-training')}
-                data-testid="shadow-training-btn"
-              >
-                <View style={[styles.featureIcon, { backgroundColor: '#FF5722' }]}>
-                  <Ionicons name="footsteps-outline" size={24} color="#FFF" />
-                </View>
-                <Text style={styles.featureBtnText}>Sombras</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Segunda fila: Historial, Análisis, Compartir, Nube */}
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={styles.secondaryBtn}
-                onPress={() => router.push('/history')}
-                data-testid="history-btn"
-              >
-                <Ionicons name="time-outline" size={20} color="#1E3A5F" />
-                <Text style={styles.secondaryBtnText}>{t('home.history')}</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={styles.secondaryBtn}
-                onPress={() => router.push('/analysis')}
-                data-testid="analysis-btn"
-              >
-                <Ionicons name="analytics" size={20} color="#1E3A5F" />
-                <Text style={styles.secondaryBtnText}>{t('home.analysis')}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.secondaryBtn}
-                onPress={() => router.push('/share')}
-                data-testid="share-btn"
-              >
-                <Ionicons name="share-social-outline" size={20} color="#1E3A5F" />
-                <Text style={styles.secondaryBtnText}>{t('home.sharing')}</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={styles.secondaryBtn}
-                onPress={() => router.push('/cloud-matches')}
-                data-testid="cloud-btn"
-              >
-                <Ionicons name="cloud-outline" size={20} color="#1E3A5F" />
-                <Text style={styles.secondaryBtnText}>{t('home.cloud')}</Text>
-              </TouchableOpacity>
-            </View>
-          </>
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={styles.mainFeatureBtn}
+              onPress={() => router.push('/partidos')}
+              data-testid="partidos-btn"
+            >
+              <View style={[styles.featureIcon, { backgroundColor: '#2196F3' }]}>
+                <Ionicons name="tennisball-outline" size={28} color="#FFF" />
+              </View>
+              <Text style={styles.featureBtnText}>Partidos</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={styles.mainFeatureBtn}
+              onPress={() => router.push('/shadow-training')}
+              data-testid="shadow-training-btn"
+            >
+              <View style={[styles.featureIcon, { backgroundColor: '#FF5722' }]}>
+                <Ionicons name="footsteps-outline" size={28} color="#FFF" />
+              </View>
+              <Text style={styles.featureBtnText}>Sombras</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <TouchableOpacity
             style={styles.loginRequiredButton}
@@ -645,8 +585,16 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  homeCenter: {
+    alignItems: 'center',
+  },
+  homeLogo: {
+    width: 150,
+    height: 150,
+    opacity: 0.3,
   },
   sectionHeader: {
     flexDirection: 'row',

@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
   Dimensions,
+  ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -20,23 +21,31 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COURT_WIDTH = Math.min(SCREEN_WIDTH - 40, 340);
 const COURT_HEIGHT = COURT_WIDTH * 1.35;
 
-// 12 zonas como un reloj sobre la cancha
+// 12 zonas como un reloj sobre la cancha (posiciones de la imagen del usuario)
 const ZONES_12: { id: number; x: number; y: number }[] = [
-  { id: 12, x: 0.50, y: 0.07 },
-  { id: 1,  x: 0.80, y: 0.12 },
-  { id: 2,  x: 0.87, y: 0.28 },
-  { id: 3,  x: 0.87, y: 0.48 },
-  { id: 4,  x: 0.87, y: 0.68 },
-  { id: 5,  x: 0.80, y: 0.85 },
-  { id: 6,  x: 0.50, y: 0.92 },
-  { id: 7,  x: 0.20, y: 0.85 },
-  { id: 8,  x: 0.13, y: 0.68 },
-  { id: 9,  x: 0.13, y: 0.48 },
-  { id: 10, x: 0.13, y: 0.28 },
-  { id: 11, x: 0.20, y: 0.12 },
+  { id: 1,  x: 0.89, y: 0.11 },
+  { id: 2,  x: 0.78, y: 0.29 },
+  { id: 3,  x: 0.77, y: 0.51 },
+  { id: 4,  x: 0.77, y: 0.72 },
+  { id: 5,  x: 0.77, y: 0.90 },
+  { id: 6,  x: 0.50, y: 0.91 },
+  { id: 7,  x: 0.26, y: 0.90 },
+  { id: 8,  x: 0.26, y: 0.71 },
+  { id: 9,  x: 0.24, y: 0.51 },
+  { id: 10, x: 0.23, y: 0.28 },
+  { id: 11, x: 0.11, y: 0.11 },
+  { id: 12, x: 0.50, y: 0.10 },
 ];
 
-const ZONES_6 = ZONES_12.filter(z => z.id % 2 !== 0);
+// 6 zonas (1-6 como en la imagen del usuario)
+const ZONES_6: { id: number; x: number; y: number }[] = [
+  { id: 1, x: 0.87, y: 0.11 },
+  { id: 2, x: 0.87, y: 0.53 },
+  { id: 3, x: 0.87, y: 0.89 },
+  { id: 4, x: 0.13, y: 0.89 },
+  { id: 5, x: 0.13, y: 0.53 },
+  { id: 6, x: 0.13, y: 0.11 },
+];
 
 const INTERVAL_OPTIONS = [2, 3, 4, 5, 6, 8, 10];
 const DURATION_OPTIONS = [30, 45, 60, 90, 120, 180];
@@ -266,21 +275,12 @@ export default function ShadowTraining() {
     const zoneSize = zoneMode === 6 ? 44 : 36;
 
     return (
-      <View style={[courtStyles.court, { width: COURT_WIDTH, height: COURT_HEIGHT }]}>
-        {/* Front wall */}
-        <View style={courtStyles.frontWall}>
-          <Text style={courtStyles.wallText}>Pared Frontal</Text>
-        </View>
-
-        {/* Service boxes */}
-        <View style={[courtStyles.serviceLine, { top: COURT_HEIGHT * 0.38 }]} />
-        <View style={[courtStyles.halfLine, { left: COURT_WIDTH / 2 - 1 }]} />
-
-        {/* T */}
-        <View style={[courtStyles.tMark, { left: COURT_WIDTH / 2 - 8, top: COURT_HEIGHT * 0.48 - 8 }]}>
-          <Text style={courtStyles.tText}>T</Text>
-        </View>
-
+      <ImageBackground
+        source={require('@/assets/court-shadow.jpg')}
+        style={[courtStyles.court, { width: COURT_WIDTH, height: COURT_HEIGHT }]}
+        imageStyle={{ borderRadius: 4 }}
+        resizeMode="cover"
+      >
         {/* Zones */}
         {zones.map(zone => {
           const isActive = activeZone === zone.id;
@@ -313,7 +313,7 @@ export default function ShadowTraining() {
             </View>
           );
         })}
-      </View>
+      </ImageBackground>
     );
   };
 
@@ -576,56 +576,10 @@ export default function ShadowTraining() {
 // ===================== COURT STYLES =====================
 const courtStyles = StyleSheet.create({
   court: {
-    backgroundColor: '#1B5E20',
-    borderWidth: 3,
-    borderColor: '#FFF',
     borderRadius: 4,
     position: 'relative',
     alignSelf: 'center',
     overflow: 'hidden',
-  },
-  frontWall: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 24,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  wallText: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  serviceLine: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 2,
-    backgroundColor: 'rgba(255,255,255,0.4)',
-  },
-  halfLine: {
-    position: 'absolute',
-    top: '38%',
-    width: 2,
-    height: '62%',
-    backgroundColor: 'rgba(255,255,255,0.4)',
-  },
-  tMark: {
-    position: 'absolute',
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  tText: {
-    color: '#FFF',
-    fontSize: 9,
-    fontWeight: 'bold',
   },
   zone: {
     position: 'absolute',
