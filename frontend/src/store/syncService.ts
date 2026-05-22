@@ -684,6 +684,146 @@ class SyncService {
       return { success: false, message: 'Error restaurando datos', playersRestored, matchesRestored };
     }
   }
+
+  // ============================================================================
+  // SHADOW ROUTINES SYNC
+  // ============================================================================
+
+  async syncShadowRoutines(): Promise<number> {
+    const sessionToken = await this.getSessionToken();
+    if (!sessionToken) return 0;
+
+    const isOnline = await this.isOnline();
+    if (!isOnline) return 0;
+
+    try {
+      const db = await getDatabase();
+      const unsynced = await db.getAllAsync(
+        'SELECT * FROM shadow_routines WHERE synced = 0 OR synced IS NULL'
+      );
+      console.log(`[Sync] syncShadowRoutines: ${(unsynced as any[]).length} rutinas pendientes`);
+
+      let uploaded = 0;
+      for (const r of unsynced as any[]) {
+        try {
+          const res = await fetch(`${BACKEND_URL}/api/shadow-routines`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${sessionToken}`
+            },
+            body: JSON.stringify({
+              local_id: r.id,
+              name: r.name || null,
+              date: r.date,
+              zone_mode: r.zone_mode,
+              interval_time: r.interval_time,
+              set_duration: r.set_duration,
+              rest_duration: r.rest_duration,
+              number_of_sets: r.number_of_sets,
+              completed_sets: r.completed_sets,
+              total_zones_visited: r.total_zones_visited,
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            await db.runAsync(
+              'UPDATE shadow_routines SET synced = 1, server_id = ? WHERE id = ?',
+              [data.routine_id || null, r.id]
+            );
+            uploaded++;
+            console.log(`[Sync] Rutina sombra subida: ${r.id} -> ${data.routine_id}`);
+          } else {
+            const errText = await res.text();
+            console.error(`[Sync] Error subiendo rutina ${r.id}: ${res.status} ${errText}`);
+          }
+        } catch (e) {
+          console.error(`[Sync] Error subiendo rutina ${r.id}:`, e);
+        }
+      }
+
+      console.log(`[Sync] syncShadowRoutines completado: ${uploaded} subidas`);
+      return uploaded;
+    } catch (error) {
+      console.error('[Sync] Error sincronizando rutinas sombras:', error);
+      return 0;
+    }
+  }
+
+  async restoreShadowRoutinesFromCloud(userId: string): Promise<number> {
+    const sessionToken = await this.getSessionToken();
+    if (!sessionToken) return 0;
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/shadow-routines`, {
+        headers: { 'Authorization': `Bearer ${sessionToken}` }
+      });
+      if (!response.ok) return 0;
+
+      const cloudRoutines = await response.json();
+      if (!cloudRoutines.length) return 0;
+
+      const db = await getDatabase();
+      let restored = 0;
+
+      for (const cr of cloudRoutines) {
+        try {
+          const existing = await db.getFirstAsync(
+            'SELECT id FROM shadow_routines WHERE server_id = ?',
+            [cr.routine_id]
+          );
+          if (existing) continue;
+
+          await db.runAsync(
+            `INSERT INTO shadow_routines (
+              user_id, name, date, zone_mode, interval_time, set_duration,
+              rest_duration, number_of_sets, completed_sets, total_zones_visited,
+              created_at, synced, server_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+            [
+              userId,
+              cr.name || null,
+              cr.date,
+              cr.zone_mode,
+              cr.interval_time,
+              cr.set_duration,
+              cr.rest_duration,
+              cr.number_of_sets,
+              cr.completed_sets,
+              cr.total_zones_visited,
+              cr.created_at || new Date().toISOString(),
+              cr.routine_id,
+            ]
+          );
+          restored++;
+        } catch (e) {
+          console.error('[Sync] Error restaurando rutina sombra:', e);
+        }
+      }
+
+      console.log(`[Sync] restoreShadowRoutines: ${restored} restauradas`);
+      return restored;
+    } catch (error) {
+      console.error('[Sync] Error restaurando rutinas sombras:', error);
+      return 0;
+    }
+  }
+
+  async deleteShadowRoutineCloud(serverId: string): Promise<boolean> {
+    const sessionToken = await this.getSessionToken();
+    if (!sessionToken || !serverId) return false;
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/shadow-routines/${serverId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${sessionToken}` }
+      });
+      return res.ok;
+    } catch (e) {
+      console.error('[Sync] Error eliminando rutina en la nube:', e);
+      return false;
+    }
+  }
 }
 
 export const syncService = new SyncService();

@@ -67,6 +67,8 @@ export default function RootLayout() {
               <Stack.Screen name="shared-with-me" />
               <Stack.Screen name="shared-match-detail" />
               <Stack.Screen name="shadow-training" />
+              <Stack.Screen name="shadow-history" />
+              <Stack.Screen name="sombras" />
               <Stack.Screen name="partidos" />
             </Stack>
           </GestureHandlerRootView>

@@ -201,6 +201,16 @@ const runMigrations = async (): Promise<void> => {
   } catch (e) {
     // Tabla ya existe
   }
+
+  // Migraciones extra para shadow_routines (idempotentes)
+  const shadowMigrations = [
+    "ALTER TABLE shadow_routines ADD COLUMN synced INTEGER DEFAULT 0",
+    "ALTER TABLE shadow_routines ADD COLUMN server_id TEXT",
+    "ALTER TABLE shadow_routines ADD COLUMN name TEXT",
+  ];
+  for (const sql of shadowMigrations) {
+    try { await db.execAsync(sql); } catch (e) { /* columna ya existe */ }
+  }
   
   // Migración de motivos: limpiar antiguos y agregar nuevos
   try {

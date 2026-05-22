@@ -398,8 +398,8 @@ export default function Index() {
             
             <TouchableOpacity
               style={styles.mainFeatureBtn}
-              onPress={() => router.push('/shadow-training')}
-              data-testid="shadow-training-btn"
+              onPress={() => router.push('/sombras')}
+              data-testid="sombras-btn"
             >
               <View style={[styles.featureIcon, { backgroundColor: '#FF5722' }]}>
                 <Ionicons name="footsteps-outline" size={28} color="#FFF" />

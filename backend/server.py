@@ -316,6 +316,33 @@ class GameResultCreate(BaseModel):
     player2_score: int
     winner_local_id: Optional[int] = None
 
+class ShadowRoutine(BaseModel):
+    routine_id: str = Field(default_factory=lambda: f"shadow_{uuid.uuid4().hex[:12]}")
+    user_id: str
+    local_id: Optional[int] = None
+    name: Optional[str] = None
+    date: str
+    zone_mode: int
+    interval_time: float
+    set_duration: int
+    rest_duration: int
+    number_of_sets: int
+    completed_sets: int
+    total_zones_visited: int
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ShadowRoutineCreate(BaseModel):
+    local_id: Optional[int] = None
+    name: Optional[str] = None
+    date: str
+    zone_mode: int
+    interval_time: float
+    set_duration: int
+    rest_duration: int
+    number_of_sets: int
+    completed_sets: int
+    total_zones_visited: int
+
 class SyncData(BaseModel):
     players: List[PlayerCreate] = []
     matches: List[MatchCreate] = []
@@ -1375,6 +1402,64 @@ async def get_head_to_head(
     }
 
 # =============================================================================
+# SHADOW TRAINING ROUTINES
+# =============================================================================
+
+@api_router.post("/shadow-routines")
+async def create_shadow_routine(
+    data: ShadowRoutineCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new shadow routine for the current user"""
+    routine = ShadowRoutine(
+        user_id=current_user.user_id,
+        local_id=data.local_id,
+        name=data.name,
+        date=data.date,
+        zone_mode=data.zone_mode,
+        interval_time=data.interval_time,
+        set_duration=data.set_duration,
+        rest_duration=data.rest_duration,
+        number_of_sets=data.number_of_sets,
+        completed_sets=data.completed_sets,
+        total_zones_visited=data.total_zones_visited,
+    )
+    doc = routine.dict()
+    await db.shadow_routines.insert_one(doc)
+    return {
+        "routine_id": routine.routine_id,
+        "user_id": routine.user_id,
+        "created_at": routine.created_at.isoformat(),
+    }
+
+@api_router.get("/shadow-routines")
+async def get_shadow_routines(current_user: User = Depends(get_current_user)):
+    """List all shadow routines for the current user, newest first"""
+    routines = await db.shadow_routines.find(
+        {"user_id": current_user.user_id},
+        {"_id": 0}
+    ).sort("date", -1).to_list(1000)
+    # Ensure datetimes are serializable
+    for r in routines:
+        if isinstance(r.get("created_at"), datetime):
+            r["created_at"] = r["created_at"].isoformat()
+    return routines
+
+@api_router.delete("/shadow-routines/{routine_id}")
+async def delete_shadow_routine(
+    routine_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a shadow routine owned by the current user"""
+    result = await db.shadow_routines.delete_one({
+        "routine_id": routine_id,
+        "user_id": current_user.user_id,
+    })
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Rutina no encontrada")
+    return {"deleted": True, "routine_id": routine_id}
+
+# =============================================================================
 # BASIC ENDPOINTS
 # =============================================================================
 
@@ -1395,13 +1480,15 @@ async def clear_user_data(current_user: User = Depends(get_current_user)):
     r_points = await db.points.delete_many({"user_id": uid})
     r_games = await db.game_results.delete_many({"user_id": uid})
     r_tournaments = await db.tournaments.delete_many({"user_id": uid})
+    r_shadows = await db.shadow_routines.delete_many({"user_id": uid})
     return {
         "deleted": {
             "players": r_players.deleted_count,
             "matches": r_matches.deleted_count,
             "points": r_points.deleted_count,
             "game_results": r_games.deleted_count,
-            "tournaments": r_tournaments.deleted_count
+            "tournaments": r_tournaments.deleted_count,
+            "shadow_routines": r_shadows.deleted_count
         }
     }
 

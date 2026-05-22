@@ -11,11 +11,13 @@ import {
   ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { getDatabase } from '@/src/store/database';
 import { useAuth } from '@/src/context/AuthContext';
+import { useLanguage } from '@/src/context/LanguageContext';
+import { syncService } from '@/src/store/syncService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COURT_WIDTH = Math.min(SCREEN_WIDTH - 24, 360);
@@ -47,7 +49,7 @@ const ZONES_6: { id: number; x: number; y: number }[] = [
   { id: 6, x: 0.10, y: 0.05 },
 ];
 
-const INTERVAL_OPTIONS = [2, 3, 4, 5, 6, 8, 10];
+const INTERVAL_OPTIONS = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 8, 10];
 const DURATION_OPTIONS = [30, 45, 60, 90, 120, 180];
 const REST_OPTIONS = [10, 15, 20, 30, 45, 60];
 const SETS_OPTIONS = [1, 2, 3, 4, 5, 6, 8, 10];
@@ -56,19 +58,37 @@ type Phase = 'config' | 'countdown' | 'active' | 'rest' | 'complete';
 
 export default function ShadowTraining() {
   const router = useRouter();
+  const params = useLocalSearchParams<{
+    zoneMode?: string;
+    intervalTime?: string;
+    setDuration?: string;
+    restDuration?: string;
+    numberOfSets?: string;
+  }>();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const soundRef = useRef<Audio.Sound | null>(null);
   const soundStartRef = useRef<Audio.Sound | null>(null);
   const soundEndRef = useRef<Audio.Sound | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const zoneTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Config
-  const [zoneMode, setZoneMode] = useState<6 | 12>(6);
-  const [intervalTime, setIntervalTime] = useState(4);
-  const [setDuration, setSetDuration] = useState(60);
-  const [restDuration, setRestDuration] = useState(30);
-  const [numberOfSets, setNumberOfSets] = useState(3);
+  // Config (with prefill support from route params)
+  const [zoneMode, setZoneMode] = useState<6 | 12>(
+    params.zoneMode === '12' ? 12 : 6
+  );
+  const [intervalTime, setIntervalTime] = useState(
+    params.intervalTime ? parseFloat(params.intervalTime) : 4
+  );
+  const [setDuration, setSetDuration] = useState(
+    params.setDuration ? parseInt(params.setDuration, 10) : 60
+  );
+  const [restDuration, setRestDuration] = useState(
+    params.restDuration ? parseInt(params.restDuration, 10) : 30
+  );
+  const [numberOfSets, setNumberOfSets] = useState(
+    params.numberOfSets ? parseInt(params.numberOfSets, 10) : 3
+  );
 
   // Runtime
   const [phase, setPhase] = useState<Phase>('config');
@@ -153,9 +173,9 @@ export default function ShadowTraining() {
   // START TRAINING
   const startTraining = () => {
     Alert.alert(
-      'Volumen',
-      'Se recomienda poner el volumen del celular al máximo para poder escuchar los cambios de zona en la cancha.',
-      [{ text: 'Entendido', onPress: () => {
+      t('shadow.volumeTitle'),
+      t('shadow.volumeMsg'),
+      [{ text: t('shadow.understood'), onPress: () => {
         setPhase('countdown');
         setCountdownVal(3);
         setCurrentSet(1);
@@ -259,15 +279,17 @@ export default function ShadowTraining() {
   const togglePause = () => setIsPaused(prev => !prev);
 
   const stopTraining = () => {
-    Alert.alert('Detener', '¿Seguro que quieres detener el entrenamiento?', [
-      { text: 'No', style: 'cancel' },
+    Alert.alert(t('shadow.stopTitle'), t('shadow.stopMsg'), [
+      { text: t('common.no'), style: 'cancel' },
       {
-        text: 'Si', style: 'destructive', onPress: () => {
+        text: t('common.yes'),
+        style: 'destructive',
+        onPress: () => {
           if (timerRef.current) clearInterval(timerRef.current);
           if (zoneTimerRef.current) clearInterval(zoneTimerRef.current);
           setPhase('complete');
           setActiveZone(null);
-        }
+        },
       },
     ]);
   };
@@ -275,11 +297,12 @@ export default function ShadowTraining() {
   const saveRoutine = async () => {
     try {
       const db = await getDatabase();
-      await db.runAsync(
-        `INSERT INTO shadow_routines (user_id, date, zone_mode, interval_time, set_duration, rest_duration, number_of_sets, completed_sets, total_zones_visited, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      const nowIso = new Date().toISOString();
+      const result = await db.runAsync(
+        `INSERT INTO shadow_routines (user_id, date, zone_mode, interval_time, set_duration, rest_duration, number_of_sets, completed_sets, total_zones_visited, created_at, synced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
         [
           user?.user_id || '',
-          new Date().toISOString(),
+          nowIso,
           zoneMode,
           intervalTime,
           setDuration,
@@ -287,14 +310,17 @@ export default function ShadowTraining() {
           numberOfSets,
           currentSet,
           totalZonesVisited,
-          new Date().toISOString(),
+          nowIso,
         ]
       );
-      Alert.alert('Guardado', 'Rutina guardada correctamente');
-      setPhase('config');
+      console.log('[Shadow] Rutina guardada local id:', result.lastInsertRowId);
+      Alert.alert(t('shadow.saved'), t('shadow.savedMsg'));
+      // Fire-and-forget cloud sync
+      syncService.syncShadowRoutines().catch(() => {});
+      router.replace('/sombras');
     } catch (e) {
       console.error('[Shadow] Error saving:', e);
-      Alert.alert('Error', 'No se pudo guardar la rutina');
+      Alert.alert('Error', t('shadow.saveError'));
     }
   };
 
@@ -361,29 +387,35 @@ export default function ShadowTraining() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} data-testid="shadow-back-btn">
             <Ionicons name="arrow-back" size={24} color="#FFF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Entrenamiento Sombras</Text>
-          <View style={{ width: 40 }} />
+          <Text style={styles.headerTitle}>{t('shadow.title')}</Text>
+          <TouchableOpacity
+            onPress={() => router.push('/shadow-history')}
+            style={styles.backBtn}
+            data-testid="shadow-history-link"
+          >
+            <Ionicons name="time-outline" size={24} color="#FFF" />
+          </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.configScroll} showsVerticalScrollIndicator={false}>
           {/* Zone mode */}
-          <Text style={styles.configLabel}>Zonas de la cancha</Text>
+          <Text style={styles.configLabel}>{t('shadow.zones')}</Text>
           <View style={styles.optionRow}>
             <TouchableOpacity
               style={[styles.optionBtn, zoneMode === 6 && styles.optionBtnActive]}
               onPress={() => setZoneMode(6)}
               data-testid="zone-mode-6"
             >
-              <Text style={[styles.optionText, zoneMode === 6 && styles.optionTextActive]}>6 Zonas</Text>
-              <Text style={[styles.optionSub, zoneMode === 6 && styles.optionSubActive]}>Impares</Text>
+              <Text style={[styles.optionText, zoneMode === 6 && styles.optionTextActive]}>{t('shadow.zones6')}</Text>
+              <Text style={[styles.optionSub, zoneMode === 6 && styles.optionSubActive]}>{t('shadow.oddZones')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.optionBtn, zoneMode === 12 && styles.optionBtnActive]}
               onPress={() => setZoneMode(12)}
               data-testid="zone-mode-12"
             >
-              <Text style={[styles.optionText, zoneMode === 12 && styles.optionTextActive]}>12 Zonas</Text>
-              <Text style={[styles.optionSub, zoneMode === 12 && styles.optionSubActive]}>Reloj completo</Text>
+              <Text style={[styles.optionText, zoneMode === 12 && styles.optionTextActive]}>{t('shadow.zones12')}</Text>
+              <Text style={[styles.optionSub, zoneMode === 12 && styles.optionSubActive]}>{t('shadow.fullClock')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -393,7 +425,7 @@ export default function ShadowTraining() {
           </View>
 
           {/* Interval */}
-          <Text style={styles.configLabel}>Tiempo entre zonas</Text>
+          <Text style={styles.configLabel}>{t('shadow.timeBetween')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
             {INTERVAL_OPTIONS.map(v => (
               <TouchableOpacity
@@ -407,7 +439,7 @@ export default function ShadowTraining() {
           </ScrollView>
 
           {/* Set duration */}
-          <Text style={styles.configLabel}>Duración de cada serie</Text>
+          <Text style={styles.configLabel}>{t('shadow.setDuration')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
             {DURATION_OPTIONS.map(v => (
               <TouchableOpacity
@@ -421,7 +453,7 @@ export default function ShadowTraining() {
           </ScrollView>
 
           {/* Rest duration */}
-          <Text style={styles.configLabel}>Descanso entre series</Text>
+          <Text style={styles.configLabel}>{t('shadow.restDuration')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
             {REST_OPTIONS.map(v => (
               <TouchableOpacity
@@ -435,7 +467,7 @@ export default function ShadowTraining() {
           </ScrollView>
 
           {/* Number of sets */}
-          <Text style={styles.configLabel}>Número de series</Text>
+          <Text style={styles.configLabel}>{t('shadow.numberOfSets')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
             {SETS_OPTIONS.map(v => (
               <TouchableOpacity
@@ -450,12 +482,12 @@ export default function ShadowTraining() {
 
           {/* Summary */}
           <View style={styles.summaryCard}>
-            <Text style={styles.summaryTitle}>Resumen</Text>
-            <Text style={styles.summaryLine}>{numberOfSets} series x {formatTime(setDuration)}</Text>
-            <Text style={styles.summaryLine}>Descanso: {restDuration}s entre series</Text>
-            <Text style={styles.summaryLine}>Cambio de zona cada {intervalTime}s</Text>
+            <Text style={styles.summaryTitle}>{t('shadow.summary')}</Text>
+            <Text style={styles.summaryLine}>{numberOfSets} {t('shadow.setsX')} {formatTime(setDuration)}</Text>
+            <Text style={styles.summaryLine}>{t('shadow.restBetween')} {restDuration}s</Text>
+            <Text style={styles.summaryLine}>{t('shadow.zoneChange')} {intervalTime}s</Text>
             <Text style={styles.summaryTotal}>
-              Tiempo total: ~{formatTime(numberOfSets * setDuration + (numberOfSets - 1) * restDuration)}
+              {t('shadow.totalTime')}: ~{formatTime(numberOfSets * setDuration + (numberOfSets - 1) * restDuration)}
             </Text>
           </View>
 
@@ -465,7 +497,7 @@ export default function ShadowTraining() {
         <View style={styles.footer}>
           <TouchableOpacity style={styles.startButton} onPress={startTraining} data-testid="start-shadow-btn">
             <Ionicons name="play-circle" size={26} color="#FFF" />
-            <Text style={styles.startButtonText}>Iniciar Entrenamiento</Text>
+            <Text style={styles.startButtonText}>{t('shadow.startTraining')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -477,9 +509,9 @@ export default function ShadowTraining() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: '#1E3A5F' }]}>
         <View style={styles.countdownContainer}>
-          <Text style={styles.countdownSetLabel}>Serie {currentSet} de {numberOfSets}</Text>
+          <Text style={styles.countdownSetLabel}>{t('shadow.prepareSet')} {currentSet} {t('shadow.prepareOf')} {numberOfSets}</Text>
           <Text style={styles.countdownNumber}>{countdownVal > 0 ? countdownVal : 'GO!'}</Text>
-          <Text style={styles.countdownSubtext}>Prepárate</Text>
+          <Text style={styles.countdownSubtext}>{t('shadow.prepare')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -494,7 +526,7 @@ export default function ShadowTraining() {
           <View style={styles.trainingInfo}>
             <Text style={styles.trainingSetText}>Serie {currentSet}/{numberOfSets}</Text>
             <View style={[styles.phaseBadge, phase === 'rest' ? { backgroundColor: '#FF9800' } : { backgroundColor: '#4CAF50' }]}>
-              <Text style={styles.phaseBadgeText}>{phase === 'active' ? 'ACTIVO' : 'DESCANSO'}</Text>
+              <Text style={styles.phaseBadgeText}>{phase === 'active' ? t('shadow.active') : t('shadow.rest')}</Text>
             </View>
           </View>
           <Text style={styles.trainingTimer}>{formatTime(timeRemaining)}</Text>
@@ -507,9 +539,9 @@ export default function ShadowTraining() {
           ) : (
             <View style={styles.restDisplay}>
               <Ionicons name="cafe-outline" size={60} color="#FF9800" />
-              <Text style={styles.restText}>Descansa</Text>
+              <Text style={styles.restText}>{t('shadow.restText')}</Text>
               <Text style={styles.restTimer}>{formatTime(timeRemaining)}</Text>
-              <Text style={styles.restNext}>Siguiente serie en...</Text>
+              <Text style={styles.restNext}>{t('shadow.nextSet')}</Text>
             </View>
           )}
         </View>
@@ -519,15 +551,15 @@ export default function ShadowTraining() {
           <View style={styles.statsBar}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>{zonesVisited}</Text>
-              <Text style={styles.statLabel}>Zonas</Text>
+              <Text style={styles.statLabel}>{t('shadow.zonesLabel')}</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>{zoneMode}</Text>
-              <Text style={styles.statLabel}>Modo</Text>
+              <Text style={styles.statLabel}>{t('shadow.modeLabel')}</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>{intervalTime}s</Text>
-              <Text style={styles.statLabel}>Intervalo</Text>
+              <Text style={styles.statLabel}>{t('shadow.intervalLabel')}</Text>
             </View>
           </View>
         )}
@@ -536,12 +568,12 @@ export default function ShadowTraining() {
         <View style={styles.controlsRow}>
           <TouchableOpacity style={styles.controlBtn} onPress={stopTraining} data-testid="stop-shadow-btn">
             <Ionicons name="stop-circle" size={28} color="#F44336" />
-            <Text style={[styles.controlLabel, { color: '#F44336' }]}>Detener</Text>
+            <Text style={[styles.controlLabel, { color: '#F44336' }]}>{t('shadow.stop')}</Text>
           </TouchableOpacity>
           {phase === 'active' && (
             <TouchableOpacity style={styles.controlBtn} onPress={togglePause} data-testid="pause-shadow-btn">
               <Ionicons name={isPaused ? 'play-circle' : 'pause-circle'} size={28} color="#FFF" />
-              <Text style={styles.controlLabel}>{isPaused ? 'Reanudar' : 'Pausar'}</Text>
+              <Text style={styles.controlLabel}>{isPaused ? t('shadow.resume') : t('shadow.pause')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -556,42 +588,42 @@ export default function ShadowTraining() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Entrenamiento Completo</Text>
+        <Text style={styles.headerTitle}>{t('shadow.complete')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView style={styles.completeScroll} contentContainerStyle={styles.completeContent}>
         <Ionicons name="checkmark-circle" size={80} color="#4CAF50" style={{ alignSelf: 'center', marginBottom: 16 }} />
-        <Text style={styles.completeTitle}>Bien hecho!</Text>
+        <Text style={styles.completeTitle}>{t('shadow.wellDone')}</Text>
 
         <View style={styles.completeCard}>
           <View style={styles.completeRow}>
-            <Text style={styles.completeLabel}>Zonas</Text>
-            <Text style={styles.completeValue}>{zoneMode} (reloj)</Text>
+            <Text style={styles.completeLabel}>{t('shadow.zonesMode')}</Text>
+            <Text style={styles.completeValue}>{zoneMode} ({t('shadow.clock')})</Text>
           </View>
           <View style={styles.completeRow}>
-            <Text style={styles.completeLabel}>Series completadas</Text>
+            <Text style={styles.completeLabel}>{t('shadow.setsCompleted')}</Text>
             <Text style={styles.completeValue}>{currentSet} / {numberOfSets}</Text>
           </View>
           <View style={styles.completeRow}>
-            <Text style={styles.completeLabel}>Duración por serie</Text>
+            <Text style={styles.completeLabel}>{t('shadow.durationPerSet')}</Text>
             <Text style={styles.completeValue}>{formatTime(setDuration)}</Text>
           </View>
           <View style={styles.completeRow}>
-            <Text style={styles.completeLabel}>Descanso entre series</Text>
+            <Text style={styles.completeLabel}>{t('shadow.restBetweenSets')}</Text>
             <Text style={styles.completeValue}>{restDuration}s</Text>
           </View>
           <View style={styles.completeRow}>
-            <Text style={styles.completeLabel}>Intervalo de zona</Text>
+            <Text style={styles.completeLabel}>{t('shadow.zoneInterval')}</Text>
             <Text style={styles.completeValue}>{intervalTime}s</Text>
           </View>
           <View style={styles.completeDivider} />
           <View style={styles.completeRow}>
-            <Text style={styles.completeLabelBold}>Total zonas visitadas</Text>
+            <Text style={styles.completeLabelBold}>{t('shadow.totalZones')}</Text>
             <Text style={styles.completeValueBold}>{totalZonesVisited}</Text>
           </View>
           <View style={styles.completeRow}>
-            <Text style={styles.completeLabelBold}>Tiempo total</Text>
+            <Text style={styles.completeLabelBold}>{t('shadow.totalTimeLabel')}</Text>
             <Text style={styles.completeValueBold}>
               ~{formatTime(currentSet * setDuration + Math.max(0, currentSet - 1) * restDuration)}
             </Text>
@@ -602,7 +634,7 @@ export default function ShadowTraining() {
       <View style={styles.footer}>
         <TouchableOpacity style={styles.saveButton} onPress={saveRoutine} data-testid="save-shadow-btn">
           <Ionicons name="save" size={22} color="#FFF" />
-          <Text style={styles.saveButtonText}>Guardar Rutina</Text>
+          <Text style={styles.saveButtonText}>{t('shadow.saveRoutine')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
