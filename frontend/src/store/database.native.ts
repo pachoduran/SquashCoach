@@ -16,16 +16,19 @@ const initializeDatabase = async (): Promise<void> => {
   
   // Si ya hay una inicialización en curso, esperar a que termine
   if (initPromise) {
-    return initPromise;
+    await initPromise;
+    return;
   }
   
   initPromise = (async () => {
     try {
-    console.log('[DB] Inicializando base de datos...');
-    
-    // SDK 51: usar openDatabaseSync (API nueva)
-    db = SQLite.openDatabaseSync('squash_analyzer.db');
-    console.log('[DB] Base de datos abierta');
+      console.log('[DB] Inicializando base de datos...');
+      
+      // SDK 51: usar openDatabaseSync (API nueva)
+      if (!db) {
+        db = SQLite.openDatabaseSync('squash_analyzer.db');
+        console.log('[DB] Base de datos abierta');
+      }
     
     // Crear tablas
     await db.execAsync(`

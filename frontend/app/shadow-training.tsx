@@ -58,6 +58,8 @@ export default function ShadowTraining() {
   const router = useRouter();
   const { user } = useAuth();
   const soundRef = useRef<Audio.Sound | null>(null);
+  const soundStartRef = useRef<Audio.Sound | null>(null);
+  const soundEndRef = useRef<Audio.Sound | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const zoneTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -78,22 +80,26 @@ export default function ShadowTraining() {
   const [totalZonesVisited, setTotalZonesVisited] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
-  // Load sound
+  // Load sounds
   useEffect(() => {
-    const loadSound = async () => {
+    const loadSounds = async () => {
       try {
         await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-        const { sound } = await Audio.Sound.createAsync(
-          require('@/assets/beep.wav')
-        );
-        soundRef.current = sound;
+        const { sound: s1 } = await Audio.Sound.createAsync(require('@/assets/beep.wav'));
+        soundRef.current = s1;
+        const { sound: s2 } = await Audio.Sound.createAsync(require('@/assets/beep-start.wav'));
+        soundStartRef.current = s2;
+        const { sound: s3 } = await Audio.Sound.createAsync(require('@/assets/beep-end.wav'));
+        soundEndRef.current = s3;
       } catch (e) {
-        console.log('[Shadow] Error loading sound:', e);
+        console.log('[Shadow] Error loading sounds:', e);
       }
     };
-    loadSound();
+    loadSounds();
     return () => {
       soundRef.current?.unloadAsync();
+      soundStartRef.current?.unloadAsync();
+      soundEndRef.current?.unloadAsync();
       if (timerRef.current) clearInterval(timerRef.current);
       if (zoneTimerRef.current) clearInterval(zoneTimerRef.current);
     };
@@ -111,6 +117,30 @@ export default function ShadowTraining() {
     }
   };
 
+  const playStartBeep = async () => {
+    try {
+      if (soundStartRef.current) {
+        await soundStartRef.current.setPositionAsync(0);
+        await soundStartRef.current.playAsync();
+      }
+      Vibration.vibrate(500);
+    } catch (e) {
+      Vibration.vibrate(500);
+    }
+  };
+
+  const playEndBeep = async () => {
+    try {
+      if (soundEndRef.current) {
+        await soundEndRef.current.setPositionAsync(0);
+        await soundEndRef.current.playAsync();
+      }
+      Vibration.vibrate(800);
+    } catch (e) {
+      Vibration.vibrate(800);
+    }
+  };
+
   const getRandomZone = (currentZone: number | null): number => {
     const zones = zoneMode === 6 ? ZONES_6 : ZONES_12;
     let newZone: number;
@@ -122,10 +152,16 @@ export default function ShadowTraining() {
 
   // START TRAINING
   const startTraining = () => {
-    setPhase('countdown');
-    setCountdownVal(3);
-    setCurrentSet(1);
-    setTotalZonesVisited(0);
+    Alert.alert(
+      'Volumen',
+      'Se recomienda poner el volumen del celular al máximo para poder escuchar los cambios de zona en la cancha.',
+      [{ text: 'Entendido', onPress: () => {
+        setPhase('countdown');
+        setCountdownVal(3);
+        setCurrentSet(1);
+        setTotalZonesVisited(0);
+      }}]
+    );
   };
 
   // Countdown phase
@@ -150,7 +186,7 @@ export default function ShadowTraining() {
     setActiveZone(firstZone);
     setZonesVisited(1);
     setTotalZonesVisited(prev => prev + 1);
-    playBeep();
+    playStartBeep();
   };
 
   // Active phase - main timer
@@ -188,7 +224,7 @@ export default function ShadowTraining() {
   }, [phase, isPaused, intervalTime, activeZone]);
 
   const onSetFinished = () => {
-    playBeep();
+    playEndBeep();
     if (currentSet >= numberOfSets) {
       setPhase('complete');
       setActiveZone(null);
@@ -255,7 +291,7 @@ export default function ShadowTraining() {
         ]
       );
       Alert.alert('Guardado', 'Rutina guardada correctamente');
-      router.back();
+      setPhase('config');
     } catch (e) {
       console.error('[Shadow] Error saving:', e);
       Alert.alert('Error', 'No se pudo guardar la rutina');
@@ -799,7 +835,7 @@ const styles = StyleSheet.create({
   },
   trainingSetText: {
     color: '#FFF',
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: '600',
   },
   phaseBadge: {
@@ -815,7 +851,7 @@ const styles = StyleSheet.create({
   },
   trainingTimer: {
     color: '#FFF',
-    fontSize: 26,
+    fontSize: 40,
     fontWeight: '900',
     fontVariant: ['tabular-nums'],
   },
@@ -837,13 +873,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statNumber: {
-    fontSize: 16,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#1E3A5F',
   },
   statLabel: {
-    fontSize: 9,
+    fontSize: 12,
     color: '#666',
+    fontWeight: '600',
   },
   controlsRow: {
     flexDirection: 'row',
@@ -873,8 +910,9 @@ const styles = StyleSheet.create({
   },
   restTimer: {
     color: '#FFF',
-    fontSize: 60,
+    fontSize: 80,
     fontWeight: '900',
+    fontVariant: ['tabular-nums'],
   },
   restNext: {
     color: 'rgba(255,255,255,0.5)',
