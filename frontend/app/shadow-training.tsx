@@ -18,33 +18,33 @@ import { getDatabase } from '@/src/store/database';
 import { useAuth } from '@/src/context/AuthContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const COURT_WIDTH = Math.min(SCREEN_WIDTH - 40, 340);
-const COURT_HEIGHT = COURT_WIDTH * 1.35;
+const COURT_WIDTH = Math.min(SCREEN_WIDTH - 40, 320);
+const COURT_HEIGHT = COURT_WIDTH; // Cancha cuadrada como la imagen
 
-// 12 zonas como un reloj sobre la cancha (posiciones de la imagen del usuario)
+// 12 zonas como un reloj sobre la cancha (posiciones exactas de la imagen del usuario)
 const ZONES_12: { id: number; x: number; y: number }[] = [
-  { id: 1,  x: 0.89, y: 0.11 },
-  { id: 2,  x: 0.78, y: 0.29 },
-  { id: 3,  x: 0.77, y: 0.51 },
-  { id: 4,  x: 0.77, y: 0.72 },
-  { id: 5,  x: 0.77, y: 0.90 },
-  { id: 6,  x: 0.50, y: 0.91 },
-  { id: 7,  x: 0.26, y: 0.90 },
-  { id: 8,  x: 0.26, y: 0.71 },
-  { id: 9,  x: 0.24, y: 0.51 },
-  { id: 10, x: 0.23, y: 0.28 },
-  { id: 11, x: 0.11, y: 0.11 },
-  { id: 12, x: 0.50, y: 0.10 },
+  { id: 1,  x: 0.88, y: 0.05 },
+  { id: 2,  x: 0.88, y: 0.27 },
+  { id: 3,  x: 0.88, y: 0.47 },
+  { id: 4,  x: 0.88, y: 0.68 },
+  { id: 5,  x: 0.88, y: 0.85 },
+  { id: 6,  x: 0.48, y: 0.93 },
+  { id: 7,  x: 0.10, y: 0.90 },
+  { id: 8,  x: 0.10, y: 0.68 },
+  { id: 9,  x: 0.10, y: 0.47 },
+  { id: 10, x: 0.10, y: 0.27 },
+  { id: 11, x: 0.10, y: 0.05 },
+  { id: 12, x: 0.48, y: 0.05 },
 ];
 
-// 6 zonas (1-6 como en la imagen del usuario)
+// 6 zonas (esquinas y laterales como en la imagen del usuario)
 const ZONES_6: { id: number; x: number; y: number }[] = [
-  { id: 1, x: 0.87, y: 0.11 },
-  { id: 2, x: 0.87, y: 0.53 },
-  { id: 3, x: 0.87, y: 0.89 },
-  { id: 4, x: 0.13, y: 0.89 },
-  { id: 5, x: 0.13, y: 0.53 },
-  { id: 6, x: 0.13, y: 0.11 },
+  { id: 1, x: 0.88, y: 0.05 },
+  { id: 2, x: 0.88, y: 0.47 },
+  { id: 3, x: 0.88, y: 0.93 },
+  { id: 4, x: 0.10, y: 0.93 },
+  { id: 5, x: 0.10, y: 0.47 },
+  { id: 6, x: 0.10, y: 0.05 },
 ];
 
 const INTERVAL_OPTIONS = [2, 3, 4, 5, 6, 8, 10];
