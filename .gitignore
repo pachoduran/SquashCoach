@@ -3,7 +3,6 @@ node_modules/
 
 # Metro bundler cache
 .metro-cache/
-frontend/.metro-cache/
 
 # Build outputs
 /build
@@ -51,14 +50,17 @@ credentials.json
 *.key
 *token.json*
 
+# Emergent platform files
+.emergent/
+.gitconfig
+
+# Backups
+frontend_backup*/
+
+# Lock files (regenerated on install)
+package-lock.json
+yarn.lock
+
 # Testing
 /coverage
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
+test_reports/
