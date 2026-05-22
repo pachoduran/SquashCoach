@@ -18,6 +18,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { getDatabase } from '@/src/store/database';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { useAuth } from '@/src/context/AuthContext';
+import { SyncBanner } from '@/src/components/SyncBanner';
 
 const BACKEND_URL = 'https://lev.jsb.mybluehost.me:8001';
 import { format } from 'date-fns';
@@ -389,6 +390,8 @@ export default function HistoryScreen() {
           {hasActiveFilters && <View style={styles.filterDot} />}
         </TouchableOpacity>
       </View>
+
+      <SyncBanner />
 
       {showFilters && (
         <View style={styles.filtersPanel}>

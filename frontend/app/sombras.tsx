@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '@/src/context/LanguageContext';
+import { SyncBanner } from '@/src/components/SyncBanner';
 
 export default function Sombras() {
   const router = useRouter();
@@ -18,6 +19,8 @@ export default function Sombras() {
         <Text style={styles.headerTitle}>{t('sombras.title')}</Text>
         <View style={{ width: 40 }} />
       </View>
+
+      <SyncBanner />
 
       <View style={styles.content}>
         <TouchableOpacity

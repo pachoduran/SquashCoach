@@ -18,6 +18,8 @@ import { BarChart } from 'react-native-gifted-charts';
 import { getDatabase } from '@/src/store/database';
 import { useAuth } from '@/src/context/AuthContext';
 import { useLanguage } from '@/src/context/LanguageContext';
+import { useSync } from '@/src/context/SyncContext';
+import { SyncBanner } from '@/src/components/SyncBanner';
 import { syncService } from '@/src/store/syncService';
 
 interface Routine {
@@ -70,10 +72,10 @@ export default function ShadowHistory() {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { syncNow } = useSync();
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [syncing, setSyncing] = useState(false);
 
   const loadRoutines = useCallback(async () => {
     try {
@@ -93,39 +95,18 @@ export default function ShadowHistory() {
   useFocusEffect(
     useCallback(() => {
       loadRoutines();
-      // Best-effort cloud sync on entry
-      (async () => {
-        try {
-          await syncService.syncShadowRoutines();
-          await syncService.restoreShadowRoutinesFromCloud(user?.user_id || '');
-          loadRoutines();
-        } catch {}
-      })();
-    }, [loadRoutines, user])
+      // Sync transparente en segundo plano via SyncContext
+      syncNow().then(() => loadRoutines()).catch(() => {});
+    }, [loadRoutines, syncNow])
   );
 
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      await syncService.syncShadowRoutines();
-      await syncService.restoreShadowRoutinesFromCloud(user?.user_id || '');
+      await syncNow();
       await loadRoutines();
     } finally {
       setRefreshing(false);
-    }
-  };
-
-  const handleSync = async () => {
-    setSyncing(true);
-    try {
-      const up = await syncService.syncShadowRoutines();
-      const down = await syncService.restoreShadowRoutinesFromCloud(user?.user_id || '');
-      await loadRoutines();
-      Alert.alert(t('common.success'), `${up} ${t('shadowHistory.uploaded')}, ${down} ${t('shadowHistory.downloaded')}`);
-    } catch (e) {
-      Alert.alert(t('common.error'), t('shadowHistory.syncError'));
-    } finally {
-      setSyncing(false);
     }
   };
 
@@ -265,19 +246,10 @@ export default function ShadowHistory() {
           <Ionicons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('shadowHistory.title')}</Text>
-        <TouchableOpacity
-          onPress={handleSync}
-          disabled={syncing}
-          style={styles.syncBtn}
-          data-testid="sync-shadows-btn"
-        >
-          {syncing ? (
-            <ActivityIndicator size="small" color="#FFF" />
-          ) : (
-            <Ionicons name="cloud-upload-outline" size={22} color="#FFF" />
-          )}
-        </TouchableOpacity>
+        <View style={{ width: 40 }} />
       </View>
+
+      <SyncBanner />
 
       {loading ? (
         <View style={styles.loadingContainer}>

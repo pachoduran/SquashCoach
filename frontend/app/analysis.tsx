@@ -19,6 +19,7 @@ import { getDatabase } from '@/src/store/database';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { useAuth } from '@/src/context/AuthContext';
 import { HeatmapCourt } from '@/src/components/HeatmapCourt';
+import { SyncBanner } from '@/src/components/SyncBanner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -334,6 +335,8 @@ export default function AnalysisScreen() {
         <Text style={styles.headerTitle}>{t('analysis.title')}</Text>
         <View style={{ width: 30 }} />
       </View>
+
+      <SyncBanner />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Selectores de jugadores */}

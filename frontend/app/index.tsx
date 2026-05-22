@@ -17,9 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { initDatabase, getDatabase } from '@/src/store/database';
 import { useAuth } from '@/src/context/AuthContext';
 import { useLanguage } from '@/src/context/LanguageContext';
-import { useSync } from '@/src/context/SyncContext';
 import { SyncBanner } from '@/src/components/SyncBanner';
-import { syncService } from '@/src/store/syncService';
 import { format } from 'date-fns';
 import { TutorialModal } from '@/src/components/TutorialModal';
 
@@ -45,8 +43,6 @@ export default function Index() {
   const { language, setLang, t } = useLanguage();
   const [activeMatches, setActiveMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
-  const [hasPendingSync, setHasPendingSync] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
 
@@ -74,76 +70,13 @@ export default function Index() {
   useFocusEffect(
     useCallback(() => {
       loadActiveMatches();
-      checkPendingSync();
     }, [])
   );
-
-  useEffect(() => {
-    if (isAuthenticated && hasPendingSync) {
-      handleSync();
-    }
-    if (isAuthenticated) {
-      restoreFromCloudIfNeeded();
-    }
-  }, [isAuthenticated, hasPendingSync]);
-
-  const restoreFromCloudIfNeeded = async () => {
-    try {
-      const db = await getDatabase();
-      const localPlayers = await db.getAllAsync('SELECT COUNT(*) as count FROM players');
-      const playerCount = (localPlayers as any[])[0]?.count || 0;
-      const localTournaments = await db.getAllAsync('SELECT COUNT(*) as count FROM tournaments');
-      const tournamentCount = (localTournaments as any[])[0]?.count || 0;
-      
-      if (playerCount > 0 && tournamentCount > 0) {
-        console.log('[Restore] Ya hay datos locales y torneos, sincronizando...');
-        // Always sync tournaments to/from cloud to keep in sync
-        await syncService.syncTournaments();
-        return;
-      }
-
-      console.log(`[Restore] Players: ${playerCount}, Tournaments: ${tournamentCount}. Restaurando...`);
-      setSyncing(true);
-
-      // Always try to restore tournaments if missing
-      if (playerCount > 0 && tournamentCount === 0) {
-        console.log('[Restore] Hay jugadores pero no torneos, restaurando torneos...');
-        const userId = user?.user_id || '';
-        const tournamentsRestored = await syncService.restoreTournamentsFromCloud(userId);
-        setSyncing(false);
-        if (tournamentsRestored > 0) {
-          Alert.alert(t('common.success'), `${tournamentsRestored} torneos restaurados`);
-        }
-        return;
-      }
-
-      const result = await syncService.restoreFromCloud();
-      console.log('[Restore] Resultado:', JSON.stringify(result));
-
-      setSyncing(false);
-
-      if (result.success && (result.playersRestored > 0 || result.matchesRestored > 0)) {
-        Alert.alert(
-          t('common.success'),
-          `${result.playersRestored} ${t('home.playersRestored')}, ${result.matchesRestored} ${t('home.matchesRestored')}`
-        );
-        await loadActiveMatches();
-      } else if (!result.success) {
-        console.log('[Restore] Error:', result.message);
-      } else {
-        console.log('[Restore] Nada que restaurar de la nube');
-      }
-    } catch (error) {
-      console.error('[Restore] Error general:', error);
-      setSyncing(false);
-    }
-  };
 
   const initializeApp = async () => {
     try {
       await initDatabase();
       await loadActiveMatches();
-      await checkPendingSync();
     } catch (error) {
       console.error('Error inicializando app:', error);
     } finally {
@@ -192,46 +125,12 @@ export default function Index() {
     }
   }, [user?.user_id]);
 
-  const checkPendingSync = async () => {
-    const pending = await syncService.hasPendingSync();
-    setHasPendingSync(pending);
-  };
-
-  const handleSync = async () => {
-    if (!isAuthenticated) {
-      Alert.alert(t('home.loginRequired'), t('home.loginRequiredMsg'), [
-        { text: t('common.cancel') },
-        { text: t('home.login'), onPress: login }
-      ]);
-      return;
-    }
-
-    setSyncing(true);
-    Alert.alert('Sync', 'Iniciando sincronización...');
-    
-    // First sync players to cloud
-    await syncService.syncPlayers();
-    
-    // Sync tournaments to cloud
-    await syncService.syncTournaments();
-    
-    // Then sync matches
-    const result = await syncService.syncPendingMatches();
-    setSyncing(false);
-
-    Alert.alert('Sync Resultado', `${result.success ? 'OK' : 'Error'}: ${result.message}`);
-    
-    if (result.success) {
-      setHasPendingSync(false);
-    }
-  };
-
   const handleLogout = () => {
     Alert.alert(t('home.logout'), t('home.logoutConfirm'), [
       { text: t('common.cancel') },
       { text: t('home.logout'), onPress: logout, style: 'destructive' }
     ]);
-  };
+  }; 
 
   const deleteMatch = async (matchId: number) => {
     Alert.alert(
@@ -361,15 +260,6 @@ export default function Index() {
             </TouchableOpacity>
           )}
         </View>
-        
-        {hasPendingSync && isAuthenticated && (
-          <TouchableOpacity style={styles.syncBanner} onPress={handleSync} disabled={syncing}>
-            <Ionicons name="cloud-upload-outline" size={18} color="#FFF" />
-            <Text style={styles.syncBannerText}>
-              {syncing ? t('home.syncing') : t('home.pendingSync')}
-            </Text>
-          </TouchableOpacity>
-        )}
       </View>
 
       <SyncBanner />
