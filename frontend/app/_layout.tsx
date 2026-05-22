@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, View, Image, Animated } from 'react-native';
 import { AuthProvider } from '@/src/context/AuthContext';
 import { LanguageProvider } from '@/src/context/LanguageContext';
+import { SyncProvider } from '@/src/context/SyncContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 
@@ -51,27 +52,29 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <LanguageProvider>
         <AuthProvider>
-          <GestureHandlerRootView style={styles.container}>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="index" />
-              <Stack.Screen name="login" />
-              <Stack.Screen name="new-match" />
-              <Stack.Screen name="match-play" />
-              <Stack.Screen name="match-summary" />
-              <Stack.Screen name="history" />
-              <Stack.Screen name="player-analysis" />
-              <Stack.Screen name="settings" />
-              <Stack.Screen name="analysis" />
-              <Stack.Screen name="cloud-matches" />
-              <Stack.Screen name="share" />
-              <Stack.Screen name="shared-with-me" />
-              <Stack.Screen name="shared-match-detail" />
-              <Stack.Screen name="shadow-training" />
-              <Stack.Screen name="shadow-history" />
-              <Stack.Screen name="sombras" />
-              <Stack.Screen name="partidos" />
-            </Stack>
-          </GestureHandlerRootView>
+          <SyncProvider>
+            <GestureHandlerRootView style={styles.container}>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="index" />
+                <Stack.Screen name="login" />
+                <Stack.Screen name="new-match" />
+                <Stack.Screen name="match-play" />
+                <Stack.Screen name="match-summary" />
+                <Stack.Screen name="history" />
+                <Stack.Screen name="player-analysis" />
+                <Stack.Screen name="settings" />
+                <Stack.Screen name="analysis" />
+                <Stack.Screen name="cloud-matches" />
+                <Stack.Screen name="share" />
+                <Stack.Screen name="shared-with-me" />
+                <Stack.Screen name="shared-match-detail" />
+                <Stack.Screen name="shadow-training" />
+                <Stack.Screen name="shadow-history" />
+                <Stack.Screen name="sombras" />
+                <Stack.Screen name="partidos" />
+              </Stack>
+            </GestureHandlerRootView>
+          </SyncProvider>
         </AuthProvider>
       </LanguageProvider>
     </SafeAreaProvider>

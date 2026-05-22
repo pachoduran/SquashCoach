@@ -44,7 +44,18 @@
     "loginRequiredMsg": "Debes iniciar sesión para sincronizar",
     "sync": "Sincronización",
     "selectLanguage": "Selecciona tu idioma",
-    "sharing": "Compartir"
+    "sharing": "Compartir",
+    "matches": "Partidos",
+    "shadows": "Sombras"
+  },
+  "partidos": {
+    "newMatchDesc": "Registrar un nuevo partido"
+  },
+  "sync": {
+    "syncing": "Sincronizando...",
+    "updated": "Actualizado",
+    "offline": "Sin conexión – los cambios se sincronizarán al volver",
+    "pendingChanges": "Cambios pendientes"
   },
   "login": {
     "signIn": "Iniciar Sesión",

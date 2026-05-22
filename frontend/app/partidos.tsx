@@ -14,6 +14,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { getDatabase } from '@/src/store/database';
 import { useAuth } from '@/src/context/AuthContext';
 import { useLanguage } from '@/src/context/LanguageContext';
+import { useSync } from '@/src/context/SyncContext';
+import { SyncBanner } from '@/src/components/SyncBanner';
 
 interface ActiveMatch {
   id: number;
@@ -32,6 +34,7 @@ export default function Partidos() {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { syncNow } = useSync();
   const [activeMatches, setActiveMatches] = useState<ActiveMatch[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -58,11 +61,14 @@ export default function Partidos() {
   useFocusEffect(
     useCallback(() => {
       loadActiveMatches();
+      // Sincronizar en segundo plano cada vez que se entra
+      syncNow().then(() => loadActiveMatches()).catch(() => {});
     }, [user])
   );
 
   const onRefresh = async () => {
     setRefreshing(true);
+    await syncNow();
     await loadActiveMatches();
     setRefreshing(false);
   };
@@ -73,9 +79,11 @@ export default function Partidos() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} data-testid="partidos-back-btn">
           <Ionicons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Partidos</Text>
+        <Text style={styles.headerTitle}>{t('home.matches')}</Text>
         <View style={{ width: 40 }} />
       </View>
+
+      <SyncBanner />
 
       <FlatList
         data={[]}
@@ -86,7 +94,7 @@ export default function Partidos() {
             {/* Partidos en curso */}
             {activeMatches.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Partidos en Curso</Text>
+                <Text style={styles.sectionTitle}>{t('home.matchesInProgress')}</Text>
                 {activeMatches.map((match) => (
                   <TouchableOpacity
                     key={match.id}
@@ -124,12 +132,12 @@ export default function Partidos() {
               </View>
               <View style={styles.featureText}>
                 <Text style={styles.featureTitle}>{t('home.newMatch')}</Text>
-                <Text style={styles.featureSub}>Registrar un nuevo partido</Text>
+                <Text style={styles.featureSub}>{t('partidos.newMatchDesc')}</Text>
               </View>
               <Ionicons name="chevron-forward" size={22} color="#999" />
             </TouchableOpacity>
 
-            {/* Grid de opciones */}
+            {/* Grid de opciones (sin botón Nube — sync es automática) */}
             <View style={styles.grid}>
               <TouchableOpacity
                 style={styles.gridItem}
@@ -162,17 +170,6 @@ export default function Partidos() {
                   <Ionicons name="share-social-outline" size={24} color="#FFF" />
                 </View>
                 <Text style={styles.gridLabel}>{t('home.sharing')}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.gridItem}
-                onPress={() => router.push('/cloud-matches')}
-                data-testid="cloud-btn"
-              >
-                <View style={[styles.gridIcon, { backgroundColor: '#4CAF50' }]}>
-                  <Ionicons name="cloud-outline" size={24} color="#FFF" />
-                </View>
-                <Text style={styles.gridLabel}>{t('home.cloud')}</Text>
               </TouchableOpacity>
             </View>
           </View>

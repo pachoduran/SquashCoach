@@ -48,6 +48,15 @@
     "matches": "Matches",
     "shadows": "Shadows"
   },
+  "partidos": {
+    "newMatchDesc": "Record a new match"
+  },
+  "sync": {
+    "syncing": "Syncing...",
+    "updated": "Updated",
+    "offline": "Offline – changes will sync when reconnected",
+    "pendingChanges": "Pending changes"
+  },
   "login": {
     "signIn": "Sign In",
     "signUp": "Sign Up",

@@ -824,6 +824,72 @@ class SyncService {
       return false;
     }
   }
+
+  // ============================================================================
+  // MASTER SYNC: sube y baja TODO (jugadores, torneos, partidos, sombras)
+  // ============================================================================
+  async syncAll(userId?: string): Promise<{
+    success: boolean;
+    uploaded: { players: number; tournaments: number; matches: number; shadows: number };
+    downloaded: { players: number; tournaments: number; matches: number; shadows: number };
+  }> {
+    const result = {
+      success: false,
+      uploaded: { players: 0, tournaments: 0, matches: 0, shadows: 0 },
+      downloaded: { players: 0, tournaments: 0, matches: 0, shadows: 0 },
+    };
+
+    if (this.isSyncing) {
+      console.log('[SyncAll] Ya hay un sync en curso, salteando');
+      return result;
+    }
+
+    const sessionToken = await this.getSessionToken();
+    if (!sessionToken) {
+      console.log('[SyncAll] Sin sesión');
+      return result;
+    }
+
+    const online = await this.isOnline();
+    if (!online) {
+      console.log('[SyncAll] Sin internet, salteando');
+      return result;
+    }
+
+    this.isSyncing = true;
+    try {
+      // 1. UPLOAD
+      result.uploaded.players = await this.syncPlayers();
+      result.uploaded.tournaments = await this.syncTournaments();
+      result.uploaded.shadows = await this.syncShadowRoutines();
+
+      // Upload matches (legacy: marks individual matches + mass upload)
+      this.isSyncing = false; // syncPendingMatches re-locks internally
+      const matchRes = await this.syncPendingMatches();
+      this.isSyncing = true;
+      if (matchRes.success) {
+        const m = matchRes.message.match(/(\d+)\s*partidos/);
+        if (m) result.uploaded.matches = parseInt(m[1], 10);
+      }
+
+      // 2. DOWNLOAD
+      const uid = userId || '';
+      const downRes = await this.restoreFromCloud();
+      result.downloaded.players = downRes.playersRestored;
+      result.downloaded.matches = downRes.matchesRestored;
+      result.downloaded.tournaments = await this.restoreTournamentsFromCloud(uid);
+      result.downloaded.shadows = await this.restoreShadowRoutinesFromCloud(uid);
+
+      result.success = true;
+      console.log('[SyncAll] Completado:', result);
+    } catch (e) {
+      console.error('[SyncAll] Error:', e);
+    } finally {
+      this.isSyncing = false;
+    }
+
+    return result;
+  }
 }
 
 export const syncService = new SyncService();

@@ -17,6 +17,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { initDatabase, getDatabase } from '@/src/store/database';
 import { useAuth } from '@/src/context/AuthContext';
 import { useLanguage } from '@/src/context/LanguageContext';
+import { useSync } from '@/src/context/SyncContext';
+import { SyncBanner } from '@/src/components/SyncBanner';
 import { syncService } from '@/src/store/syncService';
 import { format } from 'date-fns';
 import { TutorialModal } from '@/src/components/TutorialModal';
@@ -370,6 +372,8 @@ export default function Index() {
         )}
       </View>
 
+      <SyncBanner />
+
       <View style={styles.content}>
         {/* Logo central */}
         <View style={styles.homeCenter}>
@@ -393,7 +397,7 @@ export default function Index() {
               <View style={[styles.featureIcon, { backgroundColor: '#2196F3' }]}>
                 <Ionicons name="tennisball-outline" size={28} color="#FFF" />
               </View>
-              <Text style={styles.featureBtnText}>Partidos</Text>
+              <Text style={styles.featureBtnText}>{t('home.matches')}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
@@ -404,7 +408,7 @@ export default function Index() {
               <View style={[styles.featureIcon, { backgroundColor: '#FF5722' }]}>
                 <Ionicons name="footsteps-outline" size={28} color="#FFF" />
               </View>
-              <Text style={styles.featureBtnText}>Sombras</Text>
+              <Text style={styles.featureBtnText}>{t('home.shadows')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
