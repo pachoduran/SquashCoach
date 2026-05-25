@@ -212,6 +212,20 @@ class SyncService {
         const result = JSON.parse(responseText);
         console.log('[Sync] Resultado:', result);
 
+        // Guardar server_id en los partidos locales (clave para deduplicación)
+        if (result.match_mappings) {
+          for (const [localIdStr, serverId] of Object.entries(result.match_mappings)) {
+            try {
+              await db.runAsync(
+                'UPDATE matches SET server_id = ?, synced = 1 WHERE id = ?',
+                [String(serverId), parseInt(localIdStr, 10)]
+              );
+            } catch (e) {
+              console.error('[Sync] Error guardando server_id:', e);
+            }
+          }
+        }
+
         // Sync tournaments too
         await this.syncTournaments();
 
@@ -582,23 +596,44 @@ class SyncService {
             }
           }
 
-          // Check if match already exists locally (by players + date)
+          // Check if match already exists locally
+          // 1. PRIMERO: por server_id (clave fuerte si ya se sincronizó antes)
+          const existingByServerId = await db.getFirstAsync(
+            'SELECT id FROM matches WHERE server_id = ?',
+            [serverMatchId]
+          );
+          if (existingByServerId) {
+            console.log(`[Sync] Partido ya existe (server_id), saltando: ${serverMatchId}`);
+            continue;
+          }
+
+          // 2. FALLBACK: por jugadores (cualquier orden) + día (sin hora) — para partidos viejos sin server_id
+          const dayPrefix = (matchData.date || '').substring(0, 10);
           const existingMatch = await db.getFirstAsync(
-            'SELECT id FROM matches WHERE player1_id = ? AND player2_id = ? AND date = ?',
-            [p1Local.id, p2Local.id, matchData.date]
+            `SELECT id FROM matches 
+             WHERE ((player1_id = ? AND player2_id = ?) OR (player1_id = ? AND player2_id = ?))
+               AND substr(date, 1, 10) = ?`,
+            [p1Local.id, p2Local.id, p2Local.id, p1Local.id, dayPrefix]
           );
           if (existingMatch) {
-            console.log(`[Sync] Partido ya existe localmente, saltando`);
+            // Backfill server_id en el partido local existente para futuras sincronizaciones
+            try {
+              await db.runAsync(
+                'UPDATE matches SET server_id = ?, synced = 1 WHERE id = ?',
+                [serverMatchId, (existingMatch as any).id]
+              );
+            } catch {}
+            console.log(`[Sync] Partido ya existe (jugadores+día), backfill server_id`);
             continue;
           }
 
           const matchDate = matchData.date || new Date().toISOString();
           const result = await db.runAsync(
-            `INSERT INTO matches (player1_id, player2_id, my_player_id, best_of, winner_id, date, status, current_game, player1_games, player2_games, tournament_name, match_date, user_id)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO matches (player1_id, player2_id, my_player_id, best_of, winner_id, date, status, current_game, player1_games, player2_games, tournament_name, match_date, user_id, server_id, synced)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
             [p1Local.id, p2Local.id, myPlayerLocalId || p1Local.id, matchData.best_of || 3, winnerLocalId, matchDate,
              matchData.status || 'finished', matchData.current_game || 1, matchData.player1_games || 0,
-             matchData.player2_games || 0, matchData.tournament_name || null, matchData.match_date || null, userId]
+             matchData.player2_games || 0, matchData.tournament_name || null, matchData.match_date || null, userId, serverMatchId]
           );
 
           const localMatchId = result.lastInsertRowId;

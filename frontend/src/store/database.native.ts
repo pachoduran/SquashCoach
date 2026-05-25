@@ -157,6 +157,9 @@ const runMigrations = async (): Promise<void> => {
     "ALTER TABLE players ADD COLUMN is_mine INTEGER DEFAULT 0",
     // Phase 1: Match tournament_id
     "ALTER TABLE matches ADD COLUMN tournament_id INTEGER",
+    // Sync tracking columns to deduplicate matches across cloud roundtrips
+    "ALTER TABLE matches ADD COLUMN server_id TEXT",
+    "ALTER TABLE matches ADD COLUMN synced INTEGER DEFAULT 0",
   ];
   
   for (const sql of migrations) {
