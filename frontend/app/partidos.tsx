@@ -48,7 +48,7 @@ export default function Partidos() {
         FROM matches m
         LEFT JOIN players p1 ON m.player1_id = p1.id
         LEFT JOIN players p2 ON m.player2_id = p2.id
-        WHERE m.status = 'in_progress' AND m.user_id = ?
+        WHERE m.status = 'playing' AND m.user_id = ?
         ORDER BY m.date DESC`,
         [user?.user_id || '']
       );

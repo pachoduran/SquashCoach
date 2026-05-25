@@ -18,6 +18,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { getDatabase } from '@/src/store/database';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { useAuth } from '@/src/context/AuthContext';
+import { useSync } from '@/src/context/SyncContext';
 import { HeatmapCourt } from '@/src/components/HeatmapCourt';
 import { SyncBanner } from '@/src/components/SyncBanner';
 import { format } from 'date-fns';
@@ -50,6 +51,7 @@ export default function AnalysisScreen() {
   const router = useRouter();
   const { t } = useLanguage();
   const { user, sessionToken } = useAuth();
+  const { syncNow } = useSync();
 
   const getPlayerLabel = (player: Player) => {
     let label = player.nickname;
@@ -97,6 +99,8 @@ export default function AnalysisScreen() {
   useEffect(() => {
     loadPlayers();
     loadTournaments();
+    // Forzar sincronización con la nube al entrar a Análisis
+    syncNow().then(() => { loadPlayers(); loadTournaments(); }).catch(() => {});
   }, [sessionToken]);
 
   const loadTournaments = async () => {

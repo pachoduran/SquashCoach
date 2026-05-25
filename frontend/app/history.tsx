@@ -18,6 +18,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { getDatabase } from '@/src/store/database';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { useAuth } from '@/src/context/AuthContext';
+import { useSync } from '@/src/context/SyncContext';
 import { SyncBanner } from '@/src/components/SyncBanner';
 
 const BACKEND_URL = 'https://lev.jsb.mybluehost.me:8001';
@@ -52,6 +53,7 @@ export default function HistoryScreen() {
   const router = useRouter();
   const { t } = useLanguage();
   const { user, sessionToken } = useAuth();
+  const { syncNow } = useSync();
 
   const formatPlayerLabel = (player: Player) => {
     let label = player.nickname;
@@ -85,6 +87,8 @@ export default function HistoryScreen() {
 
   useEffect(() => {
     loadInitialData();
+    // Forzar sincronización con la nube al entrar a Historial
+    syncNow().then(() => loadMatches()).catch(() => {});
   }, []);
 
   useFocusEffect(
