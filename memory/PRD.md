@@ -37,7 +37,8 @@ Aplicación móvil (React Native / Expo) + backend (FastAPI / MongoDB) para aná
 - **Procedimiento**: vía PuTTY/SSH
   1. `cd /var/www/squash-coach`
   2. `sudo cp server.py server.py.bak-$(date +%Y%m%d-%H%M%S)`
-  3. `sudo curl -fsSL -o server.py.new https://lev.preview.emergentagent.com/api/download-server-py`
+  3. `sudo curl -fsSL -o server.py.new https://ios-picker-update.preview.emergentagent.com/api/download-server-py`
+     - ⚠️ El subdominio del preview de Emergent CAMBIA por sesión. Verifica el actual con `grep EXPO_PUBLIC_BACKEND_URL /app/frontend/.env` antes de pasarle la URL al usuario.
   4. `grep -c "referee-matches" server.py.new` (debe coincidir con la versión nueva)
   5. `sudo mv server.py.new server.py && sudo systemctl restart squash-coach`
 
