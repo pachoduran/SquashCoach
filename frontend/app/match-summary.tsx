@@ -20,6 +20,7 @@ import { getDatabase } from '@/src/store/database';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { useAuth } from '@/src/context/AuthContext';
 import { SquashCourt } from '@/src/components/SquashCourt';
+import { HeatmapCourt } from '@/src/components/HeatmapCourt';
 import { format } from 'date-fns';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
@@ -78,6 +79,10 @@ export default function MatchSummary() {
   
   // Filtro de estadísticas por jugador
   const [statsFilter, setStatsFilter] = useState<'all' | 'player1' | 'player2'>('all');
+
+  // Vista de la cancha: 'points' (punto a punto) | 'heatmap' (zonas de calor)
+  const [courtView, setCourtView] = useState<'points' | 'heatmap'>('points');
+  const [heatmapPlayer, setHeatmapPlayer] = useState<'player1' | 'player2'>('player1');
   
   // Edit point
   const [showEditPoint, setShowEditPoint] = useState(false);
@@ -405,74 +410,136 @@ export default function MatchSummary() {
         {/* Cancha y navegación - Compacto */}
         {filteredPoints.length > 0 && (
           <View style={styles.courtSection}>
-            <SquashCourt
-              points={filteredPoints.map((p, index) => ({
-                x: p.position_x,
-                y: p.position_y,
-                isWin: p.winner_player_id === matchData.player1_id,
-                score: `${p.player1_score}-${p.player2_score}`,
-                isSelected: index === selectedPointIndex,
-              }))}
-              selectedPointIndex={selectedPointIndex}
-              showSelectedHighlight={true}
-              compact={true}
-            />
-            
-            {/* Info del punto + Navegación en línea */}
-            <View style={styles.pointNavRow}>
-              <TouchableOpacity 
-                style={styles.navBtnSmall}
-                onPress={() => setSelectedPointIndex(0)}
-                disabled={selectedPointIndex === 0}
+            {/* Toggle Vista: Puntos vs Heatmap */}
+            <View style={styles.viewToggle}>
+              <TouchableOpacity
+                style={[styles.viewToggleBtn, courtView === 'points' && styles.viewToggleBtnActive]}
+                onPress={() => setCourtView('points')}
+                data-testid="view-toggle-points"
               >
-                <Ionicons name="play-skip-back" size={18} color={selectedPointIndex === 0 ? "#CCC" : "#2196F3"} />
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.navBtnSmall}
-                onPress={goToPreviousPoint}
-                disabled={selectedPointIndex === 0}
-              >
-                <Ionicons name="chevron-back" size={22} color={selectedPointIndex === 0 ? "#CCC" : "#2196F3"} />
-              </TouchableOpacity>
-              
-              <View style={styles.pointInfoCompact}>
-                <Text style={styles.pointScoreCompact}>
-                  {selectedPoint?.player1_score}-{selectedPoint?.player2_score}
+                <Ionicons name="locate" size={14} color={courtView === 'points' ? '#FFF' : '#666'} />
+                <Text style={[styles.viewToggleText, courtView === 'points' && styles.viewToggleTextActive]}>
+                  Puntos
                 </Text>
-                <Text style={styles.pointDetailCompact}>
-                  {selectedPoint?.winner_player_id === matchData.player1_id 
-                    ? matchData.player1_nickname 
-                    : matchData.player2_nickname} • {selectedPoint?.reason}
-                </Text>
-              </View>
-
-              {!isCloudMatch && (
-                <TouchableOpacity style={styles.navBtnSmall} onPress={openEditPoint}>
-                  <Ionicons name="pencil" size={18} color="#FF9800" />
-                </TouchableOpacity>
-              )}
-              
-              <TouchableOpacity 
-                style={styles.navBtnSmall}
-                onPress={goToNextPoint}
-                disabled={selectedPointIndex === filteredPoints.length - 1}
-              >
-                <Ionicons name="chevron-forward" size={22} color={selectedPointIndex === filteredPoints.length - 1 ? "#CCC" : "#2196F3"} />
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.navBtnSmall}
-                onPress={() => setSelectedPointIndex(filteredPoints.length - 1)}
-                disabled={selectedPointIndex === filteredPoints.length - 1}
+              <TouchableOpacity
+                style={[styles.viewToggleBtn, courtView === 'heatmap' && styles.viewToggleBtnActive]}
+                onPress={() => setCourtView('heatmap')}
+                data-testid="view-toggle-heatmap"
               >
-                <Ionicons name="play-skip-forward" size={18} color={selectedPointIndex === filteredPoints.length - 1 ? "#CCC" : "#2196F3"} />
+                <Ionicons name="flame" size={14} color={courtView === 'heatmap' ? '#FFF' : '#666'} />
+                <Text style={[styles.viewToggleText, courtView === 'heatmap' && styles.viewToggleTextActive]}>
+                  Heatmap
+                </Text>
               </TouchableOpacity>
             </View>
-            
-            <Text style={styles.pointCounter}>
-              Punto {selectedPointIndex + 1} de {filteredPoints.length}
-            </Text>
+
+            {courtView === 'points' ? (
+              <>
+                <SquashCourt
+                  points={filteredPoints.map((p, index) => ({
+                    x: p.position_x,
+                    y: p.position_y,
+                    isWin: p.winner_player_id === matchData.player1_id,
+                    score: `${p.player1_score}-${p.player2_score}`,
+                    isSelected: index === selectedPointIndex,
+                  }))}
+                  selectedPointIndex={selectedPointIndex}
+                  showSelectedHighlight={true}
+                  compact={true}
+                />
+                
+                {/* Info del punto + Navegación en línea */}
+                <View style={styles.pointNavRow}>
+                  <TouchableOpacity 
+                    style={styles.navBtnSmall}
+                    onPress={() => setSelectedPointIndex(0)}
+                    disabled={selectedPointIndex === 0}
+                  >
+                    <Ionicons name="play-skip-back" size={18} color={selectedPointIndex === 0 ? "#CCC" : "#2196F3"} />
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={styles.navBtnSmall}
+                    onPress={goToPreviousPoint}
+                    disabled={selectedPointIndex === 0}
+                  >
+                    <Ionicons name="chevron-back" size={22} color={selectedPointIndex === 0 ? "#CCC" : "#2196F3"} />
+                  </TouchableOpacity>
+                  
+                  <View style={styles.pointInfoCompact}>
+                    <Text style={styles.pointScoreCompact}>
+                      {selectedPoint?.player1_score}-{selectedPoint?.player2_score}
+                    </Text>
+                    <Text style={styles.pointDetailCompact}>
+                      {selectedPoint?.winner_player_id === matchData.player1_id 
+                        ? matchData.player1_nickname 
+                        : matchData.player2_nickname} • {selectedPoint?.reason}
+                    </Text>
+                  </View>
+
+                  {!isCloudMatch && (
+                    <TouchableOpacity style={styles.navBtnSmall} onPress={openEditPoint}>
+                      <Ionicons name="pencil" size={18} color="#FF9800" />
+                    </TouchableOpacity>
+                  )}
+                  
+                  <TouchableOpacity 
+                    style={styles.navBtnSmall}
+                    onPress={goToNextPoint}
+                    disabled={selectedPointIndex === filteredPoints.length - 1}
+                  >
+                    <Ionicons name="chevron-forward" size={22} color={selectedPointIndex === filteredPoints.length - 1 ? "#CCC" : "#2196F3"} />
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={styles.navBtnSmall}
+                    onPress={() => setSelectedPointIndex(filteredPoints.length - 1)}
+                    disabled={selectedPointIndex === filteredPoints.length - 1}
+                  >
+                    <Ionicons name="play-skip-forward" size={18} color={selectedPointIndex === filteredPoints.length - 1 ? "#CCC" : "#2196F3"} />
+                  </TouchableOpacity>
+                </View>
+                
+                <Text style={styles.pointCounter}>
+                  Punto {selectedPointIndex + 1} de {filteredPoints.length}
+                </Text>
+              </>
+            ) : (
+              <>
+                {/* Selector de jugador para el heatmap */}
+                <View style={styles.heatmapPlayerToggle}>
+                  <TouchableOpacity
+                    style={[styles.heatmapPlayerBtn, heatmapPlayer === 'player1' && styles.heatmapPlayerBtnActive]}
+                    onPress={() => setHeatmapPlayer('player1')}
+                    data-testid="heatmap-player1"
+                  >
+                    <Text style={[styles.heatmapPlayerText, heatmapPlayer === 'player1' && styles.heatmapPlayerTextActive]}>
+                      {matchData.player1_nickname}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.heatmapPlayerBtn, heatmapPlayer === 'player2' && styles.heatmapPlayerBtnActive]}
+                    onPress={() => setHeatmapPlayer('player2')}
+                    data-testid="heatmap-player2"
+                  >
+                    <Text style={[styles.heatmapPlayerText, heatmapPlayer === 'player2' && styles.heatmapPlayerTextActive]}>
+                      {matchData.player2_nickname}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.heatmapHint}>
+                  Zonas donde {heatmapPlayer === 'player1' ? matchData.player1_nickname : matchData.player2_nickname} ganó sus puntos
+                </Text>
+                <HeatmapCourt
+                  points={filteredPoints
+                    .filter(p => p.winner_player_id === (heatmapPlayer === 'player1' ? matchData.player1_id : matchData.player2_id))
+                    .map(p => ({ x: p.position_x, y: p.position_y }))
+                  }
+                  color={heatmapPlayer === 'player1' ? '#2196F3' : '#F44336'}
+                />
+              </>
+            )}
           </View>
         )}
 
@@ -990,6 +1057,64 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFF',
     marginLeft: 6,
+  },
+  viewToggle: {
+    flexDirection: 'row',
+    backgroundColor: '#F0F0F0',
+    borderRadius: 8,
+    padding: 3,
+    marginBottom: 10,
+    gap: 4,
+  },
+  viewToggleBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: 6,
+    gap: 6,
+  },
+  viewToggleBtnActive: {
+    backgroundColor: '#2196F3',
+  },
+  viewToggleText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#666',
+  },
+  viewToggleTextActive: {
+    color: '#FFF',
+  },
+  heatmapPlayerToggle: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 8,
+  },
+  heatmapPlayerBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: '#F0F0F0',
+    alignItems: 'center',
+  },
+  heatmapPlayerBtnActive: {
+    backgroundColor: '#1E3A5F',
+  },
+  heatmapPlayerText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#666',
+  },
+  heatmapPlayerTextActive: {
+    color: '#FFF',
+  },
+  heatmapHint: {
+    fontSize: 11,
+    color: '#888',
+    textAlign: 'center',
+    marginBottom: 8,
+    fontStyle: 'italic',
   },
 });
 

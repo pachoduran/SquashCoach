@@ -75,7 +75,7 @@ export default function MatchPlay() {
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editingPointId, setEditingPointId] = useState<number | null>(null);
-  const [reasonEnabled, setReasonEnabled] = useState(true);
+  const [reasonEnabled, setReasonEnabled] = useState(false);
 
   // Game Review Modal
   const [showGameReviewModal, setShowGameReviewModal] = useState(false);

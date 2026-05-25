@@ -24,8 +24,8 @@ export const SquashBallIcon: React.FC<SquashBallIconProps> = ({
         stroke={color}
         strokeWidth="6"
       />
-      {/* Dos puntitos alineados hacia un lado e inclinados -50° */}
-      <G rotation={-50} origin="50, 50">
+      {/* Dos puntitos alineados hacia un lado e inclinados +50° (derecha-arriba) */}
+      <G rotation={50} origin="50, 50">
         <Circle cx="50" cy="22" r="6" fill={color} />
         <Circle cx="50" cy="36" r="6" fill={color} />
       </G>
