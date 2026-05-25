@@ -80,8 +80,8 @@ export default function MatchSummary() {
   // Filtro de estadísticas por jugador
   const [statsFilter, setStatsFilter] = useState<'all' | 'player1' | 'player2'>('all');
 
-  // Vista de la cancha: 'points' (punto a punto) | 'heatmap' (zonas de calor)
-  const [courtView, setCourtView] = useState<'points' | 'heatmap'>('points');
+  // Vista de la cancha: 'points' | 'heatmap' | 'both'
+  const [courtView, setCourtView] = useState<'points' | 'heatmap' | 'both'>('points');
   const [heatmapPlayer, setHeatmapPlayer] = useState<'player1' | 'player2'>('player1');
   
   // Edit point
@@ -410,7 +410,7 @@ export default function MatchSummary() {
         {/* Cancha y navegación - Compacto */}
         {filteredPoints.length > 0 && (
           <View style={styles.courtSection}>
-            {/* Toggle Vista: Puntos vs Heatmap */}
+            {/* Toggle Vista: Puntos | Heatmap | Ambos */}
             <View style={styles.viewToggle}>
               <TouchableOpacity
                 style={[styles.viewToggleBtn, courtView === 'points' && styles.viewToggleBtnActive]}
@@ -419,7 +419,7 @@ export default function MatchSummary() {
               >
                 <Ionicons name="locate" size={14} color={courtView === 'points' ? '#FFF' : '#666'} />
                 <Text style={[styles.viewToggleText, courtView === 'points' && styles.viewToggleTextActive]}>
-                  Puntos
+                  Bolas
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -429,7 +429,17 @@ export default function MatchSummary() {
               >
                 <Ionicons name="flame" size={14} color={courtView === 'heatmap' ? '#FFF' : '#666'} />
                 <Text style={[styles.viewToggleText, courtView === 'heatmap' && styles.viewToggleTextActive]}>
-                  Heatmap
+                  Zonas
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.viewToggleBtn, courtView === 'both' && styles.viewToggleBtnActive]}
+                onPress={() => setCourtView('both')}
+                data-testid="view-toggle-both"
+              >
+                <Ionicons name="layers" size={14} color={courtView === 'both' ? '#FFF' : '#666'} />
+                <Text style={[styles.viewToggleText, courtView === 'both' && styles.viewToggleTextActive]}>
+                  Ambos
                 </Text>
               </TouchableOpacity>
             </View>
@@ -529,7 +539,9 @@ export default function MatchSummary() {
                   </TouchableOpacity>
                 </View>
                 <Text style={styles.heatmapHint}>
-                  Zonas donde {heatmapPlayer === 'player1' ? matchData.player1_nickname : matchData.player2_nickname} ganó sus puntos
+                  {courtView === 'both' ? 'Zonas + bolas: ' : 'Zonas donde '}
+                  {heatmapPlayer === 'player1' ? matchData.player1_nickname : matchData.player2_nickname}
+                  {courtView === 'both' ? '' : ' ganó sus puntos'}
                 </Text>
                 <HeatmapCourt
                   points={filteredPoints
@@ -537,6 +549,12 @@ export default function MatchSummary() {
                     .map(p => ({ x: p.position_x, y: p.position_y }))
                   }
                   color={heatmapPlayer === 'player1' ? '#2196F3' : '#F44336'}
+                  overlayPoints={courtView === 'both'
+                    ? filteredPoints
+                        .filter(p => p.winner_player_id === (heatmapPlayer === 'player1' ? matchData.player1_id : matchData.player2_id))
+                        .map(p => ({ x: p.position_x, y: p.position_y }))
+                    : undefined
+                  }
                 />
               </>
             )}

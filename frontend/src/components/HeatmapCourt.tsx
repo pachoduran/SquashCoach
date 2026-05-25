@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Dimensions, Image } from 'react-native';
-import Svg, { Rect, Text as SvgText } from 'react-native-svg';
+import Svg, { Rect, Text as SvgText, Circle } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COURT_WIDTH = SCREEN_WIDTH - 80;
@@ -12,14 +12,23 @@ const GRID_ROWS = 6;
 const CELL_WIDTH = COURT_WIDTH / GRID_COLS;
 const CELL_HEIGHT = COURT_HEIGHT / GRID_ROWS;
 
+interface HeatmapPoint {
+  x: number; // 0-1
+  y: number; // 0-1
+  isWin?: boolean; // opcional, para colorear puntos overlay
+}
+
 interface HeatmapCourtProps {
   points: Array<{ x: number; y: number }>;
   color?: string;
+  /** Puntos individuales a superponer sobre el heatmap (modo "ambos") */
+  overlayPoints?: HeatmapPoint[];
 }
 
 export const HeatmapCourt: React.FC<HeatmapCourtProps> = ({
   points,
   color = '#2196F3',
+  overlayPoints,
 }) => {
   // Calcular densidad de puntos en cada celda
   const calculateHeatmap = () => {
@@ -105,6 +114,24 @@ export const HeatmapCourt: React.FC<HeatmapCourtProps> = ({
               );
             })
           )}
+          {/* Puntos individuales superpuestos (modo "ambos") */}
+          {overlayPoints && overlayPoints.map((p, i) => {
+            const cx = p.x * COURT_WIDTH;
+            const cy = p.y * COURT_HEIGHT;
+            const fill = p.isWin === undefined ? '#FFD700' : (p.isWin ? '#4CAF50' : '#F44336');
+            return (
+              <Circle
+                key={`pt-${i}`}
+                cx={cx}
+                cy={cy}
+                r={6}
+                fill={fill}
+                stroke="#FFF"
+                strokeWidth={1.5}
+                opacity={0.95}
+              />
+            );
+          })}
         </Svg>
       </View>
       
