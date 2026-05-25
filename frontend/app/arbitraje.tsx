@@ -21,7 +21,7 @@ import { useLanguage } from '@/src/context/LanguageContext';
 import { useSync } from '@/src/context/SyncContext';
 import { SyncBanner } from '@/src/components/SyncBanner';
 
-type Phase = 'setup' | 'pick-server' | 'playing' | 'pick-side' | 'rest';
+type Phase = 'setup' | 'pick-server' | 'playing' | 'rest';
 type Side = 'L' | 'R';
 
 interface PointHistory {
@@ -72,9 +72,6 @@ export default function ArbitrajeScreen() {
   // Descanso entre games
   const [restSeconds, setRestSeconds] = useState(REST_SECONDS);
   const restTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Cambio de sacador → guarda quién es el nuevo sacador hasta que el árbitro elige lado
-  const [pendingNewServer, setPendingNewServer] = useState<1 | 2 | null>(null);
 
   // Long-press detector
   const longPressTimerRef = useRef<{ [k: string]: NodeJS.Timeout | null }>({});
@@ -296,32 +293,20 @@ export default function ArbitrajeScreen() {
       setPhase('rest');
       startRestTimer();
     } else {
-      // Punto normal
-      if (next.server !== serverPlayer) {
-        // Cambio de sacador → pedir lado al árbitro (pantalla grande L/R)
-        setP1Score(newP1); setP2Score(newP2);
-        setPendingNewServer(next.server);
-        await playBeep(false);
-        await persist({ p1: newP1, p2: newP2 });
-        setPhase('pick-side');
-      } else {
-        // Mismo sacador, alterna automáticamente
-        setP1Score(newP1); setP2Score(newP2);
-        setServerPlayer(next.server); setServerSide(next.side);
-        await playBeep(false);
-        await persist({ p1: newP1, p2: newP2, sp: next.server, side: next.side });
-      }
+      // Punto normal — el sistema asigna lado por defecto (alterna si mismo sacador, R si cambio)
+      // El árbitro puede ajustar con los chips L/R sobre la celda del sacador
+      setP1Score(newP1); setP2Score(newP2);
+      setServerPlayer(next.server); setServerSide(next.side);
+      await playBeep(false);
+      await persist({ p1: newP1, p2: newP2, sp: next.server, side: next.side });
     }
   };
 
-  // ----- Confirmar lado del nuevo sacador -----
-  const confirmNewServerSide = async (side: Side) => {
-    if (!pendingNewServer) return;
-    setServerPlayer(pendingNewServer);
+  // ----- Cambiar manualmente el lado del sacador actual -----
+  const setServerSideManual = async (side: Side) => {
+    if (side === serverSide) return;
     setServerSide(side);
-    await persist({ sp: pendingNewServer, side });
-    setPendingNewServer(null);
-    setPhase('playing');
+    await persist({ side });
   };
 
   // ----- Restar punto (long press) -----
@@ -395,12 +380,13 @@ export default function ArbitrajeScreen() {
     setP1Score(0); setP2Score(0);
     setCurrentGame(g => g + 1);
     setHistory([]);
-    // Quien ganó el último game inicia el saque del siguiente → árbitro elige lado
+    // Quien ganó el último game inicia el saque del siguiente (lado R por defecto, ajustable con chips)
     const lastGame = gamesDetail[gamesDetail.length - 1];
     const newServer: 1 | 2 = lastGame ? lastGame.winner : serverPlayer;
-    setPendingNewServer(newServer);
-    await persist({ p1: 0, p2: 0, game: currentGame + 1, sp: newServer, side: serverSide });
-    setPhase('pick-side');
+    setServerPlayer(newServer);
+    setServerSide('R');
+    setPhase('playing');
+    await persist({ p1: 0, p2: 0, game: currentGame + 1, sp: newServer, side: 'R' });
   };
 
   const skipRest = async () => {
@@ -570,40 +556,6 @@ export default function ArbitrajeScreen() {
     );
   }
 
-  // ---- PICK SIDE (cambio de saque o inicio de game) ----
-  if (phase === 'pick-side') {
-    const newServerName = pendingNewServer === 1 ? p1Name : p2Name;
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.pickSideBody}>
-          <Text style={styles.pickSideHeadline}>{t('referee.changeServer')}</Text>
-          <Text style={styles.pickSideServerName}>{newServerName}</Text>
-          <Text style={styles.pickSideHint}>{t('referee.fromWhichSide')}</Text>
-
-          <View style={styles.pickSideRow}>
-            <TouchableOpacity
-              style={[styles.pickSideBtn, styles.pickSideBtnLeft]}
-              onPress={() => confirmNewServerSide('L')}
-              data-testid="pick-side-L"
-            >
-              <Text style={styles.pickSideLetter}>L</Text>
-              <Text style={styles.pickSideLabel}>{t('referee.leftSide')}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.pickSideBtn, styles.pickSideBtnRight]}
-              onPress={() => confirmNewServerSide('R')}
-              data-testid="pick-side-R"
-            >
-              <Text style={styles.pickSideLetter}>R</Text>
-              <Text style={styles.pickSideLabel}>{t('referee.rightSide')}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   // ---- REST ----
   if (phase === 'rest') {
     return (
@@ -648,9 +600,21 @@ export default function ArbitrajeScreen() {
           data-testid="ref-score-p1"
         >
           {isP1Serving && (
-            <View style={styles.servingTag}>
-              <Ionicons name="tennisball" size={14} color="#FFD54F" />
-              <Text style={styles.servingTagText}>{serverSide}</Text>
+            <View style={styles.sideToggleRow} pointerEvents="box-none">
+              <TouchableOpacity
+                style={[styles.sideToggleBox, serverSide === 'L' && styles.sideToggleBoxActive]}
+                onPress={(e) => { e.stopPropagation?.(); setServerSideManual('L'); }}
+                data-testid="ref-p1-side-L"
+              >
+                <Text style={[styles.sideToggleText, serverSide === 'L' && styles.sideToggleTextActive]}>L</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.sideToggleBox, serverSide === 'R' && styles.sideToggleBoxActive]}
+                onPress={(e) => { e.stopPropagation?.(); setServerSideManual('R'); }}
+                data-testid="ref-p1-side-R"
+              >
+                <Text style={[styles.sideToggleText, serverSide === 'R' && styles.sideToggleTextActive]}>R</Text>
+              </TouchableOpacity>
             </View>
           )}
           <Text style={styles.scorePlayerName}>{p1Name}</Text>
@@ -666,9 +630,21 @@ export default function ArbitrajeScreen() {
           data-testid="ref-score-p2"
         >
           {!isP1Serving && (
-            <View style={styles.servingTag}>
-              <Ionicons name="tennisball" size={14} color="#FFD54F" />
-              <Text style={styles.servingTagText}>{serverSide}</Text>
+            <View style={styles.sideToggleRow} pointerEvents="box-none">
+              <TouchableOpacity
+                style={[styles.sideToggleBox, serverSide === 'L' && styles.sideToggleBoxActive]}
+                onPress={(e) => { e.stopPropagation?.(); setServerSideManual('L'); }}
+                data-testid="ref-p2-side-L"
+              >
+                <Text style={[styles.sideToggleText, serverSide === 'L' && styles.sideToggleTextActive]}>L</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.sideToggleBox, serverSide === 'R' && styles.sideToggleBoxActive]}
+                onPress={(e) => { e.stopPropagation?.(); setServerSideManual('R'); }}
+                data-testid="ref-p2-side-R"
+              >
+                <Text style={[styles.sideToggleText, serverSide === 'R' && styles.sideToggleTextActive]}>R</Text>
+              </TouchableOpacity>
             </View>
           )}
           <Text style={styles.scorePlayerName}>{p2Name}</Text>
@@ -743,11 +719,25 @@ const styles = StyleSheet.create({
   scorePlayerName: { color: '#FFF', fontSize: 18, fontWeight: '700', marginBottom: 12 },
   scoreBig: { color: '#FFF', fontSize: 140, fontWeight: '900', lineHeight: 150 },
   scoreHint: { position: 'absolute', bottom: 18, color: 'rgba(255,255,255,0.7)', fontSize: 11 },
-  servingTag: {
-    position: 'absolute', top: 16, flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: 'rgba(0,0,0,0.35)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12,
+  // Toggle L / R en la parte superior de la celda del sacador
+  sideToggleRow: {
+    position: 'absolute', top: 12, flexDirection: 'row', gap: 8, zIndex: 10,
   },
-  servingTagText: { color: '#FFD54F', fontSize: 12, fontWeight: '700' },
+  sideToggleBox: {
+    width: 50, height: 50, borderRadius: 10,
+    borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)',
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.18)',
+  },
+  sideToggleBoxActive: {
+    backgroundColor: '#FFD54F', borderColor: '#FFD54F',
+  },
+  sideToggleText: {
+    color: '#FFF', fontSize: 24, fontWeight: '900',
+  },
+  sideToggleTextActive: {
+    color: '#1E3A5F',
+  },
   bottomBar: { padding: 10, alignItems: 'center', backgroundColor: '#1E3A5F' },
   finishBtn: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#FF6F00',
@@ -770,19 +760,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center', gap: 10,
   },
   historyBigBtnText: { color: '#1E3A5F', fontSize: 18, fontWeight: '700' },
-
-  // Pick-side (cambio de saque): pantalla grande L vs R
-  pickSideBody: { flex: 1, backgroundColor: '#1E3A5F', padding: 20, alignItems: 'center', justifyContent: 'center' },
-  pickSideHeadline: { color: '#FFD54F', fontSize: 18, fontWeight: '600', marginBottom: 10, textAlign: 'center' },
-  pickSideServerName: { color: '#FFF', fontSize: 32, fontWeight: '900', marginBottom: 6, textAlign: 'center' },
-  pickSideHint: { color: 'rgba(255,255,255,0.85)', fontSize: 15, marginBottom: 30, textAlign: 'center' },
-  pickSideRow: { flexDirection: 'row', gap: 16, width: '100%' },
-  pickSideBtn: {
-    flex: 1, aspectRatio: 1, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
-  },
-  pickSideBtnLeft: { backgroundColor: '#1565C0' },
-  pickSideBtnRight: { backgroundColor: '#C62828' },
-  pickSideLetter: { color: '#FFF', fontSize: 130, fontWeight: '900', lineHeight: 140 },
-  pickSideLabel: { color: 'rgba(255,255,255,0.95)', fontSize: 22, fontWeight: '700', marginTop: 4 },
 });
