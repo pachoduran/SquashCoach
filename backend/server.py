@@ -8,7 +8,7 @@ import logging
 import httpx
 from pathlib import Path
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timezone, timedelta
 import hashlib
@@ -342,6 +342,35 @@ class ShadowRoutineCreate(BaseModel):
     number_of_sets: int
     completed_sets: int
     total_zones_visited: int
+
+class RefereeMatch(BaseModel):
+    referee_id: str = Field(default_factory=lambda: f"ref_{uuid.uuid4().hex[:12]}")
+    user_id: str
+    local_id: Optional[int] = None
+    player1_name: str
+    player2_name: str
+    best_of: int  # 1, 3, 5
+    player1_games: int = 0
+    player2_games: int = 0
+    games_detail: List[Dict[str, Any]] = []  # [{game_number, p1, p2, winner}]
+    status: str = "in_progress"  # in_progress | finished
+    winner_name: Optional[str] = None
+    date: str
+    duration_seconds: Optional[int] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class RefereeMatchCreate(BaseModel):
+    local_id: Optional[int] = None
+    player1_name: str
+    player2_name: str
+    best_of: int
+    player1_games: int = 0
+    player2_games: int = 0
+    games_detail: List[Dict[str, Any]] = []
+    status: str = "in_progress"
+    winner_name: Optional[str] = None
+    date: str
+    duration_seconds: Optional[int] = None
 
 class SyncData(BaseModel):
     players: List[PlayerCreate] = []
@@ -1458,6 +1487,64 @@ async def delete_shadow_routine(
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Rutina no encontrada")
     return {"deleted": True, "routine_id": routine_id}
+
+# =============================================================================
+# REFEREE MATCHES (Modo Árbitro)
+# =============================================================================
+
+@api_router.post("/referee-matches")
+async def create_referee_match(
+    data: RefereeMatchCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Crear/actualizar un partido arbitrado del usuario"""
+    match = RefereeMatch(
+        user_id=current_user.user_id,
+        local_id=data.local_id,
+        player1_name=data.player1_name,
+        player2_name=data.player2_name,
+        best_of=data.best_of,
+        player1_games=data.player1_games,
+        player2_games=data.player2_games,
+        games_detail=data.games_detail,
+        status=data.status,
+        winner_name=data.winner_name,
+        date=data.date,
+        duration_seconds=data.duration_seconds,
+    )
+    doc = match.dict()
+    await db.referee_matches.insert_one(doc)
+    return {
+        "referee_id": match.referee_id,
+        "user_id": match.user_id,
+        "created_at": match.created_at.isoformat(),
+    }
+
+@api_router.get("/referee-matches")
+async def get_referee_matches(current_user: User = Depends(get_current_user)):
+    """Lista los partidos arbitrados del usuario, más recientes primero"""
+    matches = await db.referee_matches.find(
+        {"user_id": current_user.user_id},
+        {"_id": 0}
+    ).sort("date", -1).to_list(1000)
+    for m in matches:
+        if isinstance(m.get("created_at"), datetime):
+            m["created_at"] = m["created_at"].isoformat()
+    return matches
+
+@api_router.delete("/referee-matches/{referee_id}")
+async def delete_referee_match(
+    referee_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Borra un partido arbitrado del usuario"""
+    result = await db.referee_matches.delete_one({
+        "referee_id": referee_id,
+        "user_id": current_user.user_id,
+    })
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Partido no encontrado")
+    return {"deleted": True, "referee_id": referee_id}
 
 # =============================================================================
 # BASIC ENDPOINTS

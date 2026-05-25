@@ -301,6 +301,17 @@ export default function Index() {
               </View>
               <Text style={styles.featureBtnText}>{t('home.shadows')}</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.mainFeatureBtn}
+              onPress={() => router.push('/arbitraje')}
+              data-testid="arbitraje-btn"
+            >
+              <View style={[styles.featureIcon, { backgroundColor: '#7B1FA2' }]}>
+                <Ionicons name="megaphone-outline" size={28} color="#FFF" />
+              </View>
+              <Text style={styles.featureBtnText}>{t('home.referee')}</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <TouchableOpacity

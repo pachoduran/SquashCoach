@@ -46,7 +46,8 @@
     "selectLanguage": "Selecciona tu idioma",
     "sharing": "Compartir",
     "matches": "Partidos",
-    "shadows": "Sombras"
+    "shadows": "Sombras",
+    "referee": "Arbitraje"
   },
   "partidos": {
     "newMatchDesc": "Registrar un nuevo partido"
@@ -299,5 +300,40 @@
     "emptyTitle": "Sin rutinas guardadas",
     "emptySub": "Comienza tu primer entrenamiento de sombras y aparecerá aquí",
     "startNow": "Empezar ahora"
+  },
+  "referee": {
+    "title": "Arbitraje",
+    "newMatch": "Nuevo arbitraje",
+    "history": "Historial",
+    "continueMatch": "Continuar arbitraje",
+    "player1Name": "Nombre jugador 1",
+    "player2Name": "Nombre jugador 2",
+    "format": "Formato",
+    "singleSet": "Set único",
+    "bestOf3": "2 de 3",
+    "bestOf5": "3 de 5",
+    "whoServes": "¿Quién saca primero?",
+    "fromWhichSide": "¿Desde qué lado saca?",
+    "rightSide": "Derecha",
+    "leftSide": "Izquierda",
+    "start": "Iniciar",
+    "game": "Game",
+    "serving": "Sacando",
+    "undo": "Deshacer",
+    "pause": "Pausar",
+    "gameWon": "Game ganado",
+    "restingTime": "Descanso",
+    "matchWinner": "Ganador del partido",
+    "shareResult": "Compartir resultado",
+    "tapToScore": "Toca para +1 · Mantén para -1",
+    "changeServer": "Nuevo sacador, elige lado",
+    "finishMatch": "Finalizar arbitraje",
+    "cancelMatch": "Cancelar arbitraje",
+    "cancelConfirm": "¿Cancelar el arbitraje en curso? Se perderá el progreso.",
+    "duration": "Duración",
+    "noMatches": "Sin partidos arbitrados",
+    "deleteConfirm": "¿Eliminar este partido del historial?",
+    "finalScore": "Marcador final",
+    "gamesDetail": "Detalle de games"
   }
 }

@@ -46,7 +46,8 @@
     "selectLanguage": "Select your language",
     "sharing": "Sharing",
     "matches": "Matches",
-    "shadows": "Shadows"
+    "shadows": "Shadows",
+    "referee": "Referee"
   },
   "partidos": {
     "newMatchDesc": "Record a new match"
@@ -299,5 +300,40 @@
     "emptyTitle": "No saved routines",
     "emptySub": "Start your first shadow training session and it will show up here",
     "startNow": "Start now"
+  },
+  "referee": {
+    "title": "Refereeing",
+    "newMatch": "New refereeing",
+    "history": "History",
+    "continueMatch": "Continue refereeing",
+    "player1Name": "Player 1 name",
+    "player2Name": "Player 2 name",
+    "format": "Format",
+    "singleSet": "Single game",
+    "bestOf3": "Best of 3",
+    "bestOf5": "Best of 5",
+    "whoServes": "Who serves first?",
+    "fromWhichSide": "Which side?",
+    "rightSide": "Right",
+    "leftSide": "Left",
+    "start": "Start",
+    "game": "Game",
+    "serving": "Serving",
+    "undo": "Undo",
+    "pause": "Pause",
+    "gameWon": "Game won",
+    "restingTime": "Rest",
+    "matchWinner": "Match winner",
+    "shareResult": "Share result",
+    "tapToScore": "Tap +1 · Hold -1",
+    "changeServer": "New server, pick side",
+    "finishMatch": "End refereeing",
+    "cancelMatch": "Cancel refereeing",
+    "cancelConfirm": "Cancel current refereeing? Progress will be lost.",
+    "duration": "Duration",
+    "noMatches": "No refereed matches",
+    "deleteConfirm": "Delete this match from history?",
+    "finalScore": "Final score",
+    "gamesDetail": "Games detail"
   }
 }

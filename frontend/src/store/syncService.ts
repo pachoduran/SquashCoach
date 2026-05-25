@@ -861,17 +861,147 @@ class SyncService {
   }
 
   // ============================================================================
+  // REFEREE MATCHES SYNC (Modo Árbitro)
+  // ============================================================================
+
+  async syncRefereeMatches(): Promise<number> {
+    const sessionToken = await this.getSessionToken();
+    if (!sessionToken) return 0;
+    if (!(await this.isOnline())) return 0;
+
+    try {
+      const db = await getDatabase();
+      // Sólo subimos partidos terminados (no los in_progress que aún se están arbitrando)
+      const unsynced = await db.getAllAsync(
+        "SELECT * FROM referee_matches WHERE status = 'finished' AND (synced = 0 OR synced IS NULL)"
+      );
+      let uploaded = 0;
+      for (const r of unsynced as any[]) {
+        try {
+          let gamesDetail: any[] = [];
+          try { gamesDetail = JSON.parse(r.games_detail || '[]'); } catch {}
+          const res = await fetch(`${BACKEND_URL}/api/referee-matches`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${sessionToken}`
+            },
+            body: JSON.stringify({
+              local_id: r.id,
+              player1_name: r.player1_name,
+              player2_name: r.player2_name,
+              best_of: r.best_of,
+              player1_games: r.player1_games,
+              player2_games: r.player2_games,
+              games_detail: gamesDetail,
+              status: r.status,
+              winner_name: r.winner_name || null,
+              date: r.date,
+              duration_seconds: r.duration_seconds || null,
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            await db.runAsync(
+              'UPDATE referee_matches SET synced = 1, server_id = ? WHERE id = ?',
+              [data.referee_id || null, r.id]
+            );
+            uploaded++;
+          }
+        } catch (e) {
+          console.error('[Sync] Error subiendo arbitraje:', e);
+        }
+      }
+      return uploaded;
+    } catch (e) {
+      console.error('[Sync] Error syncRefereeMatches:', e);
+      return 0;
+    }
+  }
+
+  async restoreRefereeMatchesFromCloud(userId: string): Promise<number> {
+    const sessionToken = await this.getSessionToken();
+    if (!sessionToken) return 0;
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/referee-matches`, {
+        headers: { 'Authorization': `Bearer ${sessionToken}` }
+      });
+      if (!response.ok) return 0;
+      const cloudMatches = await response.json();
+      if (!cloudMatches.length) return 0;
+
+      const db = await getDatabase();
+      let restored = 0;
+      for (const cm of cloudMatches) {
+        try {
+          const existing = await db.getFirstAsync(
+            'SELECT id FROM referee_matches WHERE server_id = ?',
+            [cm.referee_id]
+          );
+          if (existing) continue;
+
+          await db.runAsync(
+            `INSERT INTO referee_matches (
+              user_id, player1_name, player2_name, best_of,
+              player1_games, player2_games, games_detail,
+              current_p1, current_p2, current_game, server_player, server_side,
+              status, winner_name, date, duration_seconds,
+              synced, server_id, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 1, 1, 'R', ?, ?, ?, ?, 1, ?, ?)`,
+            [
+              userId,
+              cm.player1_name,
+              cm.player2_name,
+              cm.best_of,
+              cm.player1_games,
+              cm.player2_games,
+              JSON.stringify(cm.games_detail || []),
+              cm.status || 'finished',
+              cm.winner_name || null,
+              cm.date,
+              cm.duration_seconds || null,
+              cm.referee_id,
+              cm.created_at || new Date().toISOString(),
+            ]
+          );
+          restored++;
+        } catch (e) {
+          console.error('[Sync] Error restaurando arbitraje:', e);
+        }
+      }
+      return restored;
+    } catch (e) {
+      console.error('[Sync] Error restoreRefereeMatches:', e);
+      return 0;
+    }
+  }
+
+  async deleteRefereeMatchCloud(serverId: string): Promise<boolean> {
+    const sessionToken = await this.getSessionToken();
+    if (!sessionToken || !serverId) return false;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/referee-matches/${serverId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${sessionToken}` }
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  // ============================================================================
   // MASTER SYNC: sube y baja TODO (jugadores, torneos, partidos, sombras)
   // ============================================================================
   async syncAll(userId?: string): Promise<{
     success: boolean;
-    uploaded: { players: number; tournaments: number; matches: number; shadows: number };
-    downloaded: { players: number; tournaments: number; matches: number; shadows: number };
+    uploaded: { players: number; tournaments: number; matches: number; shadows: number; referees: number };
+    downloaded: { players: number; tournaments: number; matches: number; shadows: number; referees: number };
   }> {
     const result = {
       success: false,
-      uploaded: { players: 0, tournaments: 0, matches: 0, shadows: 0 },
-      downloaded: { players: 0, tournaments: 0, matches: 0, shadows: 0 },
+      uploaded: { players: 0, tournaments: 0, matches: 0, shadows: 0, referees: 0 },
+      downloaded: { players: 0, tournaments: 0, matches: 0, shadows: 0, referees: 0 },
     };
 
     if (this.isSyncing) {
@@ -897,6 +1027,7 @@ class SyncService {
       result.uploaded.players = await this.syncPlayers();
       result.uploaded.tournaments = await this.syncTournaments();
       result.uploaded.shadows = await this.syncShadowRoutines();
+      result.uploaded.referees = await this.syncRefereeMatches();
 
       // Upload matches (legacy: marks individual matches + mass upload)
       this.isSyncing = false; // syncPendingMatches re-locks internally
@@ -914,6 +1045,7 @@ class SyncService {
       result.downloaded.matches = downRes.matchesRestored;
       result.downloaded.tournaments = await this.restoreTournamentsFromCloud(uid);
       result.downloaded.shadows = await this.restoreShadowRoutinesFromCloud(uid);
+      result.downloaded.referees = await this.restoreRefereeMatchesFromCloud(uid);
 
       result.success = true;
       console.log('[SyncAll] Completado:', result);

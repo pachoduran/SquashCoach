@@ -214,6 +214,36 @@ const runMigrations = async (): Promise<void> => {
   for (const sql of shadowMigrations) {
     try { await db.execAsync(sql); } catch (e) { /* columna ya existe */ }
   }
+
+  // Crear tabla de partidos arbitrados (modo Árbitro)
+  try {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS referee_matches (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT,
+        player1_name TEXT NOT NULL,
+        player2_name TEXT NOT NULL,
+        best_of INTEGER NOT NULL,
+        player1_games INTEGER NOT NULL DEFAULT 0,
+        player2_games INTEGER NOT NULL DEFAULT 0,
+        games_detail TEXT NOT NULL DEFAULT '[]',
+        current_p1 INTEGER NOT NULL DEFAULT 0,
+        current_p2 INTEGER NOT NULL DEFAULT 0,
+        current_game INTEGER NOT NULL DEFAULT 1,
+        server_player INTEGER NOT NULL DEFAULT 1,
+        server_side TEXT NOT NULL DEFAULT 'R',
+        status TEXT NOT NULL DEFAULT 'in_progress',
+        winner_name TEXT,
+        date TEXT NOT NULL,
+        duration_seconds INTEGER,
+        synced INTEGER DEFAULT 0,
+        server_id TEXT,
+        created_at TEXT NOT NULL
+      );
+    `);
+  } catch (e) {
+    // tabla ya existe
+  }
   
   // Migración de motivos: limpiar antiguos y agregar nuevos
   try {
