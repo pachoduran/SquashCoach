@@ -18,6 +18,7 @@ import { initDatabase, getDatabase } from '@/src/store/database';
 import { useAuth } from '@/src/context/AuthContext';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { SyncBanner } from '@/src/components/SyncBanner';
+import { SquashBallIcon } from '@/src/components/SquashBallIcon';
 import { format } from 'date-fns';
 import { TutorialModal } from '@/src/components/TutorialModal';
 
@@ -285,7 +286,7 @@ export default function Index() {
               data-testid="partidos-btn"
             >
               <View style={[styles.featureIcon, { backgroundColor: '#2196F3' }]}>
-                <Ionicons name="tennisball-outline" size={28} color="#FFF" />
+                <SquashBallIcon size={28} color="#FFF" />
               </View>
               <Text style={styles.featureBtnText}>{t('home.matches')}</Text>
             </TouchableOpacity>

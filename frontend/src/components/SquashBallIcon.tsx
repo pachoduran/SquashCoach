@@ -1,40 +1,34 @@
 import React from 'react';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Circle, G } from 'react-native-svg';
 
 interface SquashBallIconProps {
   size?: number;
   color?: string;
 }
 
-export const SquashBallIcon: React.FC<SquashBallIconProps> = ({ 
-  size = 64, 
-  color = '#CCC' 
+/**
+ * Pelota de squash: círculo outline con 2 puntos pequeños alineados
+ * hacia un lado e inclinados ~50° respecto al centro de la pelota.
+ */
+export const SquashBallIcon: React.FC<SquashBallIconProps> = ({
+  size = 28,
+  color = '#FFF',
 }) => {
   return (
     <Svg width={size} height={size} viewBox="0 0 100 100">
-      {/* Pelota principal */}
       <Circle
         cx="50"
         cy="50"
-        r="45"
+        r="42"
         fill="none"
         stroke={color}
-        strokeWidth="3"
+        strokeWidth="6"
       />
-      {/* Punto 1 - arriba izquierda */}
-      <Circle
-        cx="35"
-        cy="35"
-        r="6"
-        fill={color}
-      />
-      {/* Punto 2 - abajo derecha */}
-      <Circle
-        cx="65"
-        cy="65"
-        r="6"
-        fill={color}
-      />
+      {/* Dos puntitos alineados hacia un lado e inclinados -50° */}
+      <G rotation={-50} origin="50, 50">
+        <Circle cx="50" cy="22" r="6" fill={color} />
+        <Circle cx="50" cy="36" r="6" fill={color} />
+      </G>
     </Svg>
   );
 };
