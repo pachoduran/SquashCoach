@@ -28,12 +28,18 @@ Aplicación móvil (React Native / Expo) + backend (FastAPI / MongoDB) para aná
 ```
 
 ## Implementado en esta sesión
-- **23/02/2026** Local-first auto-sync completado:
-  - `SyncContext` global (NetInfo + AppState) → dispara `syncAll()` en background.
-  - `SyncBanner` discreto en pantallas clave: `index`, `partidos`, `sombras`, `shadow-history`, `history`, `analysis`.
-  - Eliminados todos los botones manuales de "Nube/Sync" (index, partidos, shadow-history).
-  - `syncService.syncAll()` sube jugadores, torneos, partidos y sombras + restaura desde la nube.
-  - Traducciones `sync.syncing/updated/offline/pendingChanges` (es/en).
+- **23/02/2026** Local-first auto-sync completado.
+- **25/02/2026** Modo Árbitro completo (Bo1/Bo3/Bo5, timer 90s, persistencia in-progress, historial+nube).
+
+## Despliegue Backend (Bluehost)
+- **Ruta del backend**: `/var/www/squash-coach/server.py` (sin subcarpeta `backend/`)
+- **Servicio systemd**: `squash-coach` → `/etc/systemd/system/squash-coach.service`
+- **Procedimiento**: vía PuTTY/SSH
+  1. `cd /var/www/squash-coach`
+  2. `sudo cp server.py server.py.bak-$(date +%Y%m%d-%H%M%S)`
+  3. `sudo curl -fsSL -o server.py.new https://lev.preview.emergentagent.com/api/download-server-py`
+  4. `grep -c "referee-matches" server.py.new` (debe coincidir con la versión nueva)
+  5. `sudo mv server.py.new server.py && sudo systemctl restart squash-coach`
 
 ## Estado actual
 - Frontend: compila ✅ (`Web Bundled OK`, sin errores TS nuevos).
