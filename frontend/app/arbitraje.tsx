@@ -21,7 +21,7 @@ import { useLanguage } from '@/src/context/LanguageContext';
 import { useSync } from '@/src/context/SyncContext';
 import { SyncBanner } from '@/src/components/SyncBanner';
 
-type Phase = 'setup' | 'pick-server' | 'playing' | 'rest';
+type Phase = 'setup' | 'pick-server' | 'playing' | 'pick-side' | 'rest';
 type Side = 'L' | 'R';
 
 interface PointHistory {
@@ -72,6 +72,9 @@ export default function ArbitrajeScreen() {
   // Descanso entre games
   const [restSeconds, setRestSeconds] = useState(REST_SECONDS);
   const restTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cambio de sacador → guarda quién es el nuevo sacador hasta que el árbitro elige lado
+  const [pendingNewServer, setPendingNewServer] = useState<1 | 2 | null>(null);
 
   // Long-press detector
   const longPressTimerRef = useRef<{ [k: string]: NodeJS.Timeout | null }>({});
@@ -294,11 +297,31 @@ export default function ArbitrajeScreen() {
       startRestTimer();
     } else {
       // Punto normal
-      setP1Score(newP1); setP2Score(newP2);
-      setServerPlayer(next.server); setServerSide(next.side);
-      await playBeep(false);
-      await persist({ p1: newP1, p2: newP2, sp: next.server, side: next.side });
+      if (next.server !== serverPlayer) {
+        // Cambio de sacador → pedir lado al árbitro (pantalla grande L/R)
+        setP1Score(newP1); setP2Score(newP2);
+        setPendingNewServer(next.server);
+        await playBeep(false);
+        await persist({ p1: newP1, p2: newP2 });
+        setPhase('pick-side');
+      } else {
+        // Mismo sacador, alterna automáticamente
+        setP1Score(newP1); setP2Score(newP2);
+        setServerPlayer(next.server); setServerSide(next.side);
+        await playBeep(false);
+        await persist({ p1: newP1, p2: newP2, sp: next.server, side: next.side });
+      }
     }
+  };
+
+  // ----- Confirmar lado del nuevo sacador -----
+  const confirmNewServerSide = async (side: Side) => {
+    if (!pendingNewServer) return;
+    setServerPlayer(pendingNewServer);
+    setServerSide(side);
+    await persist({ sp: pendingNewServer, side });
+    setPendingNewServer(null);
+    setPhase('playing');
   };
 
   // ----- Restar punto (long press) -----
@@ -372,13 +395,12 @@ export default function ArbitrajeScreen() {
     setP1Score(0); setP2Score(0);
     setCurrentGame(g => g + 1);
     setHistory([]);
-    // Quien ganó el último game inicia el saque del siguiente, en R
+    // Quien ganó el último game inicia el saque del siguiente → árbitro elige lado
     const lastGame = gamesDetail[gamesDetail.length - 1];
     const newServer: 1 | 2 = lastGame ? lastGame.winner : serverPlayer;
-    setServerPlayer(newServer);
-    setServerSide('R');
-    setPhase('playing');
-    await persist({ p1: 0, p2: 0, game: currentGame + 1, sp: newServer, side: 'R' });
+    setPendingNewServer(newServer);
+    await persist({ p1: 0, p2: 0, game: currentGame + 1, sp: newServer, side: serverSide });
+    setPhase('pick-side');
   };
 
   const skipRest = async () => {
@@ -495,6 +517,15 @@ export default function ArbitrajeScreen() {
             <Ionicons name="play" size={22} color="#FFF" />
             <Text style={styles.startBtnText}>{t('referee.start')}</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.historyBigBtn}
+            onPress={() => router.push('/arbitraje-history')}
+            data-testid="ref-history-big-btn"
+          >
+            <Ionicons name="time-outline" size={22} color="#1E3A5F" />
+            <Text style={styles.historyBigBtnText}>{t('referee.history')}</Text>
+          </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
     );
@@ -534,6 +565,40 @@ export default function ArbitrajeScreen() {
               </View>
             </View>
           ))}
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ---- PICK SIDE (cambio de saque o inicio de game) ----
+  if (phase === 'pick-side') {
+    const newServerName = pendingNewServer === 1 ? p1Name : p2Name;
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.pickSideBody}>
+          <Text style={styles.pickSideHeadline}>{t('referee.changeServer')}</Text>
+          <Text style={styles.pickSideServerName}>{newServerName}</Text>
+          <Text style={styles.pickSideHint}>{t('referee.fromWhichSide')}</Text>
+
+          <View style={styles.pickSideRow}>
+            <TouchableOpacity
+              style={[styles.pickSideBtn, styles.pickSideBtnLeft]}
+              onPress={() => confirmNewServerSide('L')}
+              data-testid="pick-side-L"
+            >
+              <Text style={styles.pickSideLetter}>L</Text>
+              <Text style={styles.pickSideLabel}>{t('referee.leftSide')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.pickSideBtn, styles.pickSideBtnRight]}
+              onPress={() => confirmNewServerSide('R')}
+              data-testid="pick-side-R"
+            >
+              <Text style={styles.pickSideLetter}>R</Text>
+              <Text style={styles.pickSideLabel}>{t('referee.rightSide')}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -697,4 +762,27 @@ const styles = StyleSheet.create({
   restGames: { color: '#FFF', fontSize: 18, marginTop: 20 },
   skipRestBtn: { marginTop: 40, backgroundColor: '#2E7D32', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12 },
   skipRestText: { color: '#FFF', fontSize: 15, fontWeight: '700' },
+
+  // Botón grande de Historial bajo Start
+  historyBigBtn: {
+    marginTop: 14, backgroundColor: '#FFF', borderWidth: 2, borderColor: '#1E3A5F',
+    borderRadius: 12, paddingVertical: 14, flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'center', gap: 10,
+  },
+  historyBigBtnText: { color: '#1E3A5F', fontSize: 18, fontWeight: '700' },
+
+  // Pick-side (cambio de saque): pantalla grande L vs R
+  pickSideBody: { flex: 1, backgroundColor: '#1E3A5F', padding: 20, alignItems: 'center', justifyContent: 'center' },
+  pickSideHeadline: { color: '#FFD54F', fontSize: 18, fontWeight: '600', marginBottom: 10, textAlign: 'center' },
+  pickSideServerName: { color: '#FFF', fontSize: 32, fontWeight: '900', marginBottom: 6, textAlign: 'center' },
+  pickSideHint: { color: 'rgba(255,255,255,0.85)', fontSize: 15, marginBottom: 30, textAlign: 'center' },
+  pickSideRow: { flexDirection: 'row', gap: 16, width: '100%' },
+  pickSideBtn: {
+    flex: 1, aspectRatio: 1, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
+  },
+  pickSideBtnLeft: { backgroundColor: '#1565C0' },
+  pickSideBtnRight: { backgroundColor: '#C62828' },
+  pickSideLetter: { color: '#FFF', fontSize: 130, fontWeight: '900', lineHeight: 140 },
+  pickSideLabel: { color: 'rgba(255,255,255,0.95)', fontSize: 22, fontWeight: '700', marginTop: 4 },
 });
