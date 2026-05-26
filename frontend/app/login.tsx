@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/src/context/AuthContext';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { useRouter } from 'expo-router';
+import { BannerModal } from '@/src/components/BannerModal';
 
 type AuthMode = 'login' | 'register' | 'forgot' | 'reset';
 
@@ -156,6 +157,7 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BannerModal />
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}

@@ -214,6 +214,16 @@ export default function Settings() {
             <View style={styles.infoCard}>
               <Text style={styles.infoText}>Usuario: {user?.name || user?.email}</Text>
             </View>
+            {(user?.email || '').toLowerCase().trim() === 'franciscoduransaa@gmail.com' && (
+              <TouchableOpacity
+                style={styles.adminButton}
+                onPress={() => router.push('/admin-banners' as any)}
+                data-testid="admin-banners-btn"
+              >
+                <Ionicons name="megaphone-outline" size={20} color="#FFF" />
+                <Text style={styles.adminButtonText}>Administrar Banners</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               style={styles.deleteAccountButton}
               onPress={handleDeleteAccount}
@@ -439,6 +449,21 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: 12,
     gap: 8,
+  },
+  adminButton: {
+    backgroundColor: '#2196F3',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 14,
+    borderRadius: 10,
+    marginTop: 12,
+    gap: 8,
+  },
+  adminButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   deleteAccountText: {
     color: '#FFF',

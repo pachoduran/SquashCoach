@@ -1700,6 +1700,106 @@ async def delete_referee_match(
     return {"deleted": True, "referee_id": referee_id}
 
 # =============================================================================
+# BANNERS / ANNOUNCEMENTS (Admin-managed broadcasts shown on app open)
+# =============================================================================
+
+ADMIN_EMAILS = {"franciscoduransaa@gmail.com"}
+
+def _require_admin(user: User) -> None:
+    if (user.email or "").lower().strip() not in ADMIN_EMAILS:
+        raise HTTPException(status_code=403, detail="Acceso solo para admin")
+
+class BannerCreate(BaseModel):
+    title: Optional[str] = ""
+    body: Optional[str] = ""
+    media_url: Optional[str] = ""        # imagen o video o YouTube
+    media_type: Optional[str] = "none"   # "image" | "video" | "youtube" | "none"
+    action_url: Optional[str] = ""       # link externo opcional
+    action_label: Optional[str] = ""     # texto del boton (ej "Ver mas")
+    is_active: bool = True
+
+class Banner(BannerCreate):
+    banner_id: str = Field(default_factory=lambda: f"banner_{uuid.uuid4().hex[:12]}")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+@api_router.get("/banners/active")
+async def get_active_banner():
+    """PUBLIC. Devuelve el banner activo mas reciente (o null si no hay)."""
+    doc = await db.banners.find_one(
+        {"is_active": True},
+        {"_id": 0},
+        sort=[("updated_at", -1)],
+    )
+    if not doc:
+        return None
+    for k in ("created_at", "updated_at"):
+        if isinstance(doc.get(k), datetime):
+            doc[k] = doc[k].isoformat()
+    return doc
+
+@api_router.get("/banners")
+async def list_banners(current_user: User = Depends(get_current_user)):
+    """ADMIN. Lista todos los banners (activos e inactivos)."""
+    _require_admin(current_user)
+    docs = await db.banners.find({}, {"_id": 0}).sort("updated_at", -1).to_list(500)
+    for d in docs:
+        for k in ("created_at", "updated_at"):
+            if isinstance(d.get(k), datetime):
+                d[k] = d[k].isoformat()
+    return docs
+
+@api_router.post("/banners")
+async def create_banner(
+    data: BannerCreate,
+    current_user: User = Depends(get_current_user),
+):
+    """ADMIN. Crea un nuevo banner."""
+    _require_admin(current_user)
+    banner = Banner(**data.dict())
+    doc = banner.dict()
+    await db.banners.insert_one(doc)
+    doc.pop("_id", None)
+    for k in ("created_at", "updated_at"):
+        if isinstance(doc.get(k), datetime):
+            doc[k] = doc[k].isoformat()
+    return doc
+
+@api_router.put("/banners/{banner_id}")
+async def update_banner(
+    banner_id: str,
+    data: BannerCreate,
+    current_user: User = Depends(get_current_user),
+):
+    """ADMIN. Actualiza un banner existente."""
+    _require_admin(current_user)
+    update_fields = data.dict()
+    update_fields["updated_at"] = datetime.now(timezone.utc)
+    result = await db.banners.update_one(
+        {"banner_id": banner_id},
+        {"$set": update_fields},
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Banner no encontrado")
+    doc = await db.banners.find_one({"banner_id": banner_id}, {"_id": 0})
+    for k in ("created_at", "updated_at"):
+        if isinstance(doc.get(k), datetime):
+            doc[k] = doc[k].isoformat()
+    return doc
+
+@api_router.delete("/banners/{banner_id}")
+async def delete_banner(
+    banner_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    """ADMIN. Borra un banner."""
+    _require_admin(current_user)
+    result = await db.banners.delete_one({"banner_id": banner_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Banner no encontrado")
+    return {"deleted": True, "banner_id": banner_id}
+
+# =============================================================================
 # BASIC ENDPOINTS
 # =============================================================================
 

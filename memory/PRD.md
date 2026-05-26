@@ -41,6 +41,12 @@ Aplicación móvil (React Native / Expo) + backend (FastAPI / MongoDB) para aná
   - Login con Google funcionando ✅
   - Fix: backend `server.py` ahora hace `.strip()` al `GOOGLE_CLIENT_ID` (defensa contra `\r\n` en Secret Manager)
   - Root cause del error `wrong audience`: el secreto `GOOGLE_CLIENT_ID` en Secret Manager tenía `\r\n` al final. Se creó nueva versión limpia y nueva revisión de Cloud Run (`squash-coach-api-00004-glg`).
+- **26/05/2026** Versionado a 3.11.0 (iOS buildNumber 6, Android versionCode 14) — pendiente build EAS y publicación en stores.
+- **26/05/2026** Feature **Banners/Anuncios remotos**:
+  - Backend: nueva colección `banners` con CRUD admin (email `franciscoduransaa@gmail.com`) + endpoint público `GET /api/banners/active`.
+  - Frontend: `BannerModal` aparece al abrir login (cada vez, sin persistencia de dismissal). Soporta imagen, video MP4, YouTube y texto + botón con link externo.
+  - Admin: pantalla `app/admin-banners.tsx` (botón visible en Settings solo para email admin). Permite crear/editar/borrar/activar banners.
+  - Pendiente: re-deploy backend a Cloud Run para que el feature funcione en producción.
 
 ## Despliegue Backend (Bluehost - LEGACY, en migración)
 - **Ruta del backend**: `/var/www/squash-coach/server.py` (sin subcarpeta `backend/`)
