@@ -574,6 +574,8 @@ export default function ArbitrajeScreen() {
 
   // ---- PLAYING ----
   const isP1Serving = serverPlayer === 1;
+  // Sólo se puede elegir lado al inicio del game o tras un cambio de saque
+  const canPickSide = history.length === 0 || history[history.length - 1].server !== serverPlayer;
 
   // Lista acumulada de puntos (estado DESPUÉS de cada punto) para la evolución
   const evolution = history.map((h, i) => {
@@ -611,15 +613,17 @@ export default function ArbitrajeScreen() {
           {isP1Serving && (
             <View style={styles.sideToggleRow} pointerEvents="box-none">
               <TouchableOpacity
-                style={[styles.sideToggleBox, styles.sideToggleBoxL, serverSide === 'L' && styles.sideToggleBoxLActive]}
-                onPress={(e) => { e.stopPropagation?.(); setServerSideManual('L'); }}
+                style={[styles.sideToggleBox, styles.sideToggleBoxL, serverSide === 'L' && styles.sideToggleBoxLActive, !canPickSide && styles.sideToggleBoxLocked]}
+                onPress={(e) => { e.stopPropagation?.(); if (canPickSide) setServerSideManual('L'); }}
+                disabled={!canPickSide}
                 data-testid="ref-p1-side-L"
               >
                 <Text style={[styles.sideToggleText, serverSide !== 'L' && styles.sideToggleTextDim]}>L</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.sideToggleBox, styles.sideToggleBoxR, serverSide === 'R' && styles.sideToggleBoxRActive]}
-                onPress={(e) => { e.stopPropagation?.(); setServerSideManual('R'); }}
+                style={[styles.sideToggleBox, styles.sideToggleBoxR, serverSide === 'R' && styles.sideToggleBoxRActive, !canPickSide && styles.sideToggleBoxLocked]}
+                onPress={(e) => { e.stopPropagation?.(); if (canPickSide) setServerSideManual('R'); }}
+                disabled={!canPickSide}
                 data-testid="ref-p1-side-R"
               >
                 <Text style={[styles.sideToggleText, serverSide !== 'R' && styles.sideToggleTextDim]}>R</Text>
@@ -640,15 +644,17 @@ export default function ArbitrajeScreen() {
           {!isP1Serving && (
             <View style={styles.sideToggleRow} pointerEvents="box-none">
               <TouchableOpacity
-                style={[styles.sideToggleBox, styles.sideToggleBoxL, serverSide === 'L' && styles.sideToggleBoxLActive]}
-                onPress={(e) => { e.stopPropagation?.(); setServerSideManual('L'); }}
+                style={[styles.sideToggleBox, styles.sideToggleBoxL, serverSide === 'L' && styles.sideToggleBoxLActive, !canPickSide && styles.sideToggleBoxLocked]}
+                onPress={(e) => { e.stopPropagation?.(); if (canPickSide) setServerSideManual('L'); }}
+                disabled={!canPickSide}
                 data-testid="ref-p2-side-L"
               >
                 <Text style={[styles.sideToggleText, serverSide !== 'L' && styles.sideToggleTextDim]}>L</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.sideToggleBox, styles.sideToggleBoxR, serverSide === 'R' && styles.sideToggleBoxRActive]}
-                onPress={(e) => { e.stopPropagation?.(); setServerSideManual('R'); }}
+                style={[styles.sideToggleBox, styles.sideToggleBoxR, serverSide === 'R' && styles.sideToggleBoxRActive, !canPickSide && styles.sideToggleBoxLocked]}
+                onPress={(e) => { e.stopPropagation?.(); if (canPickSide) setServerSideManual('R'); }}
+                disabled={!canPickSide}
                 data-testid="ref-p2-side-R"
               >
                 <Text style={[styles.sideToggleText, serverSide !== 'R' && styles.sideToggleTextDim]}>R</Text>
@@ -785,6 +791,8 @@ const styles = StyleSheet.create({
   sideToggleBoxR: { borderColor: 'rgba(76,175,80,0.6)' },
   sideToggleBoxLActive: { backgroundColor: '#F44336', borderColor: '#F44336' },
   sideToggleBoxRActive: { backgroundColor: '#4CAF50', borderColor: '#4CAF50' },
+  // Bloqueado: el árbitro NO puede cambiar el lado en mitad de un saque
+  sideToggleBoxLocked: { opacity: 0.45 },
   sideToggleText: { color: '#FFF', fontSize: 36, fontWeight: '900' },
   sideToggleTextDim: { color: 'rgba(255,255,255,0.65)' },
 
