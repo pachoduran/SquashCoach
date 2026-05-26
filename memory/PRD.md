@@ -37,6 +37,10 @@ Aplicación móvil (React Native / Expo) + backend (FastAPI / MongoDB) para aná
   - 543 documents migrados con `mongodump`/`mongorestore`
   - Doble-escritura activa en Bluehost (escribe local + replica a Atlas async)
   - Frontend: URLs cambiadas en 6 archivos para apuntar a Cloud Run
+- **26/05/2026** APK Cloud Run validado en producción por el usuario:
+  - Login con Google funcionando ✅
+  - Fix: backend `server.py` ahora hace `.strip()` al `GOOGLE_CLIENT_ID` (defensa contra `\r\n` en Secret Manager)
+  - Root cause del error `wrong audience`: el secreto `GOOGLE_CLIENT_ID` en Secret Manager tenía `\r\n` al final. Se creó nueva versión limpia y nueva revisión de Cloud Run (`squash-coach-api-00004-glg`).
 
 ## Despliegue Backend (Bluehost - LEGACY, en migración)
 - **Ruta del backend**: `/var/www/squash-coach/server.py` (sin subcarpeta `backend/`)
