@@ -31,9 +31,20 @@ Aplicación móvil (React Native / Expo) + backend (FastAPI / MongoDB) para aná
 - **23/02/2026** Local-first auto-sync completado.
 - **25/02/2026** Modo Árbitro completo (Bo1/Bo3/Bo5, timer 90s, persistencia in-progress, historial+nube).
 
-## Despliegue Backend (Bluehost)
+## Despliegue Backend (Bluehost - LEGACY, en migración)
 - **Ruta del backend**: `/var/www/squash-coach/server.py` (sin subcarpeta `backend/`)
 - **Servicio systemd**: `squash-coach` → `/etc/systemd/system/squash-coach.service`
+
+## Despliegue Backend (Google Cloud Run - NUEVO PRINCIPAL)
+- **Service URL**: `https://squash-coach-api-804061220370.us-central1.run.app`
+- **Project**: `squash-coach` (Project Number 804061220370)
+- **Region**: `us-central1`
+- **MongoDB**: Atlas M0 cluster `m0.7xx8rpn.mongodb.net` (provider: Google Cloud, region us-central1)
+- **DB name**: `test_database`
+- **Secrets en Secret Manager**: `MONGO_URL`, `GOOGLE_CLIENT_ID`
+- **Imagen Docker**: `python:3.11-slim` con `requirements-cloudrun.txt`
+- **Comando de redeploy**: `gcloud run deploy squash-coach-api --source . --region us-central1 --allow-unauthenticated --memory 512Mi --cpu 1 --min-instances 0 --max-instances 5 --set-secrets="MONGO_URL=MONGO_URL:latest,GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest" --set-env-vars="DB_NAME=test_database"` desde `C:\squash-coach-deploy\`
+- **Archivos en el repo de deploy**: `server.py`, `Dockerfile`, `requirements-cloudrun.txt` (los 3 se descargan desde `/api/download-*` del preview de Emergent)
 
 ## Google OAuth (cuenta propia del usuario)
 - **Proyecto Google Cloud**: `squash-coach` (Project Number: 804061220370)
