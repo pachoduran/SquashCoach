@@ -36,7 +36,7 @@ Aplicación móvil (React Native / Expo) + backend (FastAPI / MongoDB) para aná
 - **Servicio systemd**: `squash-coach` → `/etc/systemd/system/squash-coach.service`
 
 ## Google OAuth (cuenta propia del usuario)
-- **Proyecto Google Cloud**: `Squash Coach`
+- **Proyecto Google Cloud**: `squash-coach` (Project Number: 804061220370)
 - **Web Client ID** (usado en código frontend y backend): `804061220370-kv76t65r6nc8c85a2rhhtu5kin7097s8.apps.googleusercontent.com`
 - **Android Client ID** (solo registrado en Google Cloud para que funcione, NO se usa en código): `804061220370-p94811ladus1ca50qi9hn9ggj2kgaro7.apps.googleusercontent.com`
 - **Android Package Name**: `com.sqcoash.app`
