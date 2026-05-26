@@ -716,8 +716,9 @@ async def google_signin(data: GoogleSignInRequest, response: Response):
             google_requests.Request(),
             google_client_id,
         )
-    except ValueError as e:
-        raise HTTPException(status_code=401, detail=f"Token de Google inválido: {e}")
+    except Exception as e:
+        logger.error(f"Google token verify failed: {type(e).__name__}: {e}")
+        raise HTTPException(status_code=401, detail=f"Token de Google inválido: {type(e).__name__}: {e}")
 
     email = (idinfo.get("email") or "").lower().strip()
     if not email or not idinfo.get("email_verified"):
