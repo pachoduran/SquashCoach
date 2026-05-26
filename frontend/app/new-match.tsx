@@ -26,7 +26,7 @@ import { format } from 'date-fns';
 import { adService } from '@/src/services/adService';
 import { PLAYER_CATEGORIES, GENDER_OPTIONS, COUNTRIES } from '@/src/utils/playerConstants';
 
-const BACKEND_URL = 'https://lev.jsb.mybluehost.me:8001';
+const BACKEND_URL = 'https://squash-coach-api-804061220370.us-central1.run.app';
 
 interface Player {
   id: number;

@@ -34,7 +34,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Get backend URL - HARDCODED para APK
 const getBackendUrl = () => {
-  return 'https://lev.jsb.mybluehost.me:8001';
+  return 'https://squash-coach-api-804061220370.us-central1.run.app';
 };
 
 const BACKEND_URL = getBackendUrl();

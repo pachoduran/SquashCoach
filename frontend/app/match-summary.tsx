@@ -109,7 +109,7 @@ export default function MatchSummary() {
 
   const loadCloudMatchSummary = async () => {
     try {
-      const BACKEND_URL = 'https://lev.jsb.mybluehost.me:8001';
+      const BACKEND_URL = 'https://squash-coach-api-804061220370.us-central1.run.app';
       const response = await fetch(`${BACKEND_URL}/api/matches/${matchId}`, {
         headers: {
           'Authorization': `Bearer ${sessionToken}`,

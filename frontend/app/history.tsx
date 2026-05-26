@@ -21,7 +21,7 @@ import { useAuth } from '@/src/context/AuthContext';
 import { useSync } from '@/src/context/SyncContext';
 import { SyncBanner } from '@/src/components/SyncBanner';
 
-const BACKEND_URL = 'https://lev.jsb.mybluehost.me:8001';
+const BACKEND_URL = 'https://squash-coach-api-804061220370.us-central1.run.app';
 import { format } from 'date-fns';
 
 interface Match {

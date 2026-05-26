@@ -6,7 +6,7 @@ const PENDING_SYNC_KEY = '@squash_coach_pending_sync';
 const AUTH_STORAGE_KEY = '@squash_coach_auth';
 
 // HARDCODED URL para APK - igual que en AuthContext
-const BACKEND_URL = 'https://lev.jsb.mybluehost.me:8001';
+const BACKEND_URL = 'https://squash-coach-api-804061220370.us-central1.run.app';
 
 interface SyncData {
   players: any[];

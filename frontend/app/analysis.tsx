@@ -24,7 +24,7 @@ import { SyncBanner } from '@/src/components/SyncBanner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-const BACKEND_URL = 'https://lev.jsb.mybluehost.me:8001';
+const BACKEND_URL = 'https://squash-coach-api-804061220370.us-central1.run.app';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface Player {

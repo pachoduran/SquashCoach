@@ -30,6 +30,13 @@ Aplicación móvil (React Native / Expo) + backend (FastAPI / MongoDB) para aná
 ## Implementado en esta sesión
 - **23/02/2026** Local-first auto-sync completado.
 - **25/02/2026** Modo Árbitro completo (Bo1/Bo3/Bo5, timer 90s, persistencia in-progress, historial+nube).
+- **25/02/2026** Login con Google (OAuth propio del usuario, no Emergent-managed).
+- **26/02/2026** Migración completa a Google Cloud Run + MongoDB Atlas M0:
+  - Cloud Run: `https://squash-coach-api-804061220370.us-central1.run.app`
+  - MongoDB Atlas M0 (us-central1, cluster `m0.7xx8rpn`)
+  - 543 documents migrados con `mongodump`/`mongorestore`
+  - Doble-escritura activa en Bluehost (escribe local + replica a Atlas async)
+  - Frontend: URLs cambiadas en 6 archivos para apuntar a Cloud Run
 
 ## Despliegue Backend (Bluehost - LEGACY, en migración)
 - **Ruta del backend**: `/var/www/squash-coach/server.py` (sin subcarpeta `backend/`)
