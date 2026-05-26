@@ -1781,3 +1781,9 @@ async def download_requirements_cloudrun():
     import os
     file_path = os.path.join(os.path.dirname(__file__), "requirements-cloudrun.txt")
     return FileResponse(file_path, media_type="text/plain", filename="requirements-cloudrun.txt")
+
+@app.get("/api/download-infra-backup")
+async def download_infra_backup():
+    import os
+    file_path = "/app/memory/INFRA_BACKUP.md"
+    return FileResponse(file_path, media_type="text/markdown", filename="SquashCoach_INFRA_BACKUP.md")
