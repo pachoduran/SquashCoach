@@ -38,7 +38,72 @@ load_dotenv(ROOT_DIR / '.env')
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ.get('DB_NAME', 'squash_coach')]
+_primary_db = client[os.environ.get('DB_NAME', 'squash_coach')]
+
+# Réplica opcional (doble-escritura a MongoDB Atlas durante la migración a Cloud Run).
+# Lecturas y operaciones SIEMPRE se hacen sobre el primario.
+# Las escrituras se replican async en background; si fallan, sólo se loguea.
+import asyncio as _asyncio
+REPLICA_MONGO_URL = os.environ.get('REPLICA_MONGO_URL')
+REPLICA_DB_NAME = os.environ.get('REPLICA_DB_NAME', os.environ.get('DB_NAME', 'squash_coach'))
+_replica_client = AsyncIOMotorClient(REPLICA_MONGO_URL) if REPLICA_MONGO_URL else None
+_replica_db_raw = _replica_client[REPLICA_DB_NAME] if _replica_client else None
+
+_WRITE_METHODS = {
+    'insert_one', 'insert_many',
+    'update_one', 'update_many',
+    'replace_one',
+    'delete_one', 'delete_many',
+    'find_one_and_update', 'find_one_and_delete', 'find_one_and_replace',
+    'bulk_write', 'create_index', 'drop',
+}
+
+class _ReplicatedCollection:
+    """Wrapper de una colección Motor: lectura local; escrituras replican a Atlas async."""
+    __slots__ = ('_primary', '_replica', '_name')
+    def __init__(self, primary, replica, name):
+        self._primary = primary
+        self._replica = replica
+        self._name = name
+
+    def __getattr__(self, attr):
+        primary_method = getattr(self._primary, attr)
+        if attr not in _WRITE_METHODS or self._replica is None:
+            return primary_method
+
+        replica_method = getattr(self._replica, attr)
+        async def _wrapped(*args, **kwargs):
+            result = await primary_method(*args, **kwargs)
+            try:
+                _asyncio.create_task(_replicate(replica_method, attr, self._name, args, kwargs))
+            except Exception as e:
+                logging.warning(f"[REPLICA] no se pudo programar replicación {self._name}.{attr}: {e}")
+            return result
+        return _wrapped
+
+async def _replicate(method, op, coll_name, args, kwargs):
+    try:
+        await method(*args, **kwargs)
+    except Exception as e:
+        logging.warning(f"[REPLICA-WARN] {coll_name}.{op} falló en réplica: {e}")
+
+class _ReplicatedDB:
+    __slots__ = ('_primary', '_replica')
+    def __init__(self, primary, replica):
+        self._primary = primary
+        self._replica = replica
+    def __getattr__(self, name):
+        return _ReplicatedCollection(
+            self._primary[name],
+            self._replica[name] if self._replica is not None else None,
+            name,
+        )
+    def __getitem__(self, name):
+        return self.__getattr__(name)
+
+db = _ReplicatedDB(_primary_db, _replica_db_raw)
+if REPLICA_MONGO_URL:
+    logging.info(f"[REPLICA] Doble-escritura activa hacia Atlas (db={REPLICA_DB_NAME})")
 
 # Create the main app
 app = FastAPI(title="Squash Coach API")
