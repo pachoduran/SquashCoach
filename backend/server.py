@@ -1702,3 +1702,15 @@ async def download_server_py():
     import os
     file_path = os.path.join(os.path.dirname(__file__), "server.py")
     return FileResponse(file_path, media_type="text/plain", filename="server.py")
+
+@app.get("/api/download-dockerfile")
+async def download_dockerfile():
+    import os
+    file_path = os.path.join(os.path.dirname(__file__), "Dockerfile")
+    return FileResponse(file_path, media_type="text/plain", filename="Dockerfile")
+
+@app.get("/api/download-requirements-cloudrun")
+async def download_requirements_cloudrun():
+    import os
+    file_path = os.path.join(os.path.dirname(__file__), "requirements-cloudrun.txt")
+    return FileResponse(file_path, media_type="text/plain", filename="requirements-cloudrun.txt")
