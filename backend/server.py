@@ -772,7 +772,7 @@ async def google_signin(data: GoogleSignInRequest, response: Response):
     except ImportError:
         raise HTTPException(status_code=500, detail="google-auth no instalado")
 
-    google_client_id = os.environ.get("GOOGLE_CLIENT_ID")
+    google_client_id = (os.environ.get("GOOGLE_CLIENT_ID") or "").strip()
     if not google_client_id:
         raise HTTPException(status_code=500, detail="GOOGLE_CLIENT_ID no configurado")
 
