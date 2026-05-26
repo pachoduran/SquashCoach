@@ -574,6 +574,14 @@ export default function ArbitrajeScreen() {
 
   // ---- PLAYING ----
   const isP1Serving = serverPlayer === 1;
+
+  // Lista acumulada de puntos (estado DESPUÉS de cada punto) para la evolución
+  const evolution = history.map((h, i) => {
+    const newP1 = h.p1 + (h.scoredBy === 1 ? 1 : 0);
+    const newP2 = h.p2 + (h.scoredBy === 2 ? 1 : 0);
+    return { idx: i + 1, p1: newP1, p2: newP2, scoredBy: h.scoredBy };
+  }).slice().reverse(); // último arriba
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.playHeader}>
@@ -587,14 +595,15 @@ export default function ArbitrajeScreen() {
           </Text>
         </View>
         <TouchableOpacity onPress={undoLastPoint} style={styles.iconBtn} disabled={history.length === 0} data-testid="undo-btn">
-          <Ionicons name="arrow-undo" size={22} color={history.length === 0 ? '#888' : '#FFF'} />
+          <Ionicons name="arrow-undo" size={22} color={history.length === 0 ? '#666' : '#FFF'} />
         </TouchableOpacity>
       </View>
 
+      {/* Marcador grande arriba con botones L/R */}
       <View style={styles.scoreboard}>
         <TouchableOpacity
           activeOpacity={0.7}
-          style={[styles.scoreCell, { backgroundColor: '#1565C0' }]}
+          style={[styles.scoreCell, styles.scoreCellP1]}
           onPressIn={() => handlePressIn(1)}
           onPressOut={() => handlePressOut(1)}
           data-testid="ref-score-p1"
@@ -602,29 +611,28 @@ export default function ArbitrajeScreen() {
           {isP1Serving && (
             <View style={styles.sideToggleRow} pointerEvents="box-none">
               <TouchableOpacity
-                style={[styles.sideToggleBox, serverSide === 'L' && styles.sideToggleBoxActive]}
+                style={[styles.sideToggleBox, styles.sideToggleBoxL, serverSide === 'L' && styles.sideToggleBoxLActive]}
                 onPress={(e) => { e.stopPropagation?.(); setServerSideManual('L'); }}
                 data-testid="ref-p1-side-L"
               >
-                <Text style={[styles.sideToggleText, serverSide === 'L' && styles.sideToggleTextActive]}>L</Text>
+                <Text style={[styles.sideToggleText, serverSide !== 'L' && styles.sideToggleTextDim]}>L</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.sideToggleBox, serverSide === 'R' && styles.sideToggleBoxActive]}
+                style={[styles.sideToggleBox, styles.sideToggleBoxR, serverSide === 'R' && styles.sideToggleBoxRActive]}
                 onPress={(e) => { e.stopPropagation?.(); setServerSideManual('R'); }}
                 data-testid="ref-p1-side-R"
               >
-                <Text style={[styles.sideToggleText, serverSide === 'R' && styles.sideToggleTextActive]}>R</Text>
+                <Text style={[styles.sideToggleText, serverSide !== 'R' && styles.sideToggleTextDim]}>R</Text>
               </TouchableOpacity>
             </View>
           )}
           <Text style={styles.scorePlayerName}>{p1Name}</Text>
-          <Text style={styles.scoreBig}>{p1Score}</Text>
-          <Text style={styles.scoreHint}>{t('referee.tapToScore')}</Text>
+          <Text style={[styles.scoreBig, styles.scoreBigP1]}>{p1Score}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           activeOpacity={0.7}
-          style={[styles.scoreCell, { backgroundColor: '#C62828' }]}
+          style={[styles.scoreCell, styles.scoreCellP2]}
           onPressIn={() => handlePressIn(2)}
           onPressOut={() => handlePressOut(2)}
           data-testid="ref-score-p2"
@@ -632,25 +640,55 @@ export default function ArbitrajeScreen() {
           {!isP1Serving && (
             <View style={styles.sideToggleRow} pointerEvents="box-none">
               <TouchableOpacity
-                style={[styles.sideToggleBox, serverSide === 'L' && styles.sideToggleBoxActive]}
+                style={[styles.sideToggleBox, styles.sideToggleBoxL, serverSide === 'L' && styles.sideToggleBoxLActive]}
                 onPress={(e) => { e.stopPropagation?.(); setServerSideManual('L'); }}
                 data-testid="ref-p2-side-L"
               >
-                <Text style={[styles.sideToggleText, serverSide === 'L' && styles.sideToggleTextActive]}>L</Text>
+                <Text style={[styles.sideToggleText, serverSide !== 'L' && styles.sideToggleTextDim]}>L</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.sideToggleBox, serverSide === 'R' && styles.sideToggleBoxActive]}
+                style={[styles.sideToggleBox, styles.sideToggleBoxR, serverSide === 'R' && styles.sideToggleBoxRActive]}
                 onPress={(e) => { e.stopPropagation?.(); setServerSideManual('R'); }}
                 data-testid="ref-p2-side-R"
               >
-                <Text style={[styles.sideToggleText, serverSide === 'R' && styles.sideToggleTextActive]}>R</Text>
+                <Text style={[styles.sideToggleText, serverSide !== 'R' && styles.sideToggleTextDim]}>R</Text>
               </TouchableOpacity>
             </View>
           )}
           <Text style={styles.scorePlayerName}>{p2Name}</Text>
-          <Text style={styles.scoreBig}>{p2Score}</Text>
-          <Text style={styles.scoreHint}>{t('referee.tapToScore')}</Text>
+          <Text style={[styles.scoreBig, styles.scoreBigP2]}>{p2Score}</Text>
         </TouchableOpacity>
+      </View>
+
+      {/* Evolución del partido (línea central) */}
+      <View style={styles.evolutionWrap}>
+        <View style={styles.evolutionHeader}>
+          <Text style={[styles.evolutionHeaderText, { color: '#42A5F5' }]}>{p1Name}</Text>
+          <Text style={[styles.evolutionHeaderText, { color: '#FFD54F' }]}>{p2Name}</Text>
+        </View>
+        <View style={styles.evolutionList}>
+          {evolution.length === 0 ? (
+            <Text style={styles.evolutionEmpty}>{t('referee.tapToScore')}</Text>
+          ) : (
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {evolution.map((p) => (
+                <View key={p.idx} style={styles.evolutionRow}>
+                  <View style={styles.evolutionLeft}>
+                    {p.scoredBy === 1 && (
+                      <Text style={[styles.evolutionPoint, { color: '#42A5F5' }]}>{p.p1}</Text>
+                    )}
+                  </View>
+                  <View style={styles.evolutionCenterLine} />
+                  <View style={styles.evolutionRight}>
+                    {p.scoredBy === 2 && (
+                      <Text style={[styles.evolutionPoint, { color: '#FFD54F' }]}>{p.p2}</Text>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+        </View>
       </View>
 
       <View style={styles.bottomBar}>
@@ -664,7 +702,7 @@ export default function ArbitrajeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F7FA' },
+  container: { flex: 1, backgroundColor: '#000' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -675,7 +713,7 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { color: '#FFF', fontSize: 18, fontWeight: '700' },
-  setupBody: { padding: 20 },
+  setupBody: { padding: 20, backgroundColor: '#F5F7FA', flexGrow: 1 },
   label: { fontSize: 13, fontWeight: '600', color: '#555', marginTop: 12, marginBottom: 4 },
   input: {
     borderWidth: 1, borderColor: '#DDD', borderRadius: 10,
@@ -706,39 +744,81 @@ const styles = StyleSheet.create({
   // Playing
   playHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#1E3A5F', paddingHorizontal: 10, paddingVertical: 10,
+    backgroundColor: '#000', paddingHorizontal: 10, paddingVertical: 10,
+    borderBottomWidth: 1, borderBottomColor: '#222',
   },
   iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
   headerCenter: { flex: 1, alignItems: 'center' },
   gameLabel: { color: '#FFF', fontSize: 16, fontWeight: '700' },
-  gamesLine: { color: 'rgba(255,255,255,0.85)', fontSize: 12, marginTop: 2 },
-  scoreboard: { flex: 1, flexDirection: 'row' },
-  scoreCell: {
-    flex: 1, alignItems: 'center', justifyContent: 'center', position: 'relative',
+  gamesLine: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 },
+  scoreboard: {
+    flexDirection: 'row',
+    backgroundColor: '#000',
+    borderBottomWidth: 1, borderBottomColor: '#222',
   },
-  scorePlayerName: { color: '#FFF', fontSize: 18, fontWeight: '700', marginBottom: 12 },
-  scoreBig: { color: '#FFF', fontSize: 140, fontWeight: '900', lineHeight: 150 },
-  scoreHint: { position: 'absolute', bottom: 18, color: 'rgba(255,255,255,0.7)', fontSize: 11 },
+  scoreCell: {
+    flex: 1, alignItems: 'center', justifyContent: 'flex-end',
+    position: 'relative',
+    height: 220,
+    paddingTop: 100,
+    paddingBottom: 16,
+  },
+  scoreCellP1: { backgroundColor: '#000', borderRightWidth: 1, borderRightColor: '#222' },
+  scoreCellP2: { backgroundColor: '#000' },
+  scorePlayerName: { color: '#FFF', fontSize: 16, fontWeight: '700', marginBottom: 0 },
+  scoreBig: { fontSize: 110, fontWeight: '900', lineHeight: 120 },
+  scoreBigP1: { color: '#42A5F5' },
+  scoreBigP2: { color: '#FFD54F' },
+  scoreHint: { position: 'absolute', bottom: 4, color: 'rgba(255,255,255,0.4)', fontSize: 10 },
+
   // Toggle L / R en la parte superior de la celda del sacador
   sideToggleRow: {
-    position: 'absolute', top: 12, flexDirection: 'row', gap: 8, zIndex: 10,
+    position: 'absolute', top: 12, flexDirection: 'row', gap: 10, zIndex: 10,
   },
   sideToggleBox: {
-    width: 50, height: 50, borderRadius: 10,
-    borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)',
+    width: 75, height: 75, borderRadius: 12,
+    borderWidth: 3,
     alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
-  sideToggleBoxActive: {
-    backgroundColor: '#FFD54F', borderColor: '#FFD54F',
+  sideToggleBoxL: { borderColor: 'rgba(244,67,54,0.6)' },
+  sideToggleBoxR: { borderColor: 'rgba(76,175,80,0.6)' },
+  sideToggleBoxLActive: { backgroundColor: '#F44336', borderColor: '#F44336' },
+  sideToggleBoxRActive: { backgroundColor: '#4CAF50', borderColor: '#4CAF50' },
+  sideToggleText: { color: '#FFF', fontSize: 36, fontWeight: '900' },
+  sideToggleTextDim: { color: 'rgba(255,255,255,0.65)' },
+
+  // Evolución del partido
+  evolutionWrap: { flex: 1, backgroundColor: '#000' },
+  evolutionHeader: {
+    flexDirection: 'row', paddingVertical: 8,
+    borderBottomWidth: 1, borderBottomColor: '#222',
   },
-  sideToggleText: {
-    color: '#FFF', fontSize: 24, fontWeight: '900',
+  evolutionHeaderText: {
+    flex: 1, textAlign: 'center', fontSize: 12, fontWeight: '700', letterSpacing: 1,
   },
-  sideToggleTextActive: {
-    color: '#1E3A5F',
+  evolutionList: { flex: 1 },
+  evolutionEmpty: {
+    color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginTop: 20, fontSize: 12,
   },
-  bottomBar: { padding: 10, alignItems: 'center', backgroundColor: '#1E3A5F' },
+  evolutionRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 3,
+  },
+  evolutionLeft: {
+    flex: 1, alignItems: 'flex-end', paddingRight: 12,
+  },
+  evolutionRight: {
+    flex: 1, alignItems: 'flex-start', paddingLeft: 12,
+  },
+  evolutionCenterLine: {
+    width: 2, backgroundColor: '#333', alignSelf: 'stretch',
+  },
+  evolutionPoint: {
+    fontSize: 22, fontWeight: '900',
+  },
+
+  bottomBar: { padding: 10, alignItems: 'center', backgroundColor: '#000', borderTopWidth: 1, borderTopColor: '#222' },
   finishBtn: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#FF6F00',
     paddingHorizontal: 16, paddingVertical: 10, borderRadius: 22, gap: 6,
