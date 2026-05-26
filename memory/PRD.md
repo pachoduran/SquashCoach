@@ -34,6 +34,16 @@ Aplicación móvil (React Native / Expo) + backend (FastAPI / MongoDB) para aná
 ## Despliegue Backend (Bluehost)
 - **Ruta del backend**: `/var/www/squash-coach/server.py` (sin subcarpeta `backend/`)
 - **Servicio systemd**: `squash-coach` → `/etc/systemd/system/squash-coach.service`
+
+## Google OAuth (cuenta propia del usuario)
+- **Proyecto Google Cloud**: `Squash Coach`
+- **Web Client ID** (usado en código frontend y backend): `804061220370-kv76t65r6nc8c85a2rhhtu5kin7097s8.apps.googleusercontent.com`
+- **Android Client ID** (solo registrado en Google Cloud para que funcione, NO se usa en código): `804061220370-p94811ladus1ca50qi9hn9ggj2kgaro7.apps.googleusercontent.com`
+- **Android Package Name**: `com.sqcoash.app`
+- **Android SHA-1**: `BF:31:99:F7:5C:CB:64:8F:F3:5C:B2:7A:52:DC:1B:AC:11:20:B3:75` (keystore EAS `Build Credentials RCQBQ0_fF5`)
+- **Backend env var requerida**: `GOOGLE_CLIENT_ID=<Web Client ID>`
+- **Librería frontend**: `@react-native-google-signin/google-signin@16.1.2` (requiere EAS Build, no Expo Go)
+- **Librería backend**: `google-auth` (instalar con `pip install google-auth` en venv del servidor)
 - **Procedimiento**: vía PuTTY/SSH
   1. `cd /var/www/squash-coach`
   2. `sudo cp server.py server.py.bak-$(date +%Y%m%d-%H%M%S)`
