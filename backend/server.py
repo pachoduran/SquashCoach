@@ -75,7 +75,9 @@ class _ReplicatedCollection:
         async def _wrapped(*args, **kwargs):
             result = await primary_method(*args, **kwargs)
             try:
-                _asyncio.create_task(_replicate(replica_method, attr, self._name, args, kwargs))
+                # Python 3.6 compat: usar loop.create_task en vez de asyncio.create_task
+                _loop = _asyncio.get_event_loop()
+                _loop.create_task(_replicate(replica_method, attr, self._name, args, kwargs))
             except Exception as e:
                 logging.warning(f"[REPLICA] no se pudo programar replicación {self._name}.{attr}: {e}")
             return result
