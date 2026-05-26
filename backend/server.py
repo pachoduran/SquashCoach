@@ -691,6 +691,91 @@ async def login_email(data: EmailLoginRequest, response: Response):
 class ForgotPasswordRequest(BaseModel):
     email: str
 
+class GoogleSignInRequest(BaseModel):
+    id_token: str
+
+@api_router.post("/auth/google")
+async def google_signin(data: GoogleSignInRequest, response: Response):
+    """Inicio de sesión / registro con Google.
+    Verifica el id_token contra Google y crea o reutiliza el usuario por email.
+    """
+    try:
+        from google.oauth2 import id_token as google_id_token
+        from google.auth.transport import requests as google_requests
+    except ImportError:
+        raise HTTPException(status_code=500, detail="google-auth no instalado")
+
+    google_client_id = os.environ.get("GOOGLE_CLIENT_ID")
+    if not google_client_id:
+        raise HTTPException(status_code=500, detail="GOOGLE_CLIENT_ID no configurado")
+
+    # Verificar el token con Google
+    try:
+        idinfo = google_id_token.verify_oauth2_token(
+            data.id_token,
+            google_requests.Request(),
+            google_client_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=f"Token de Google inválido: {e}")
+
+    email = (idinfo.get("email") or "").lower().strip()
+    if not email or not idinfo.get("email_verified"):
+        raise HTTPException(status_code=401, detail="Email de Google no verificado")
+
+    name = idinfo.get("name") or email.split("@")[0]
+    picture = idinfo.get("picture")
+
+    # Buscar usuario existente por email
+    user = await db.users.find_one({"email": email})
+    if user:
+        # Si existía con email/password, marcar también como google (linked)
+        if user.get("auth_type") != "google":
+            await db.users.update_one(
+                {"user_id": user["user_id"]},
+                {"$set": {"google_linked": True, "picture": picture or user.get("picture")}}
+            )
+    else:
+        # Crear usuario nuevo
+        user_id = f"user_{uuid.uuid4().hex[:12]}"
+        user = {
+            "user_id": user_id,
+            "email": email,
+            "name": name,
+            "picture": picture,
+            "auth_type": "google",
+            "created_at": datetime.now(timezone.utc),
+        }
+        await db.users.insert_one(user)
+        logger.info(f"New Google user created: {user_id}")
+
+    # Crear sesión
+    session_token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(days=90)
+    await db.user_sessions.delete_many({"user_id": user["user_id"]})
+    await db.user_sessions.insert_one({
+        "user_id": user["user_id"],
+        "session_token": session_token,
+        "expires_at": expires_at,
+        "created_at": datetime.now(timezone.utc),
+    })
+
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True, secure=True, samesite="none",
+        path="/", max_age=90 * 24 * 60 * 60
+    )
+
+    return {
+        "user_id": user["user_id"],
+        "email": user["email"],
+        "name": user["name"],
+        "phone": user.get("phone"),
+        "picture": user.get("picture") or picture,
+        "session_token": session_token,
+    }
+
 class ResetPasswordRequest(BaseModel):
     email: str
     code: str

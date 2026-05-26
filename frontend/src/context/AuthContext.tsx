@@ -20,6 +20,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: () => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   register: (email: string, password: string, name: string, phone?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   updateProfile: (data: { name?: string; phone?: string }) => Promise<{ success: boolean; error?: string }>;
@@ -265,6 +266,67 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const loginWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
+    try {
+      // Lazy-require para evitar errores en web/Expo Go
+      const { GoogleSignin, statusCodes } = require('@react-native-google-signin/google-signin');
+
+      GoogleSignin.configure({
+        webClientId: '804061220370-kv76t65r6nc8c85a2rhhtu5kin7097s8.apps.googleusercontent.com',
+        offlineAccess: false,
+      });
+
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      const result = await GoogleSignin.signIn();
+      // SDK v16 devuelve { type: 'success', data: { idToken, user } } o { type: 'cancelled' }
+      if (result?.type === 'cancelled') {
+        return { success: false, error: 'Cancelado' };
+      }
+      const idToken = result?.data?.idToken || result?.idToken;
+      if (!idToken) {
+        return { success: false, error: 'No se obtuvo el ID token de Google' };
+      }
+
+      const response = await fetch(`${BACKEND_URL}/api/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_token: idToken }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return { success: false, error: data.detail || 'Error verificando Google' };
+      }
+
+      setUser({
+        user_id: data.user_id,
+        email: data.email,
+        name: data.name,
+        phone: data.phone,
+        picture: data.picture,
+        auth_type: 'google',
+      });
+      setSessionToken(data.session_token);
+
+      await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
+        user: {
+          user_id: data.user_id,
+          email: data.email,
+          name: data.name,
+          phone: data.phone,
+          picture: data.picture,
+          auth_type: 'google',
+        },
+        sessionToken: data.session_token,
+      }));
+
+      return { success: true };
+    } catch (error: any) {
+      const msg = error?.message || String(error);
+      console.error('[GOOGLE LOGIN] Error:', msg);
+      return { success: false, error: msg };
+    }
+  };
+
   const register = async (email: string, password: string, name: string, phone?: string): Promise<{ success: boolean; error?: string }> => {
     const url = `${BACKEND_URL}/api/auth/register`;
     
@@ -461,6 +523,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isAuthenticated: !!user,
         login,
         loginWithEmail,
+        loginWithGoogle,
         register,
         logout,
         updateProfile,

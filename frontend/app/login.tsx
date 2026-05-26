@@ -21,7 +21,7 @@ import { useRouter } from 'expo-router';
 type AuthMode = 'login' | 'register' | 'forgot' | 'reset';
 
 export default function LoginScreen() {
-  const { login, loginWithEmail, register, isLoading, forgotPassword, resetPassword } = useAuth();
+  const { login, loginWithEmail, loginWithGoogle, register, isLoading, forgotPassword, resetPassword } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
   
@@ -315,6 +315,33 @@ export default function LoginScreen() {
               </TouchableOpacity>
             )}
 
+            {/* Divisor */}
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>o</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Botón Google */}
+            <TouchableOpacity
+              style={[styles.googleButton, loading && styles.buttonDisabled]}
+              onPress={async () => {
+                setLoading(true);
+                const r = await loginWithGoogle();
+                setLoading(false);
+                if (r.success) {
+                  router.replace('/');
+                } else if (r.error && r.error !== 'Cancelado') {
+                  Alert.alert('Google', r.error);
+                }
+              }}
+              disabled={loading}
+              data-testid="google-signin-btn"
+            >
+              <Ionicons name="logo-google" size={20} color="#1E3A5F" />
+              <Text style={styles.googleButtonText}>Continuar con Google</Text>
+            </TouchableOpacity>
+
           </View>
           </>
           )}
@@ -592,6 +619,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
     backgroundColor: '#FFF',
     paddingVertical: 12,
     borderRadius: 10,
@@ -625,4 +653,9 @@ const styles = StyleSheet.create({
     color: '#2196F3',
     fontSize: 14,
   },
+  dividerRow: {
+    flexDirection: 'row', alignItems: 'center', marginTop: 18, marginBottom: 12,
+  },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#E0E0E0' },
+  dividerText: { marginHorizontal: 10, color: '#999', fontSize: 12 },
 });
