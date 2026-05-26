@@ -782,7 +782,7 @@ const styles = StyleSheet.create({
     position: 'absolute', top: 12, flexDirection: 'row', gap: 10, zIndex: 10,
   },
   sideToggleBox: {
-    width: 75, height: 75, borderRadius: 12,
+    width: 52, height: 52, borderRadius: 10,
     borderWidth: 3,
     alignItems: 'center', justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.06)',
@@ -793,7 +793,7 @@ const styles = StyleSheet.create({
   sideToggleBoxRActive: { backgroundColor: '#4CAF50', borderColor: '#4CAF50' },
   // Bloqueado: el árbitro NO puede cambiar el lado en mitad de un saque
   sideToggleBoxLocked: { opacity: 0.45 },
-  sideToggleText: { color: '#FFF', fontSize: 36, fontWeight: '900' },
+  sideToggleText: { color: '#FFF', fontSize: 25, fontWeight: '900' },
   sideToggleTextDim: { color: 'rgba(255,255,255,0.65)' },
 
   // Evolución del partido
