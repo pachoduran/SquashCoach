@@ -8,13 +8,9 @@ import {
   StyleSheet,
   ScrollView,
   Linking,
-  ActivityIndicator,
   Dimensions,
-  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Video, ResizeMode } from 'expo-av';
-import { WebView } from 'react-native-webview';
 
 const BACKEND_URL = 'https://squash-coach-api-804061220370.us-central1.run.app';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -40,7 +36,7 @@ function detectMediaType(url?: string, explicit?: string): 'image' | 'video' | '
   if (u.includes('youtube.com') || u.includes('youtu.be')) return 'youtube';
   if (u.match(/\.(mp4|mov|webm|m4v)(\?.*)?$/)) return 'video';
   if (u.match(/\.(png|jpg|jpeg|gif|webp|bmp)(\?.*)?$/)) return 'image';
-  return 'image'; // fallback
+  return 'image';
 }
 
 function getYouTubeEmbedUrl(url: string): string {
@@ -49,20 +45,69 @@ function getYouTubeEmbedUrl(url: string): string {
   return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
 }
 
+// Carga perezosa de modulos pesados — evita crash al iniciar si el modulo nativo falla
+const LazyVideo: React.FC<{ uri: string; style: any }> = ({ uri, style }) => {
+  try {
+    const ExpoAv = require('expo-av');
+    const VideoCmp = ExpoAv.Video;
+    const RM = ExpoAv.ResizeMode || { CONTAIN: 'contain' };
+    return (
+      <VideoCmp
+        source={{ uri }}
+        style={style}
+        useNativeControls
+        resizeMode={RM.CONTAIN}
+        shouldPlay={false}
+      />
+    );
+  } catch (_e) {
+    return (
+      <View style={[style, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }]}>
+        <Text style={{ color: '#fff' }}>Video no disponible</Text>
+      </View>
+    );
+  }
+};
+
+const LazyYouTube: React.FC<{ url: string; style: any }> = ({ url, style }) => {
+  try {
+    const { WebView } = require('react-native-webview');
+    return (
+      <View style={style}>
+        <WebView
+          source={{ uri: getYouTubeEmbedUrl(url) }}
+          style={{ flex: 1, backgroundColor: '#000' }}
+          allowsFullscreenVideo
+          javaScriptEnabled
+          domStorageEnabled
+        />
+      </View>
+    );
+  } catch (_e) {
+    return (
+      <View style={[style, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }]}>
+        <Text style={{ color: '#fff' }}>YouTube no disponible</Text>
+      </View>
+    );
+  }
+};
+
 export const BannerModal: React.FC = () => {
   const [banner, setBanner] = useState<Banner | null>(null);
   const [visible, setVisible] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    const fetchBanner = async () => {
       try {
-        const res = await fetch(`${BACKEND_URL}/api/banners/active`);
-        if (!res.ok) {
-          if (!cancelled) setLoading(false);
-          return;
-        }
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch(`${BACKEND_URL}/api/banners/active`, {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        if (cancelled) return;
+        if (!res.ok) return;
         const data = await res.json();
         if (cancelled) return;
         if (data && (data.title || data.body || data.media_url)) {
@@ -70,13 +115,14 @@ export const BannerModal: React.FC = () => {
           setVisible(true);
         }
       } catch (_e) {
-        // silently ignore network errors
-      } finally {
-        if (!cancelled) setLoading(false);
+        // silently ignore - no banner shown si falla
       }
-    })();
+    };
+    // Pequeno delay para no bloquear el cold start
+    const t = setTimeout(fetchBanner, 800);
     return () => {
       cancelled = true;
+      clearTimeout(t);
     };
   }, []);
 
@@ -90,7 +136,7 @@ export const BannerModal: React.FC = () => {
     }
   };
 
-  if (loading || !visible || !banner) return null;
+  if (!visible || !banner) return null;
 
   const mediaType = detectMediaType(banner.media_url, banner.media_type);
   const mediaUrl = banner.media_url || '';
@@ -127,25 +173,11 @@ export const BannerModal: React.FC = () => {
             ) : null}
 
             {mediaType === 'video' && mediaUrl ? (
-              <Video
-                source={{ uri: mediaUrl }}
-                style={styles.media}
-                useNativeControls
-                resizeMode={ResizeMode.CONTAIN}
-                shouldPlay={false}
-              />
+              <LazyVideo uri={mediaUrl} style={styles.media} />
             ) : null}
 
             {mediaType === 'youtube' && mediaUrl ? (
-              <View style={styles.media}>
-                <WebView
-                  source={{ uri: getYouTubeEmbedUrl(mediaUrl) }}
-                  style={{ flex: 1, backgroundColor: '#000' }}
-                  allowsFullscreenVideo
-                  javaScriptEnabled
-                  domStorageEnabled
-                />
-              </View>
+              <LazyYouTube url={mediaUrl} style={styles.media} />
             ) : null}
 
             <View style={styles.textBlock}>

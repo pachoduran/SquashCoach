@@ -1984,3 +1984,27 @@ async def download_infra_backup():
     import os
     file_path = "/app/memory/INFRA_BACKUP.md"
     return FileResponse(file_path, media_type="text/markdown", filename="SquashCoach_INFRA_BACKUP.md")
+
+@app.get("/api/download-banner-modal")
+async def download_banner_modal():
+    return FileResponse("/app/frontend/src/components/BannerModal.tsx", media_type="text/plain", filename="BannerModal.tsx")
+
+@app.get("/api/download-admin-banners")
+async def download_admin_banners():
+    return FileResponse("/app/frontend/app/admin-banners.tsx", media_type="text/plain", filename="admin-banners.tsx")
+
+@app.get("/api/download-layout")
+async def download_layout():
+    return FileResponse("/app/frontend/app/_layout.tsx", media_type="text/plain", filename="_layout.tsx")
+
+@app.get("/api/download-login")
+async def download_login():
+    return FileResponse("/app/frontend/app/login.tsx", media_type="text/plain", filename="login.tsx")
+
+@app.get("/api/download-settings")
+async def download_settings():
+    return FileResponse("/app/frontend/app/settings.tsx", media_type="text/plain", filename="settings.tsx")
+
+@app.get("/api/download-app-json")
+async def download_app_json():
+    return FileResponse("/app/frontend/app.json", media_type="application/json", filename="app.json")
