@@ -2008,3 +2008,7 @@ async def download_settings():
 @app.get("/api/download-app-json")
 async def download_app_json():
     return FileResponse("/app/frontend/app.json", media_type="application/json", filename="app.json")
+
+@app.get("/api/download-eas-json")
+async def download_eas_json():
+    return FileResponse("/app/frontend/eas.json", media_type="application/json", filename="eas.json")
