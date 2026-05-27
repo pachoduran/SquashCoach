@@ -1,5 +1,5 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, UploadFile, File
+from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -1798,6 +1798,103 @@ async def delete_banner(
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Banner no encontrado")
     return {"deleted": True, "banner_id": banner_id}
+
+# =============================================================================
+# FILE UPLOADS (GridFS) - usado por banners y otros features futuros
+# =============================================================================
+
+# Limite tamaño archivo en MB (Cloud Run request limit es 32 MB; M0 Atlas total 512 MB)
+MAX_UPLOAD_MB = 10
+ALLOWED_MIME_PREFIXES = ("image/", "video/")
+
+@api_router.post("/banners/upload")
+async def upload_banner_file(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+):
+    """ADMIN. Sube una imagen o video y devuelve la URL publica para usarla en un banner."""
+    _require_admin(current_user)
+
+    content_type = (file.content_type or "").lower()
+    if not any(content_type.startswith(p) for p in ALLOWED_MIME_PREFIXES):
+        raise HTTPException(status_code=400, detail=f"Tipo de archivo no permitido: {content_type}")
+
+    # Lectura del archivo con control de tamano
+    contents = await file.read()
+    size_mb = len(contents) / (1024 * 1024)
+    if size_mb > MAX_UPLOAD_MB:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Archivo muy grande ({size_mb:.1f} MB). Limite: {MAX_UPLOAD_MB} MB",
+        )
+
+    # GridFS via motor - usar el primary db real (no el wrapper de replicacion)
+    from motor.motor_asyncio import AsyncIOMotorGridFSBucket
+    primary_db = getattr(db, '_primary', db)
+    bucket = AsyncIOMotorGridFSBucket(primary_db, bucket_name="banner_files")
+    file_id = await bucket.upload_from_stream(
+        file.filename or "upload",
+        contents,
+        metadata={
+            "content_type": content_type,
+            "uploaded_by": current_user.user_id,
+            "uploaded_at": datetime.now(timezone.utc),
+        },
+    )
+
+    # Detectar media_type segun content-type
+    if content_type.startswith("image/"):
+        media_type = "image"
+    elif content_type.startswith("video/"):
+        media_type = "video"
+    else:
+        media_type = "none"
+
+    file_id_str = str(file_id)
+    return {
+        "file_id": file_id_str,
+        "url": f"/api/files/{file_id_str}",
+        "content_type": content_type,
+        "media_type": media_type,
+        "size_bytes": len(contents),
+    }
+
+@api_router.get("/files/{file_id}")
+async def serve_file(file_id: str):
+    """PUBLIC. Sirve un archivo de GridFS por su id."""
+    from motor.motor_asyncio import AsyncIOMotorGridFSBucket
+    from bson import ObjectId
+    from bson.errors import InvalidId
+
+    try:
+        oid = ObjectId(file_id)
+    except (InvalidId, TypeError):
+        raise HTTPException(status_code=404, detail="ID invalido")
+
+    bucket = AsyncIOMotorGridFSBucket(getattr(db, '_primary', db), bucket_name="banner_files")
+    try:
+        stream = await bucket.open_download_stream(oid)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Archivo no encontrado")
+
+    metadata = stream.metadata or {}
+    content_type = metadata.get("content_type") or "application/octet-stream"
+
+    async def iterfile():
+        while True:
+            chunk = await stream.readchunk()
+            if not chunk:
+                break
+            yield chunk
+
+    return StreamingResponse(
+        iterfile(),
+        media_type=content_type,
+        headers={
+            "Cache-Control": "public, max-age=31536000, immutable",
+            "Content-Length": str(stream.length),
+        },
+    )
 
 # =============================================================================
 # BASIC ENDPOINTS

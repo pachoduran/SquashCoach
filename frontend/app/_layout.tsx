@@ -7,6 +7,7 @@ import { LanguageProvider } from '@/src/context/LanguageContext';
 import { SyncProvider } from '@/src/context/SyncContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
+import { BannerModal } from '@/src/components/BannerModal';
 
 // Prevent auto-hide of splash screen
 SplashScreen.preventAutoHideAsync();
@@ -54,6 +55,7 @@ export default function RootLayout() {
         <AuthProvider>
           <SyncProvider>
             <GestureHandlerRootView style={styles.container}>
+              <BannerModal />
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="index" />
                 <Stack.Screen name="login" />

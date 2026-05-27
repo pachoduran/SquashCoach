@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/src/context/AuthContext';
+import * as ImagePicker from 'expo-image-picker';
 
 const BACKEND_URL = 'https://squash-coach-api-804061220370.us-central1.run.app';
 const ADMIN_EMAILS = ['franciscoduransaa@gmail.com'];
@@ -53,6 +54,7 @@ export default function AdminBannersScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
 
@@ -145,6 +147,90 @@ export default function AdminBannersScreen() {
       Alert.alert('Error', e?.message || 'Error de red');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const pickAndUpload = async (kind: 'camera' | 'gallery_image' | 'gallery_video') => {
+    if (!sessionToken) return;
+    try {
+      // Permisos
+      if (kind === 'camera') {
+        const perm = await ImagePicker.requestCameraPermissionsAsync();
+        if (!perm.granted) {
+          Alert.alert('Permiso requerido', 'Necesitamos acceso a la cámara.');
+          return;
+        }
+      } else {
+        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!perm.granted) {
+          Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería.');
+          return;
+        }
+      }
+
+      // Picker
+      let result: ImagePicker.ImagePickerResult;
+      if (kind === 'camera') {
+        result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: false,
+          quality: 0.7,
+        });
+      } else if (kind === 'gallery_image') {
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: false,
+          quality: 0.7,
+        });
+      } else {
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+          allowsEditing: false,
+          videoMaxDuration: 60,
+        });
+      }
+
+      if (result.canceled || !result.assets || result.assets.length === 0) return;
+
+      const asset = result.assets[0];
+      const isVideo = asset.type === 'video' || kind === 'gallery_video';
+      const fileUri = asset.uri;
+      const filename = fileUri.split('/').pop() || (isVideo ? 'video.mp4' : 'image.jpg');
+      const ext = (filename.split('.').pop() || '').toLowerCase();
+      const mimeMap: Record<string, string> = {
+        jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp',
+        mp4: 'video/mp4', mov: 'video/quicktime', m4v: 'video/x-m4v', webm: 'video/webm',
+      };
+      const mime = mimeMap[ext] || (isVideo ? 'video/mp4' : 'image/jpeg');
+
+      setUploading(true);
+      const formData = new FormData();
+      // @ts-ignore React Native FormData admite el shape {uri,name,type}
+      formData.append('file', { uri: fileUri, name: filename, type: mime });
+
+      const res = await fetch(`${BACKEND_URL}/api/banners/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${sessionToken}` },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        Alert.alert('Error al subir', txt || `HTTP ${res.status}`);
+        return;
+      }
+      const data = await res.json();
+      const fullUrl = `${BACKEND_URL}${data.url}`;
+      setForm((f) => ({
+        ...f,
+        media_url: fullUrl,
+        media_type: (data.media_type as MediaType) || 'auto',
+      }));
+      Alert.alert('Listo', `Archivo subido (${(data.size_bytes / 1024).toFixed(0)} KB).`);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'No se pudo subir el archivo');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -252,17 +338,52 @@ export default function AdminBannersScreen() {
           />
 
           <Text style={styles.label}>URL de imagen o video (opcional)</Text>
+          <View style={styles.uploadRow}>
+            <TouchableOpacity
+              style={[styles.uploadBtn, uploading && styles.uploadBtnDisabled]}
+              onPress={() => pickAndUpload('camera')}
+              disabled={uploading}
+              data-testid="banner-upload-camera"
+            >
+              <Ionicons name="camera" size={18} color="#fff" />
+              <Text style={styles.uploadBtnText}>Cámara</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.uploadBtn, uploading && styles.uploadBtnDisabled]}
+              onPress={() => pickAndUpload('gallery_image')}
+              disabled={uploading}
+              data-testid="banner-upload-image"
+            >
+              <Ionicons name="image" size={18} color="#fff" />
+              <Text style={styles.uploadBtnText}>Imagen</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.uploadBtn, uploading && styles.uploadBtnDisabled]}
+              onPress={() => pickAndUpload('gallery_video')}
+              disabled={uploading}
+              data-testid="banner-upload-video"
+            >
+              <Ionicons name="videocam" size={18} color="#fff" />
+              <Text style={styles.uploadBtnText}>Video</Text>
+            </TouchableOpacity>
+          </View>
+          {uploading ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
+              <ActivityIndicator size="small" />
+              <Text style={styles.helper}>Subiendo archivo al servidor...</Text>
+            </View>
+          ) : null}
           <TextInput
             style={styles.input}
             value={form.media_url}
             onChangeText={(v) => setForm({ ...form, media_url: v })}
-            placeholder="https://... (.jpg, .png, .mp4 o YouTube)"
+            placeholder="O pega aquí una URL: https://... o YouTube"
             autoCapitalize="none"
             keyboardType="url"
             data-testid="banner-form-media-url"
           />
           <Text style={styles.helper}>
-            Soporta: imágenes (jpg/png/gif/webp), videos (mp4/mov) y enlaces de YouTube.
+            Sube desde tu celular (hasta 10 MB) o pega una URL externa (imagen, mp4 o YouTube).
           </Text>
 
           <Text style={styles.label}>Tipo de medio</Text>
@@ -439,6 +560,19 @@ const styles = StyleSheet.create({
     borderColor: '#E0E0E0',
   },
   textarea: { minHeight: 80, textAlignVertical: 'top' },
+  uploadRow: { flexDirection: 'row', gap: 6, marginBottom: 8 },
+  uploadBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#1E3A5F',
+  },
+  uploadBtnDisabled: { opacity: 0.5 },
+  uploadBtnText: { color: '#fff', fontSize: 12, fontWeight: '600' },
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
   chip: {
     paddingHorizontal: 12,
