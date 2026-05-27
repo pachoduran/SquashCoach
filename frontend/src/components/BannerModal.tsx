@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 const BACKEND_URL = 'https://squash-coach-api-804061220370.us-central1.run.app';
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface Banner {
   banner_id: string;
@@ -211,7 +211,9 @@ export const BannerModal: React.FC = () => {
   );
 };
 
-const CARD_WIDTH = Math.min(SCREEN_WIDTH - 32, 480);
+const CARD_WIDTH = SCREEN_WIDTH * 0.8;
+const CARD_HEIGHT = SCREEN_HEIGHT * 0.8;
+const MEDIA_HEIGHT = CARD_HEIGHT * 0.55;
 
 const styles = StyleSheet.create({
   overlay: {
@@ -219,11 +221,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 16,
   },
   card: {
     width: CARD_WIDTH,
-    maxHeight: '85%',
+    height: CARD_HEIGHT,
     backgroundColor: '#FFF',
     borderRadius: 16,
     overflow: 'hidden',
@@ -239,7 +240,7 @@ const styles = StyleSheet.create({
   },
   media: {
     width: '100%',
-    height: 220,
+    height: MEDIA_HEIGHT,
     backgroundColor: '#000',
   },
   closeBtn: {
