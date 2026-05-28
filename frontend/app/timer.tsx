@@ -9,6 +9,7 @@ import {
   Vibration,
   Platform,
   StatusBar,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -73,20 +74,31 @@ function fmt(s: number): string {
   return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
 }
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+// "00:00" = 5 chars. En monospace cada char ~0.55 de fontSize.
+// Queremos que el texto ocupe ~85% del ancho.
+const BIG_TIME_FONT = Math.floor((SCREEN_WIDTH * 0.85) / (5 * 0.55));
+
 function vibrateBeep() {
-  if (Platform.OS === 'android') {
-    Vibration.vibrate(80);
-  } else {
-    Vibration.vibrate();
-  }
+  // Pito fuerte de 1 segundo (perceptible como un pitazo)
+  try {
+    if (Platform.OS === 'android') {
+      Vibration.vibrate(300);
+    } else {
+      Vibration.vibrate();
+    }
+  } catch (_e) {}
 }
 
 function vibrateLong() {
-  if (Platform.OS === 'android') {
-    Vibration.vibrate([0, 200, 100, 200]);
-  } else {
-    Vibration.vibrate();
-  }
+  // Cambio de fase: vibracion doble fuerte
+  try {
+    if (Platform.OS === 'android') {
+      Vibration.vibrate([0, 500, 150, 500]);
+    } else {
+      Vibration.vibrate();
+    }
+  } catch (_e) {}
 }
 
 // Sonidos opcionales — si falla, queda solo la vibracion
@@ -97,42 +109,24 @@ async function loadSounds() {
   try {
     // @ts-ignore
     const ExpoAv = require('expo-av');
-    if (!ExpoAv || !ExpoAv.Audio || !ExpoAv.Audio.Sound) return;
-    if (!_soundShort) {
-      const tone = await ExpoAv.Audio.Sound.createAsync(
-        { uri: 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg' },
-        { volume: 1.0 }
-      );
-      _soundShort = tone.sound;
-    }
-    if (!_soundLong) {
-      const longTone = await ExpoAv.Audio.Sound.createAsync(
-        { uri: 'https://actions.google.com/sounds/v1/alarms/medium_bell_ringing_near.ogg' },
-        { volume: 1.0 }
-      );
-      _soundLong = longTone.sound;
-    }
-  } catch (_e) {
-    // ignore
-  }
+    if (!ExpoAv || !ExpoAv.Audio) return;
+    // Configurar audio para que suene fuerte incluso en modo silencioso (iOS)
+    try {
+      await ExpoAv.Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: false,
+      });
+    } catch (_e) {}
+  } catch (_e) {}
 }
 
-async function playShort() {
+function playShort() {
   vibrateBeep();
-  try {
-    if (_soundShort) await _soundShort.replayAsync();
-  } catch (_e) {
-    // ignore
-  }
 }
 
-async function playLong() {
+function playLong() {
   vibrateLong();
-  try {
-    if (_soundLong) await _soundLong.replayAsync();
-  } catch (_e) {
-    // ignore
-  }
 }
 
 export default function TimerScreen() {
@@ -440,7 +434,13 @@ export default function TimerScreen() {
             {phaseLabel()}
           </Text>
 
-          <Text style={styles.bigTime} data-testid="timer-time">
+          <Text
+            style={styles.bigTime}
+            data-testid="timer-time"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.5}
+          >
             {fmt(remaining)}
           </Text>
 
@@ -647,10 +647,13 @@ const styles = StyleSheet.create({
   },
   bigTime: {
     color: '#FFF',
-    fontSize: 140,
+    fontSize: BIG_TIME_FONT,
     fontWeight: '900',
-    letterSpacing: 4,
+    letterSpacing: 2,
     fontVariant: ['tabular-nums'],
+    width: SCREEN_WIDTH * 0.85,
+    textAlign: 'center',
+    lineHeight: BIG_TIME_FONT * 1.05,
   },
   metaRow: {
     flexDirection: 'row',
