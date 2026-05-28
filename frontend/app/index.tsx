@@ -312,6 +312,17 @@ export default function Index() {
               </View>
               <Text style={styles.featureBtnText}>{t('home.referee')}</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.mainFeatureBtn}
+              onPress={() => router.push('/timer' as any)}
+              data-testid="timer-btn"
+            >
+              <View style={[styles.featureIcon, { backgroundColor: '#FF9800' }]}>
+                <Ionicons name="timer-outline" size={28} color="#FFF" />
+              </View>
+              <Text style={styles.featureBtnText}>Cronómetro</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <TouchableOpacity

@@ -2012,3 +2012,15 @@ async def download_app_json():
 @app.get("/api/download-eas-json")
 async def download_eas_json():
     return FileResponse("/app/frontend/eas.json", media_type="application/json", filename="eas.json")
+
+@app.get("/api/download-timer")
+async def download_timer():
+    return FileResponse("/app/frontend/app/timer.tsx", media_type="text/plain", filename="timer.tsx")
+
+@app.get("/api/download-index")
+async def download_index():
+    return FileResponse("/app/frontend/app/index.tsx", media_type="text/plain", filename="index.tsx")
+
+@app.get("/api/download-package-json")
+async def download_package_json():
+    return FileResponse("/app/frontend/package.json", media_type="application/json", filename="package.json")
