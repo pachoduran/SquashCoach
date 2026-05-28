@@ -61,7 +61,7 @@ const STORAGE_KEY = 'squashcoach_timer_config_v1';
 
 const COLORS = {
   work: '#2E7D32',       // verde
-  rest: '#1976D2',       // azul
+  rest: '#C62828',       // rojo (descanso)
   prep: '#F57C00',       // naranja (ultimos segundos)
   cycleRest: '#6A1B9A',  // morado
   done: '#37474F',       // gris
@@ -101,16 +101,17 @@ function vibrateLong() {
   } catch (_e) {}
 }
 
-// Sonidos opcionales — si falla, queda solo la vibracion
+// Sonidos: assets locales del proyecto
 let _soundShort: any = null;
 let _soundLong: any = null;
+let _soundsLoaded = false;
 
 async function loadSounds() {
+  if (_soundsLoaded) return;
   try {
     // @ts-ignore
     const ExpoAv = require('expo-av');
     if (!ExpoAv || !ExpoAv.Audio) return;
-    // Configurar audio para que suene fuerte incluso en modo silencioso (iOS)
     try {
       await ExpoAv.Audio.setAudioModeAsync({
         playsInSilentModeIOS: true,
@@ -118,15 +119,44 @@ async function loadSounds() {
         shouldDuckAndroid: false,
       });
     } catch (_e) {}
+    try {
+      const s1 = await ExpoAv.Audio.Sound.createAsync(
+        require('../assets/sounds/beep.wav'),
+        { volume: 1.0, shouldPlay: false }
+      );
+      _soundShort = s1.sound;
+    } catch (_e) {}
+    try {
+      const s2 = await ExpoAv.Audio.Sound.createAsync(
+        require('../assets/sounds/beep_long.wav'),
+        { volume: 1.0, shouldPlay: false }
+      );
+      _soundLong = s2.sound;
+    } catch (_e) {}
+    _soundsLoaded = true;
+  } catch (_e) {}
+}
+
+async function unloadSounds() {
+  try {
+    if (_soundShort) { await _soundShort.unloadAsync(); _soundShort = null; }
+    if (_soundLong) { await _soundLong.unloadAsync(); _soundLong = null; }
+    _soundsLoaded = false;
   } catch (_e) {}
 }
 
 function playShort() {
   vibrateBeep();
+  if (_soundShort) {
+    _soundShort.replayAsync().catch(() => {});
+  }
 }
 
 function playLong() {
   vibrateLong();
+  if (_soundLong) {
+    _soundLong.replayAsync().catch(() => {});
+  }
 }
 
 export default function TimerScreen() {
@@ -160,6 +190,7 @@ export default function TimerScreen() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       keepAwakeOff();
+      unloadSounds();
     };
   }, []);
 
@@ -659,13 +690,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 24,
+    gap: 36,
     marginBottom: 6,
   },
   metaItem: { alignItems: 'center' },
-  metaLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '700', letterSpacing: 1.5 },
-  metaValue: { color: '#FFF', fontSize: 36, fontWeight: '800', marginTop: 4 },
-  metaSep: { width: 1, height: 50, backgroundColor: 'rgba(255,255,255,0.4)' },
+  metaLabel: { color: 'rgba(255,255,255,0.85)', fontSize: 22, fontWeight: '700', letterSpacing: 2 },
+  metaValue: { color: '#FFF', fontSize: 64, fontWeight: '900', marginTop: 6 },
+  metaSep: { width: 2, height: 80, backgroundColor: 'rgba(255,255,255,0.4)' },
   controlsRow: {
     flexDirection: 'row',
     alignItems: 'center',

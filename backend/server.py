@@ -2024,3 +2024,11 @@ async def download_index():
 @app.get("/api/download-package-json")
 async def download_package_json():
     return FileResponse("/app/frontend/package.json", media_type="application/json", filename="package.json")
+
+@app.get("/api/download-beep")
+async def download_beep():
+    return FileResponse("/app/frontend/assets/sounds/beep.wav", media_type="audio/wav", filename="beep.wav")
+
+@app.get("/api/download-beep-long")
+async def download_beep_long():
+    return FileResponse("/app/frontend/assets/sounds/beep_long.wav", media_type="audio/wav", filename="beep_long.wav")
