@@ -13,8 +13,30 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Lazy load para evitar crash si el modulo nativo no esta disponible
+async function keepAwakeOn() {
+  try {
+    const m = require('expo-keep-awake');
+    if (m && typeof m.activateKeepAwakeAsync === 'function') {
+      await m.activateKeepAwakeAsync();
+    }
+  } catch (_e) {
+    // silently ignore
+  }
+}
+
+function keepAwakeOff() {
+  try {
+    const m = require('expo-keep-awake');
+    if (m && typeof m.deactivateKeepAwake === 'function') {
+      m.deactivateKeepAwake();
+    }
+  } catch (_e) {
+    // silently ignore
+  }
+}
 
 type Phase = 'idle' | 'preparing' | 'work' | 'rest' | 'cycle_rest' | 'done';
 
@@ -143,7 +165,7 @@ export default function TimerScreen() {
     })();
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
-      deactivateKeepAwake();
+      keepAwakeOff();
     };
   }, []);
 
@@ -167,7 +189,7 @@ export default function TimerScreen() {
     if (config.workSec < 1 || config.rounds < 1 || config.cycles < 1) {
       return;
     }
-    await activateKeepAwakeAsync();
+    await keepAwakeOn();
     phaseRef.current = 'work';
     remainingRef.current = config.workSec;
     roundRef.current = 1;
@@ -261,7 +283,7 @@ export default function TimerScreen() {
     setRemaining(0);
     setRunning(false);
     playLong();
-    deactivateKeepAwake();
+    keepAwakeOff();
   };
 
   const pause = () => {
@@ -287,7 +309,7 @@ export default function TimerScreen() {
     setCurrentRound(1);
     setCurrentCycle(1);
     setRunning(false);
-    deactivateKeepAwake();
+    keepAwakeOff();
   };
 
   const phaseLabel = (): string => {
