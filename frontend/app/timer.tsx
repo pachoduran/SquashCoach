@@ -15,27 +15,25 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Lazy load para evitar crash si el modulo nativo no esta disponible
+// Funciones opcionales: si expo-keep-awake no esta disponible, no pasa nada.
 async function keepAwakeOn() {
   try {
+    // @ts-ignore
     const m = require('expo-keep-awake');
     if (m && typeof m.activateKeepAwakeAsync === 'function') {
       await m.activateKeepAwakeAsync();
     }
-  } catch (_e) {
-    // silently ignore
-  }
+  } catch (_e) {}
 }
 
 function keepAwakeOff() {
   try {
+    // @ts-ignore
     const m = require('expo-keep-awake');
     if (m && typeof m.deactivateKeepAwake === 'function') {
       m.deactivateKeepAwake();
     }
-  } catch (_e) {
-    // silently ignore
-  }
+  } catch (_e) {}
 }
 
 type Phase = 'idle' | 'preparing' | 'work' | 'rest' | 'cycle_rest' | 'done';
@@ -91,29 +89,31 @@ function vibrateLong() {
   }
 }
 
-// Sonidos opcionales: si expo-av falla, igual vibra.
+// Sonidos opcionales — si falla, queda solo la vibracion
 let _soundShort: any = null;
 let _soundLong: any = null;
 
 async function loadSounds() {
   try {
-    const { Audio } = require('expo-av');
+    // @ts-ignore
+    const ExpoAv = require('expo-av');
+    if (!ExpoAv || !ExpoAv.Audio || !ExpoAv.Audio.Sound) return;
     if (!_soundShort) {
-      const tone = await Audio.Sound.createAsync(
+      const tone = await ExpoAv.Audio.Sound.createAsync(
         { uri: 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg' },
         { volume: 1.0 }
       );
       _soundShort = tone.sound;
     }
     if (!_soundLong) {
-      const longTone = await Audio.Sound.createAsync(
+      const longTone = await ExpoAv.Audio.Sound.createAsync(
         { uri: 'https://actions.google.com/sounds/v1/alarms/medium_bell_ringing_near.ogg' },
         { volume: 1.0 }
       );
       _soundLong = longTone.sound;
     }
   } catch (_e) {
-    // silently ignore — funcionara solo vibracion
+    // ignore
   }
 }
 
