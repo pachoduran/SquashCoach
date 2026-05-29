@@ -323,6 +323,17 @@ export default function Index() {
               </View>
               <Text style={styles.featureBtnText}>Cronómetro</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.mainFeatureBtn}
+              onPress={() => router.push('/rhythm' as any)}
+              data-testid="rhythm-btn"
+            >
+              <View style={[styles.featureIcon, { backgroundColor: '#3F51B5' }]}>
+                <Ionicons name="musical-notes-outline" size={28} color="#FFF" />
+              </View>
+              <Text style={styles.featureBtnText}>Ritmo</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <TouchableOpacity

@@ -2032,3 +2032,14 @@ async def download_beep():
 @app.get("/api/download-beep-long")
 async def download_beep_long():
     return FileResponse("/app/frontend/assets/sounds/beep_long.wav", media_type="audio/wav", filename="beep_long.wav")
+
+@app.get("/api/download-rhythm")
+async def download_rhythm():
+    return FileResponse("/app/frontend/app/rhythm.tsx", media_type="text/plain", filename="rhythm.tsx")
+
+@app.get("/api/download-sound/{name}")
+async def download_sound(name: str):
+    allowed = {"tick", "accent", "kick", "snare", "hihat", "beep", "beep_long"}
+    if name not in allowed:
+        raise HTTPException(status_code=404, detail="Sound not found")
+    return FileResponse(f"/app/frontend/assets/sounds/{name}.wav", media_type="audio/wav", filename=f"{name}.wav")
