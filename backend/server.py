@@ -2043,3 +2043,9 @@ async def download_sound(name: str):
     if name not in allowed:
         raise HTTPException(status_code=404, detail="Sound not found")
     return FileResponse(f"/app/frontend/assets/sounds/{name}.wav", media_type="audio/wav", filename=f"{name}.wav")
+
+@app.get("/api/download-i18n/{lang}")
+async def download_i18n(lang: str):
+    if lang not in {"en", "es"}:
+        raise HTTPException(status_code=404, detail="Language not found")
+    return FileResponse(f"/app/frontend/src/i18n/{lang}.json", media_type="application/json", filename=f"{lang}.json")

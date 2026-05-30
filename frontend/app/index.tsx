@@ -321,7 +321,7 @@ export default function Index() {
               <View style={[styles.featureIcon, { backgroundColor: '#FF9800' }]}>
                 <Ionicons name="timer-outline" size={28} color="#FFF" />
               </View>
-              <Text style={styles.featureBtnText}>Cronómetro</Text>
+              <Text style={styles.featureBtnText}>{t('home.timer')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -332,7 +332,7 @@ export default function Index() {
               <View style={[styles.featureIcon, { backgroundColor: '#3F51B5' }]}>
                 <Ionicons name="musical-notes-outline" size={28} color="#FFF" />
               </View>
-              <Text style={styles.featureBtnText}>Ritmo</Text>
+              <Text style={styles.featureBtnText}>{t('home.rhythm')}</Text>
             </TouchableOpacity>
           </View>
         ) : (

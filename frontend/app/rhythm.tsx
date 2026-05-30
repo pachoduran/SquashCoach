@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '@/src/context/LanguageContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -111,7 +112,7 @@ function getPattern(mode: Mode, beatIndex: number): string[] {
 
 interface Preset {
   id: string;
-  name: string;
+  nameKey: string;
   bpmStart: number;
   bpmEnd?: number;   // si se define -> progresivo
   durationSec: number;
@@ -121,19 +122,19 @@ interface Preset {
 }
 
 const PRESETS: Preset[] = [
-  { id: 'warmup',     name: 'Calentamiento', bpmStart: 80,  durationSec: 120, mode: 'metronome', icon: 'walk',         color: '#43A047' },
-  { id: 'steady',     name: 'Constante',     bpmStart: 110, durationSec: 180, mode: 'drums',     icon: 'pulse',        color: '#1E88E5' },
-  { id: 'resistance', name: 'Resistencia',   bpmStart: 130, durationSec: 240, mode: 'drums',     icon: 'flame',        color: '#FB8C00' },
-  { id: 'sprint',     name: 'Sprint',        bpmStart: 170, durationSec: 60,  mode: 'drums',     icon: 'flash',        color: '#E53935' },
-  { id: 'pyramid',    name: 'Pirámide',      bpmStart: 90,  bpmEnd: 160,      durationSec: 240, mode: 'drums',         icon: 'trending-up',  color: '#8E24AA' },
-  { id: 'taper',      name: 'Descenso',      bpmStart: 160, bpmEnd: 80,       durationSec: 180, mode: 'drums',         icon: 'trending-down',color: '#00897B' },
+  { id: 'warmup',     nameKey: 'rhythm.presets.warmup',     bpmStart: 80,  durationSec: 120, mode: 'metronome', icon: 'walk',         color: '#43A047' },
+  { id: 'steady',     nameKey: 'rhythm.presets.steady',     bpmStart: 110, durationSec: 180, mode: 'drums',     icon: 'pulse',        color: '#1E88E5' },
+  { id: 'resistance', nameKey: 'rhythm.presets.resistance', bpmStart: 130, durationSec: 240, mode: 'drums',     icon: 'flame',        color: '#FB8C00' },
+  { id: 'sprint',     nameKey: 'rhythm.presets.sprint',     bpmStart: 170, durationSec: 60,  mode: 'drums',     icon: 'flash',        color: '#E53935' },
+  { id: 'pyramid',    nameKey: 'rhythm.presets.pyramid',    bpmStart: 90,  bpmEnd: 160,      durationSec: 240, mode: 'drums',         icon: 'trending-up',  color: '#8E24AA' },
+  { id: 'taper',      nameKey: 'rhythm.presets.taper',      bpmStart: 160, bpmEnd: 80,       durationSec: 180, mode: 'drums',         icon: 'trending-down',color: '#00897B' },
 ];
 
 const LEVELS = [
-  { name: 'Lento',     bpm: 80 },
-  { name: 'Medio',     bpm: 110 },
-  { name: 'Rápido',    bpm: 140 },
-  { name: 'Muy rápido',bpm: 170 },
+  { nameKey: 'rhythm.levels.slow',     bpm: 80 },
+  { nameKey: 'rhythm.levels.medium',   bpm: 110 },
+  { nameKey: 'rhythm.levels.fast',     bpm: 140 },
+  { nameKey: 'rhythm.levels.veryFast', bpm: 170 },
 ];
 
 const DURATIONS = [30, 60, 90, 120, 150, 180, 210, 240]; // segundos
@@ -146,6 +147,7 @@ const STORAGE_KEY = 'squashcoach_rhythm_config_v1';
 
 export default function RhythmScreen() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [mode, setMode] = useState<Mode>('drums');
   const [bpm, setBpm] = useState(120);
   const [bpmEnd, setBpmEnd] = useState<number | null>(null); // null => no progresivo
@@ -294,7 +296,7 @@ export default function RhythmScreen() {
         >
           <Ionicons name="chevron-back" size={28} color="#FFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Ritmo / BPM</Text>
+        <Text style={styles.headerTitle}>{t('rhythm.title')}</Text>
         <View style={{ width: 28 }} />
       </View>
 
@@ -335,14 +337,14 @@ export default function RhythmScreen() {
 
           <TouchableOpacity style={styles.stopBtn} onPress={stop} data-testid="rhythm-stop">
             <Ionicons name="stop" size={32} color="#FFF" />
-            <Text style={styles.stopBtnText}>DETENER</Text>
+            <Text style={styles.stopBtnText}>{t('rhythm.stop')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
         // ====================== PANTALLA DE CONFIG ======================
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {/* MODO */}
-          <Text style={styles.sectionTitle}>Tipo de sonido</Text>
+          <Text style={styles.sectionTitle}>{t('rhythm.soundType')}</Text>
           <View style={styles.row}>
             <TouchableOpacity
               style={[styles.modeBtn, mode === 'metronome' && styles.modeBtnActive]}
@@ -350,7 +352,7 @@ export default function RhythmScreen() {
               data-testid="rhythm-mode-metronome"
             >
               <Ionicons name="musical-note-outline" size={22} color={mode === 'metronome' ? '#1A237E' : '#FFF'} />
-              <Text style={[styles.modeBtnText, mode === 'metronome' && styles.modeBtnTextActive]}>Metrónomo</Text>
+              <Text style={[styles.modeBtnText, mode === 'metronome' && styles.modeBtnTextActive]}>{t('rhythm.metronome')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.modeBtn, mode === 'drums' && styles.modeBtnActive]}
@@ -358,12 +360,12 @@ export default function RhythmScreen() {
               data-testid="rhythm-mode-drums"
             >
               <Ionicons name="musical-notes" size={22} color={mode === 'drums' ? '#1A237E' : '#FFF'} />
-              <Text style={[styles.modeBtnText, mode === 'drums' && styles.modeBtnTextActive]}>Beat</Text>
+              <Text style={[styles.modeBtnText, mode === 'drums' && styles.modeBtnTextActive]}>{t('rhythm.beat')}</Text>
             </TouchableOpacity>
           </View>
 
           {/* BPM */}
-          <Text style={styles.sectionTitle}>Velocidad (BPM)</Text>
+          <Text style={styles.sectionTitle}>{t('rhythm.speed')}</Text>
           <View style={styles.bpmCard}>
             <View style={styles.bpmRow}>
               <TouchableOpacity
@@ -386,12 +388,12 @@ export default function RhythmScreen() {
             <View style={styles.levelsRow}>
               {LEVELS.map((lvl) => (
                 <TouchableOpacity
-                  key={lvl.name}
+                  key={lvl.nameKey}
                   style={[styles.levelChip, bpm === lvl.bpm && styles.levelChipActive]}
                   onPress={() => setLevel(lvl)}
                 >
                   <Text style={[styles.levelChipText, bpm === lvl.bpm && styles.levelChipTextActive]}>
-                    {lvl.name}
+                    {t(lvl.nameKey)}
                   </Text>
                   <Text style={[styles.levelChipBpm, bpm === lvl.bpm && styles.levelChipTextActive]}>
                     {lvl.bpm}
@@ -402,7 +404,7 @@ export default function RhythmScreen() {
 
             <View style={styles.progressiveBlock}>
               <View style={styles.progressiveHeader}>
-                <Text style={styles.label}>Progresivo (acelerar/desacelerar)</Text>
+                <Text style={styles.label}>{t('rhythm.progressive')}</Text>
                 <TouchableOpacity
                   style={[styles.toggle, bpmEnd !== null && styles.toggleActive]}
                   onPress={() => setBpmEnd(bpmEnd === null ? bpm + 30 : null)}
@@ -433,7 +435,7 @@ export default function RhythmScreen() {
           </View>
 
           {/* DURACION */}
-          <Text style={styles.sectionTitle}>Duración</Text>
+          <Text style={styles.sectionTitle}>{t('rhythm.duration')}</Text>
           <View style={styles.durationsWrap}>
             {DURATIONS.map((d) => (
               <TouchableOpacity
@@ -449,7 +451,7 @@ export default function RhythmScreen() {
           </View>
 
           {/* PRESETS */}
-          <Text style={styles.sectionTitle}>Programas</Text>
+          <Text style={styles.sectionTitle}>{t('rhythm.programs')}</Text>
           <View style={styles.presetsGrid}>
             {PRESETS.map((p) => (
               <TouchableOpacity
@@ -459,7 +461,7 @@ export default function RhythmScreen() {
                 data-testid={`rhythm-preset-${p.id}`}
               >
                 <Ionicons name={p.icon as any} size={26} color="#FFF" />
-                <Text style={styles.presetName}>{p.name}</Text>
+                <Text style={styles.presetName}>{t(p.nameKey)}</Text>
                 <Text style={styles.presetMeta}>
                   {p.bpmEnd ? `${p.bpmStart}→${p.bpmEnd}` : `${p.bpmStart}`} BPM
                 </Text>
@@ -471,7 +473,7 @@ export default function RhythmScreen() {
           {/* START */}
           <TouchableOpacity style={styles.startBtn} onPress={start} data-testid="rhythm-start">
             <Ionicons name="play" size={32} color="#1A237E" />
-            <Text style={styles.startBtnText}>INICIAR</Text>
+            <Text style={styles.startBtnText}>{t('rhythm.start')}</Text>
           </TouchableOpacity>
 
           <View style={{ height: 30 }} />

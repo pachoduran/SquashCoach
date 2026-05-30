@@ -47,7 +47,9 @@
     "sharing": "Sharing",
     "matches": "Matches",
     "shadows": "Shadows",
-    "referee": "Referee"
+    "referee": "Referee",
+    "timer": "Timer",
+    "rhythm": "Rhythm"
   },
   "partidos": {
     "newMatchDesc": "Record a new match"
@@ -335,5 +337,54 @@
     "deleteConfirm": "Delete this match from history?",
     "finalScore": "Final score",
     "gamesDetail": "Games detail"
+  },
+  "timer": {
+    "title": "Routine Timer",
+    "configuration": "Configuration",
+    "workTime": "WORK time (sec)",
+    "restTime": "REST time (sec)",
+    "prepTime": "PREPARATION — beep last (sec)",
+    "rounds": "Number of ROUNDS",
+    "cycles": "Number of CYCLES",
+    "cycleRest": "REST between CYCLES (sec)",
+    "estimated": "Estimated duration:",
+    "ready": "READY",
+    "work": "WORK",
+    "rest": "REST",
+    "prepare": "GET READY",
+    "cycleRestPhase": "CYCLE REST",
+    "completed": "COMPLETED!",
+    "completedMsg": "Routine completed!",
+    "round": "ROUND",
+    "cycle": "CYCLE",
+    "start": "START",
+    "stop": "Stop",
+    "skip": "Skip"
+  },
+  "rhythm": {
+    "title": "Rhythm / BPM",
+    "soundType": "Sound type",
+    "metronome": "Metronome",
+    "beat": "Beat",
+    "speed": "Speed (BPM)",
+    "progressive": "Progressive (speed up/down)",
+    "duration": "Duration",
+    "programs": "Programs",
+    "start": "START",
+    "stop": "STOP",
+    "levels": {
+      "slow": "Slow",
+      "medium": "Medium",
+      "fast": "Fast",
+      "veryFast": "Very fast"
+    },
+    "presets": {
+      "warmup": "Warm-up",
+      "steady": "Steady",
+      "resistance": "Endurance",
+      "sprint": "Sprint",
+      "pyramid": "Pyramid",
+      "taper": "Cool-down"
+    }
   }
 }

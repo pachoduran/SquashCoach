@@ -47,7 +47,9 @@
     "sharing": "Compartir",
     "matches": "Partidos",
     "shadows": "Sombras",
-    "referee": "Arbitraje"
+    "referee": "Arbitraje",
+    "timer": "Cronómetro",
+    "rhythm": "Ritmo"
   },
   "partidos": {
     "newMatchDesc": "Registrar un nuevo partido"
@@ -335,5 +337,54 @@
     "deleteConfirm": "¿Eliminar este partido del historial?",
     "finalScore": "Marcador final",
     "gamesDetail": "Detalle de games"
+  },
+  "timer": {
+    "title": "Cronómetro de Rutinas",
+    "configuration": "Configuración",
+    "workTime": "Tiempo de RUTINA (seg)",
+    "restTime": "Tiempo de DESCANSO (seg)",
+    "prepTime": "PREPARACIÓN — pitar últimos (seg)",
+    "rounds": "Número de RONDAS",
+    "cycles": "Número de CICLOS",
+    "cycleRest": "DESCANSO entre CICLOS (seg)",
+    "estimated": "Duración estimada:",
+    "ready": "LISTO",
+    "work": "RUTINA",
+    "rest": "DESCANSO",
+    "prepare": "PREPÁRATE",
+    "cycleRestPhase": "DESCANSO DE CICLO",
+    "completed": "¡COMPLETADO!",
+    "completedMsg": "¡Rutina completada!",
+    "round": "RONDA",
+    "cycle": "CICLO",
+    "start": "INICIAR",
+    "stop": "Detener",
+    "skip": "Saltar"
+  },
+  "rhythm": {
+    "title": "Ritmo / BPM",
+    "soundType": "Tipo de sonido",
+    "metronome": "Metrónomo",
+    "beat": "Beat",
+    "speed": "Velocidad (BPM)",
+    "progressive": "Progresivo (acelerar/desacelerar)",
+    "duration": "Duración",
+    "programs": "Programas",
+    "start": "INICIAR",
+    "stop": "DETENER",
+    "levels": {
+      "slow": "Lento",
+      "medium": "Medio",
+      "fast": "Rápido",
+      "veryFast": "Muy rápido"
+    },
+    "presets": {
+      "warmup": "Calentamiento",
+      "steady": "Constante",
+      "resistance": "Resistencia",
+      "sprint": "Sprint",
+      "pyramid": "Pirámide",
+      "taper": "Descenso"
+    }
   }
 }

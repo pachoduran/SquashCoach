@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '@/src/context/LanguageContext';
 
 // Funciones opcionales: si expo-keep-awake no esta disponible, no pasa nada.
 async function keepAwakeOn() {
@@ -161,6 +162,7 @@ function playLong() {
 
 export default function TimerScreen() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [config, setConfig] = useState<Config>(DEFAULTS);
   const [phase, setPhase] = useState<Phase>('idle');
   const [remaining, setRemaining] = useState(0);
@@ -339,20 +341,20 @@ export default function TimerScreen() {
 
   const phaseLabel = (): string => {
     switch (phase) {
-      case 'idle': return 'LISTO';
+      case 'idle': return t('timer.ready');
       case 'work': {
-        if (remaining > 0 && remaining <= config.prepSec) return 'PREPÁRATE';
-        return 'RUTINA';
+        if (remaining > 0 && remaining <= config.prepSec) return t('timer.prepare');
+        return t('timer.work');
       }
       case 'rest': {
-        if (remaining > 0 && remaining <= config.prepSec) return 'PREPÁRATE';
-        return 'DESCANSO';
+        if (remaining > 0 && remaining <= config.prepSec) return t('timer.prepare');
+        return t('timer.rest');
       }
       case 'cycle_rest': {
-        if (remaining > 0 && remaining <= config.prepSec) return 'PREPÁRATE';
-        return 'DESCANSO DE CICLO';
+        if (remaining > 0 && remaining <= config.prepSec) return t('timer.prepare');
+        return t('timer.cycleRestPhase');
       }
-      case 'done': return '¡COMPLETADO!';
+      case 'done': return t('timer.completed');
       default: return '';
     }
   };
@@ -384,7 +386,7 @@ export default function TimerScreen() {
         >
           <Ionicons name="chevron-back" size={28} color="#FFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Cronómetro de Rutinas</Text>
+        <Text style={styles.headerTitle}>{t('timer.title')}</Text>
         <View style={{ width: 28 }} />
       </View>
 
@@ -396,45 +398,45 @@ export default function TimerScreen() {
           {phase === 'done' ? (
             <View style={styles.doneBanner}>
               <Ionicons name="trophy" size={48} color="#FFD700" />
-              <Text style={styles.doneText}>¡Rutina completada!</Text>
+              <Text style={styles.doneText}>{t('timer.completedMsg')}</Text>
             </View>
           ) : null}
 
           <View style={styles.configCard}>
-            <Text style={styles.configTitle}>Configuración</Text>
+            <Text style={styles.configTitle}>{t('timer.configuration')}</Text>
 
             <ConfigRow
-              label="Tiempo de RUTINA (seg)"
+              label={t("timer.workTime")}
               value={config.workSec}
               onChange={(v) => updateConfig('workSec', v)}
               testID="cfg-work"
             />
             <ConfigRow
-              label="Tiempo de DESCANSO (seg)"
+              label={t("timer.restTime")}
               value={config.restSec}
               onChange={(v) => updateConfig('restSec', v)}
               testID="cfg-rest"
             />
             <ConfigRow
-              label="PREPARACIÓN — pitar últimos (seg)"
+              label={t("timer.prepTime")}
               value={config.prepSec}
               onChange={(v) => updateConfig('prepSec', v)}
               testID="cfg-prep"
             />
             <ConfigRow
-              label="Número de RONDAS"
+              label={t("timer.rounds")}
               value={config.rounds}
               onChange={(v) => updateConfig('rounds', v)}
               testID="cfg-rounds"
             />
             <ConfigRow
-              label="Número de CICLOS"
+              label={t("timer.cycles")}
               value={config.cycles}
               onChange={(v) => updateConfig('cycles', v)}
               testID="cfg-cycles"
             />
             <ConfigRow
-              label="DESCANSO entre CICLOS (seg)"
+              label={t("timer.cycleRest")}
               value={config.cycleRestSec}
               onChange={(v) => updateConfig('cycleRestSec', v)}
               testID="cfg-cycle-rest"
@@ -456,7 +458,7 @@ export default function TimerScreen() {
             data-testid="timer-start"
           >
             <Ionicons name="play" size={32} color="#FFF" />
-            <Text style={styles.startBtnText}>INICIAR</Text>
+            <Text style={styles.startBtnText}>{t('timer.start')}</Text>
           </TouchableOpacity>
         </ScrollView>
       ) : (
@@ -477,14 +479,14 @@ export default function TimerScreen() {
 
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
-              <Text style={styles.metaLabel}>RONDA</Text>
+              <Text style={styles.metaLabel}>{t('timer.round')}</Text>
               <Text style={styles.metaValue}>
                 {currentRound}/{config.rounds}
               </Text>
             </View>
             <View style={styles.metaSep} />
             <View style={styles.metaItem}>
-              <Text style={styles.metaLabel}>CICLO</Text>
+              <Text style={styles.metaLabel}>{t('timer.cycle')}</Text>
               <Text style={styles.metaValue}>
                 {currentCycle}/{config.cycles}
               </Text>
@@ -498,7 +500,7 @@ export default function TimerScreen() {
               data-testid="timer-reset"
             >
               <Ionicons name="stop" size={28} color="#FFF" />
-              <Text style={styles.ctrlBtnText}>Detener</Text>
+              <Text style={styles.ctrlBtnText}>{t('timer.stop')}</Text>
             </TouchableOpacity>
 
             {running ? (
@@ -525,7 +527,7 @@ export default function TimerScreen() {
               data-testid="timer-skip"
             >
               <Ionicons name="play-skip-forward" size={28} color="#FFF" />
-              <Text style={styles.ctrlBtnText}>Saltar</Text>
+              <Text style={styles.ctrlBtnText}>{t('timer.skip')}</Text>
             </TouchableOpacity>
           </View>
         </View>
