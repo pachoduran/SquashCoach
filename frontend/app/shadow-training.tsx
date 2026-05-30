@@ -20,7 +20,7 @@ import { useLanguage } from '@/src/context/LanguageContext';
 import { syncService } from '@/src/store/syncService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const COURT_WIDTH = Math.min(SCREEN_WIDTH - 24, 360);
+const COURT_WIDTH = SCREEN_WIDTH * 0.95;
 const COURT_HEIGHT = COURT_WIDTH * 1.51; // Ratio real de la imagen
 
 // 12 zonas como un reloj sobre la cancha (posiciones exactas de la imagen del usuario)
@@ -375,6 +375,14 @@ export default function ShadowTraining() {
             </View>
           );
         })}
+        {/* Numero gigante en el centro de la cancha durante ejecucion */}
+        {phase === 'active' && activeZone !== null && !isPaused && (
+          <View style={courtStyles.centerNumberWrap} pointerEvents="none">
+            <Text style={courtStyles.centerNumber} adjustsFontSizeToFit numberOfLines={1}>
+              {activeZone}
+            </Text>
+          </View>
+        )}
       </ImageBackground>
     );
   };
@@ -546,16 +554,12 @@ export default function ShadowTraining() {
           )}
         </View>
 
-        {/* Stats bar */}
+        {/* Stats bar - sin Mode durante ejecucion, solo Zones e Interval mas grandes */}
         {phase === 'active' && (
           <View style={styles.statsBar}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>{zonesVisited}</Text>
               <Text style={styles.statLabel}>{t('shadow.zonesLabel')}</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{zoneMode}</Text>
-              <Text style={styles.statLabel}>{t('shadow.modeLabel')}</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>{intervalTime}s</Text>
@@ -680,6 +684,24 @@ const courtStyles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 4,
+  },
+  centerNumberWrap: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  centerNumber: {
+    fontSize: COURT_WIDTH * 0.55,
+    fontWeight: '900',
+    color: '#FF5722',
+    textShadowColor: 'rgba(255,255,255,0.95)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
+    fontVariant: ['tabular-nums'],
   },
 });
 
@@ -867,23 +889,23 @@ const styles = StyleSheet.create({
   },
   trainingSetText: {
     color: '#FFF',
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 30,
+    fontWeight: '800',
   },
   phaseBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 14,
   },
   phaseBadgeText: {
     color: '#FFF',
-    fontSize: 11,
+    fontSize: 16,
     fontWeight: 'bold',
     letterSpacing: 1,
   },
   trainingTimer: {
     color: '#FFF',
-    fontSize: 40,
+    fontSize: 56,
     fontWeight: '900',
     fontVariant: ['tabular-nums'],
   },
@@ -905,14 +927,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statNumber: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 56,
+    fontWeight: '900',
     color: '#1E3A5F',
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 18,
     color: '#666',
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 1,
   },
   controlsRow: {
     flexDirection: 'row',

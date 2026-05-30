@@ -2049,3 +2049,7 @@ async def download_i18n(lang: str):
     if lang not in {"en", "es"}:
         raise HTTPException(status_code=404, detail="Language not found")
     return FileResponse(f"/app/frontend/src/i18n/{lang}.json", media_type="application/json", filename=f"{lang}.json")
+
+@app.get("/api/download-shadow-training")
+async def download_shadow_training():
+    return FileResponse("/app/frontend/app/shadow-training.tsx", media_type="text/plain", filename="shadow-training.tsx")
