@@ -286,7 +286,7 @@ export default function Index() {
               data-testid="partidos-btn"
             >
               <View style={[styles.featureIcon, { backgroundColor: '#2196F3' }]}>
-                <SquashBallIcon size={28} color="#FFF" />
+                <SquashBallIcon size={36} color="#FFF" />
               </View>
               <Text style={styles.featureBtnText}>{t('home.matches')}</Text>
             </TouchableOpacity>
@@ -297,7 +297,7 @@ export default function Index() {
               data-testid="sombras-btn"
             >
               <View style={[styles.featureIcon, { backgroundColor: '#FF5722' }]}>
-                <Ionicons name="footsteps-outline" size={28} color="#FFF" />
+                <Ionicons name="footsteps-outline" size={36} color="#FFF" />
               </View>
               <Text style={styles.featureBtnText}>{t('home.shadows')}</Text>
             </TouchableOpacity>
@@ -308,7 +308,7 @@ export default function Index() {
               data-testid="arbitraje-btn"
             >
               <View style={[styles.featureIcon, { backgroundColor: '#7B1FA2' }]}>
-                <Ionicons name="megaphone-outline" size={28} color="#FFF" />
+                <Ionicons name="megaphone-outline" size={36} color="#FFF" />
               </View>
               <Text style={styles.featureBtnText}>{t('home.referee')}</Text>
             </TouchableOpacity>
@@ -319,20 +319,9 @@ export default function Index() {
               data-testid="timer-btn"
             >
               <View style={[styles.featureIcon, { backgroundColor: '#FF9800' }]}>
-                <Ionicons name="timer-outline" size={28} color="#FFF" />
+                <Ionicons name="timer-outline" size={36} color="#FFF" />
               </View>
               <Text style={styles.featureBtnText}>{t('home.timer')}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.mainFeatureBtn}
-              onPress={() => router.push('/rhythm' as any)}
-              data-testid="rhythm-btn"
-            >
-              <View style={[styles.featureIcon, { backgroundColor: '#3F51B5' }]}>
-                <Ionicons name="musical-notes-outline" size={28} color="#FFF" />
-              </View>
-              <Text style={styles.featureBtnText}>{t('home.rhythm')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -686,31 +675,37 @@ const styles = StyleSheet.create({
   },
   buttonRow: {
     flexDirection: 'row',
-    gap: 8,
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 12,
+    columnGap: 12,
     marginBottom: 8,
   },
   mainFeatureBtn: {
-    flex: 1,
+    width: '48%',
     backgroundColor: '#FFF',
-    borderRadius: 12,
-    paddingVertical: 14,
+    borderRadius: 16,
+    paddingVertical: 24,
+    paddingHorizontal: 12,
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#EEE',
   },
   featureIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+    width: 64,
+    height: 64,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
   featureBtnText: {
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: '700',
     color: '#333',
   },
