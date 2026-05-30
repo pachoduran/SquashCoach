@@ -256,6 +256,14 @@
     "zonesLabel": "Zonas",
     "modeLabel": "Modo",
     "intervalLabel": "Intervalo",
+    "courtArea": "Área de cancha",
+    "areas": {
+      "all": "Toda la cancha",
+      "front": "Delantera",
+      "back": "Trasera",
+      "drive": "Drive",
+      "backhand": "Revés"
+    },
     "stop": "Detener",
     "stopTitle": "Detener",
     "stopMsg": "¿Seguro que quieres detener el entrenamiento?",

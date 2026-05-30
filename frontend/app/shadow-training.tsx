@@ -54,6 +54,19 @@ const DURATION_OPTIONS = [30, 45, 60, 90, 120, 180];
 const REST_OPTIONS = [10, 15, 20, 30, 45, 60];
 const SETS_OPTIONS = [1, 2, 3, 4, 5, 6, 8, 10];
 
+type CourtArea = 'all' | 'front' | 'back' | 'drive' | 'backhand';
+
+// Filtra zonas segun el area de cancha seleccionada
+function filterZones(zones: { id: number; x: number; y: number }[], area: CourtArea) {
+  switch (area) {
+    case 'front':    return zones.filter(z => z.y < 0.5);   // mitad delantera (cerca del fronton)
+    case 'back':     return zones.filter(z => z.y >= 0.5);  // mitad trasera
+    case 'drive':    return zones.filter(z => z.x < 0.5);   // lado izquierdo (drive para diestro)
+    case 'backhand': return zones.filter(z => z.x >= 0.5);  // lado derecho (reves para diestro)
+    default:         return zones;                           // toda la cancha
+  }
+}
+
 type Phase = 'config' | 'countdown' | 'active' | 'rest' | 'complete';
 
 export default function ShadowTraining() {
@@ -88,6 +101,9 @@ export default function ShadowTraining() {
   );
   const [numberOfSets, setNumberOfSets] = useState(
     params.numberOfSets ? parseInt(params.numberOfSets, 10) : 3
+  );
+  const [courtArea, setCourtArea] = useState<CourtArea>(
+    ((params as any).courtArea as CourtArea) || 'all'
   );
 
   // Runtime
@@ -162,11 +178,14 @@ export default function ShadowTraining() {
   };
 
   const getRandomZone = (currentZone: number | null): number => {
-    const zones = zoneMode === 6 ? ZONES_6 : ZONES_12;
+    const allZones = zoneMode === 6 ? ZONES_6 : ZONES_12;
+    const zones = filterZones(allZones, courtArea);
+    // Si el filtro deja menos de 1 zona, usar todas (fallback)
+    const pool = zones.length > 0 ? zones : allZones;
     let newZone: number;
     do {
-      newZone = zones[Math.floor(Math.random() * zones.length)].id;
-    } while (newZone === currentZone && zones.length > 1);
+      newZone = pool[Math.floor(Math.random() * pool.length)].id;
+    } while (newZone === currentZone && pool.length > 1);
     return newZone;
   };
 
@@ -335,6 +354,7 @@ export default function ShadowTraining() {
   const renderCourt = () => {
     const zones = zoneMode === 6 ? ZONES_6 : ZONES_12;
     const zoneSize = zoneMode === 6 ? 44 : 36;
+    const allowedZoneIds = new Set(filterZones(zones, courtArea).map(z => z.id));
 
     return (
       <ImageBackground
@@ -346,6 +366,7 @@ export default function ShadowTraining() {
         {/* Zones */}
         {zones.map(zone => {
           const isActive = activeZone === zone.id;
+          const isAllowed = allowedZoneIds.has(zone.id);
           const left = zone.x * COURT_WIDTH - zoneSize / 2;
           const top = zone.y * COURT_HEIGHT - zoneSize / 2;
 
@@ -360,6 +381,7 @@ export default function ShadowTraining() {
                   borderRadius: zoneSize / 2,
                   left,
                   top,
+                  opacity: isAllowed ? 1 : 0.25,
                 },
                 isActive && courtStyles.zoneActive,
                 !isActive && phase === 'active' && courtStyles.zoneInactive,
@@ -440,6 +462,23 @@ export default function ShadowTraining() {
               <Text style={[styles.optionSub, zoneMode === 12 && styles.optionSubActive]}>{t('shadow.fullClock')}</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Area de cancha a entrenar */}
+          <Text style={styles.configLabel}>{t('shadow.courtArea')}</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+            {(['all', 'front', 'back', 'drive', 'backhand'] as CourtArea[]).map(area => (
+              <TouchableOpacity
+                key={area}
+                style={[styles.areaChip, courtArea === area && styles.areaChipActive]}
+                onPress={() => setCourtArea(area)}
+                data-testid={`court-area-${area}`}
+              >
+                <Text style={[styles.areaChipText, courtArea === area && styles.areaChipTextActive]}>
+                  {t(`shadow.areas.${area}`)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
           {/* Preview */}
           <View style={styles.previewContainer}>
@@ -739,6 +778,9 @@ const courtStyles = StyleSheet.create({
     textTransform: 'uppercase',
   },
 });
+
+// Estilos del area chip (selector de zona de cancha) — anexados al styles principal abajo
+const areaChipExtra = null;
 
 // ===================== STYLES =====================
 const styles = StyleSheet.create({
@@ -1072,5 +1114,26 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#FFF',
+  },
+  areaChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginRight: 8,
+    borderRadius: 10,
+    backgroundColor: '#EEE',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  areaChipActive: {
+    backgroundColor: '#FFF',
+    borderColor: '#1E3A5F',
+  },
+  areaChipText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#666',
+  },
+  areaChipTextActive: {
+    color: '#1E3A5F',
   },
 });

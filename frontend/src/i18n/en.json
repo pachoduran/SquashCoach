@@ -256,6 +256,14 @@
     "zonesLabel": "Zones",
     "modeLabel": "Mode",
     "intervalLabel": "Interval",
+    "courtArea": "Court area",
+    "areas": {
+      "all": "Full court",
+      "front": "Front",
+      "back": "Back",
+      "drive": "Drive",
+      "backhand": "Backhand"
+    },
     "stop": "Stop",
     "stopTitle": "Stop",
     "stopMsg": "Are you sure you want to stop the training?",
