@@ -383,6 +383,20 @@ export default function ShadowTraining() {
             </Text>
           </View>
         )}
+
+        {/* Stats overlays a los lados del numero - solo durante active */}
+        {phase === 'active' && (
+          <>
+            <View style={courtStyles.statOverlayLeft} pointerEvents="none">
+              <Text style={courtStyles.statOverlayNumber}>{zonesVisited}</Text>
+              <Text style={courtStyles.statOverlayLabel}>{t('shadow.zonesLabel')}</Text>
+            </View>
+            <View style={courtStyles.statOverlayRight} pointerEvents="none">
+              <Text style={courtStyles.statOverlayNumber}>{intervalTime}s</Text>
+              <Text style={courtStyles.statOverlayLabel}>{t('shadow.intervalLabel')}</Text>
+            </View>
+          </>
+        )}
       </ImageBackground>
     );
   };
@@ -554,19 +568,7 @@ export default function ShadowTraining() {
           )}
         </View>
 
-        {/* Stats bar - sin Mode durante ejecucion, solo Zones e Interval mas grandes */}
-        {phase === 'active' && (
-          <View style={styles.statsBar}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{zonesVisited}</Text>
-              <Text style={styles.statLabel}>{t('shadow.zonesLabel')}</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{intervalTime}s</Text>
-              <Text style={styles.statLabel}>{t('shadow.intervalLabel')}</Text>
-            </View>
-          </View>
-        )}
+        {/* Stats overlays se muestran ahora DENTRO de la cancha (en renderCourt) */}
 
         {/* Controls */}
         <View style={styles.controlsRow}>
@@ -702,6 +704,39 @@ const courtStyles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 10,
     fontVariant: ['tabular-nums'],
+  },
+  statOverlayLeft: {
+    position: 'absolute',
+    top: 18,
+    left: 14,
+    alignItems: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    borderRadius: 10,
+  },
+  statOverlayRight: {
+    position: 'absolute',
+    top: 18,
+    right: 14,
+    alignItems: 'flex-end',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    borderRadius: 10,
+  },
+  statOverlayNumber: {
+    fontSize: 38,
+    fontWeight: '900',
+    color: '#1E3A5F',
+    lineHeight: 42,
+  },
+  statOverlayLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#555',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
 });
 
@@ -911,9 +946,10 @@ const styles = StyleSheet.create({
   },
   courtContainer: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    paddingVertical: 2,
+    paddingTop: 20,
+    paddingBottom: 2,
   },
   statsBar: {
     flexDirection: 'row',
