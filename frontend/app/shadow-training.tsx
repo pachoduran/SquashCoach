@@ -54,7 +54,7 @@ const DURATION_OPTIONS = [30, 45, 60, 90, 120, 180];
 const REST_OPTIONS = [10, 15, 20, 30, 45, 60];
 const SETS_OPTIONS = [1, 2, 3, 4, 5, 6, 8, 10];
 
-type CourtArea = 'all' | 'front' | 'back' | 'drive' | 'backhand';
+type CourtArea = 'all' | 'front' | 'back' | 'drive' | 'backhand' | 'custom';
 
 // Filtra zonas segun el area de cancha seleccionada
 function filterZones(zones: { id: number; x: number; y: number }[], area: CourtArea) {
@@ -65,6 +65,24 @@ function filterZones(zones: { id: number; x: number; y: number }[], area: CourtA
     case 'backhand': return zones.filter(z => z.x >= 0.5);  // lado derecho (reves para diestro)
     default:         return zones;                           // toda la cancha
   }
+}
+
+// Convierte un preset de area a un Set de ids habilitados
+function presetToIds(zoneMode: 6 | 12, area: CourtArea): Set<number> {
+  const all = zoneMode === 6 ? ZONES_6 : ZONES_12;
+  return new Set(filterZones(all, area).map(z => z.id));
+}
+
+// Detecta cual preset matchea la seleccion actual (o 'custom' si no matchea ninguno)
+function detectActivePreset(zoneMode: 6 | 12, enabled: Set<number>): CourtArea {
+  const presets: CourtArea[] = ['all', 'front', 'back', 'drive', 'backhand'];
+  for (const p of presets) {
+    const ids = presetToIds(zoneMode, p);
+    if (ids.size === enabled.size && [...ids].every(id => enabled.has(id))) {
+      return p;
+    }
+  }
+  return 'custom';
 }
 
 type Phase = 'config' | 'countdown' | 'active' | 'rest' | 'complete';
@@ -105,6 +123,33 @@ export default function ShadowTraining() {
   const [courtArea, setCourtArea] = useState<CourtArea>(
     ((params as any).courtArea as CourtArea) || 'all'
   );
+  const [enabledZones, setEnabledZones] = useState<Set<number>>(
+    () => presetToIds((((params as any).zoneMode === '6' ? 6 : 12) as 6 | 12), 'all')
+  );
+
+  // Cuando cambia el numero de zonas, resetea a todas habilitadas
+  useEffect(() => {
+    setEnabledZones(presetToIds(zoneMode as 6 | 12, 'all'));
+    setCourtArea('all');
+  }, [zoneMode]);
+
+  const applyAreaPreset = (area: CourtArea) => {
+    setCourtArea(area);
+    setEnabledZones(presetToIds(zoneMode as 6 | 12, area));
+  };
+
+  const toggleZone = (zoneId: number) => {
+    const next = new Set(enabledZones);
+    if (next.has(zoneId)) {
+      // Evitar dejar 0 zonas habilitadas
+      if (next.size <= 1) return;
+      next.delete(zoneId);
+    } else {
+      next.add(zoneId);
+    }
+    setEnabledZones(next);
+    setCourtArea(detectActivePreset(zoneMode as 6 | 12, next));
+  };
 
   // Runtime
   const [phase, setPhase] = useState<Phase>('config');
@@ -179,13 +224,12 @@ export default function ShadowTraining() {
 
   const getRandomZone = (currentZone: number | null): number => {
     const allZones = zoneMode === 6 ? ZONES_6 : ZONES_12;
-    const zones = filterZones(allZones, courtArea);
-    // Si el filtro deja menos de 1 zona, usar todas (fallback)
-    const pool = zones.length > 0 ? zones : allZones;
+    const pool = allZones.filter(z => enabledZones.has(z.id));
+    const finalPool = pool.length > 0 ? pool : allZones;
     let newZone: number;
     do {
-      newZone = pool[Math.floor(Math.random() * pool.length)].id;
-    } while (newZone === currentZone && pool.length > 1);
+      newZone = finalPool[Math.floor(Math.random() * finalPool.length)].id;
+    } while (newZone === currentZone && finalPool.length > 1);
     return newZone;
   };
 
@@ -354,7 +398,7 @@ export default function ShadowTraining() {
   const renderCourt = () => {
     const zones = zoneMode === 6 ? ZONES_6 : ZONES_12;
     const zoneSize = zoneMode === 6 ? 44 : 36;
-    const allowedZoneIds = new Set(filterZones(zones, courtArea).map(z => z.id));
+    const isConfig = phase === 'config';
 
     return (
       <ImageBackground
@@ -366,13 +410,19 @@ export default function ShadowTraining() {
         {/* Zones */}
         {zones.map(zone => {
           const isActive = activeZone === zone.id;
-          const isAllowed = allowedZoneIds.has(zone.id);
+          const isEnabled = enabledZones.has(zone.id);
           const left = zone.x * COURT_WIDTH - zoneSize / 2;
           const top = zone.y * COURT_HEIGHT - zoneSize / 2;
 
+          const ZoneWrap: any = isConfig ? TouchableOpacity : View;
+          const wrapProps: any = isConfig
+            ? { onPress: () => toggleZone(zone.id), activeOpacity: 0.7 }
+            : {};
+
           return (
-            <View
+            <ZoneWrap
               key={zone.id}
+              {...wrapProps}
               style={[
                 courtStyles.zone,
                 {
@@ -381,7 +431,9 @@ export default function ShadowTraining() {
                   borderRadius: zoneSize / 2,
                   left,
                   top,
-                  opacity: isAllowed ? 1 : 0.25,
+                  backgroundColor: isEnabled ? '#D32F2F' : '#9E9E9E',
+                  borderColor: isEnabled ? '#FFCDD2' : '#E0E0E0',
+                  opacity: isConfig ? 1 : (isEnabled ? 1 : 0.25),
                 },
                 isActive && courtStyles.zoneActive,
                 !isActive && phase === 'active' && courtStyles.zoneInactive,
@@ -394,7 +446,7 @@ export default function ShadowTraining() {
               ]}>
                 {zone.id}
               </Text>
-            </View>
+            </ZoneWrap>
           );
         })}
         {/* Numero gigante en el centro de la cancha durante ejecucion */}
@@ -470,7 +522,7 @@ export default function ShadowTraining() {
               <TouchableOpacity
                 key={area}
                 style={[styles.areaChip, courtArea === area && styles.areaChipActive]}
-                onPress={() => setCourtArea(area)}
+                onPress={() => applyAreaPreset(area)}
                 data-testid={`court-area-${area}`}
               >
                 <Text style={[styles.areaChipText, courtArea === area && styles.areaChipTextActive]}>
@@ -703,9 +755,9 @@ const courtStyles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.5)',
   },
   zoneActive: {
-    backgroundColor: '#FF5722',
+    backgroundColor: '#D32F2F',
     borderColor: '#FFF',
-    shadowColor: '#FF5722',
+    shadowColor: '#D32F2F',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
     shadowRadius: 16,
@@ -713,7 +765,7 @@ const courtStyles = StyleSheet.create({
     transform: [{ scale: 1.2 }],
   },
   zoneInactive: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: '#7F1F1F',
     borderColor: 'rgba(255,255,255,0.25)',
   },
   zoneLabel: {
@@ -738,7 +790,7 @@ const courtStyles = StyleSheet.create({
   centerNumber: {
     fontSize: COURT_WIDTH * 0.55,
     fontWeight: '900',
-    color: '#FF5722',
+    color: '#D32F2F',
     textShadowColor: 'rgba(255,255,255,0.95)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 10,
