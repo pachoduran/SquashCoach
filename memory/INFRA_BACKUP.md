@@ -150,7 +150,7 @@ mongodb+srv://<USER>:<PASSWORD>@m0.7xx8rpn.mongodb.net/?retryWrites=true&w=major
 | `MONGO_URL` | Secret reference | `MONGO_URL:latest` (de Secret Manager) |
 | `GOOGLE_CLIENT_ID` | Secret reference | `GOOGLE_CLIENT_ID:latest` (de Secret Manager) |
 
-### Archivos en el repo de deploy (local en `C:\squash-coach-deploy\`)
+### Archivos en el repo de deploy (local en `C:\sc\backend\`)
 1. `server.py` — el código del backend FastAPI (idéntico al de Bluehost, con `_ReplicatedDB` wrapper que **NO** se usa cuando ya está en Atlas)
 2. `Dockerfile` — imagen Python 3.11-slim
 3. `requirements-cloudrun.txt` — deps Python (fastapi, motor, google-auth, etc.)
@@ -168,7 +168,7 @@ CMD exec uvicorn server:app --host 0.0.0.0 --port ${PORT}
 
 ### Comando de redeploy (desde local en Windows) — REAL QUE USA EL USUARIO
 ```bash
-cd C:\squash-coach-deploy
+cd C:\sc\backend
 gcloud run deploy squash-coach-api --source . --region us-central1
 ```
 > ✅ Los secrets (`MONGO_URL`, `GOOGLE_CLIENT_ID`) y env vars (`DB_NAME=test_database`) ya están configurados en el servicio Cloud Run, así que **no hace falta pasarlos en cada deploy**. gcloud reutiliza la configuración de la última revisión.
@@ -428,7 +428,7 @@ db.shadow_routines.countDocuments()
 
 ### 11.1 Cómo actualizar el backend en Cloud Run
 1. Pedir al agente de Emergent la URL actual de descarga: `<PREVIEW>/api/download-server-py`
-2. En tu carpeta local `C:\squash-coach-deploy\`:
+2. En tu carpeta local `C:\sc\backend\`:
    ```bash
    curl -fsSL -o server.py https://<PREVIEW>/api/download-server-py
    ```

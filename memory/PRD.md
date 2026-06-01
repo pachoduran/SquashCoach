@@ -60,7 +60,7 @@ Aplicación móvil (React Native / Expo) + backend (FastAPI / MongoDB) para aná
 - **DB name**: `test_database`
 - **Secrets en Secret Manager**: `MONGO_URL`, `GOOGLE_CLIENT_ID`
 - **Imagen Docker**: `python:3.11-slim` con `requirements-cloudrun.txt`
-- **Comando de redeploy**: `gcloud run deploy squash-coach-api --source . --region us-central1 --allow-unauthenticated --memory 512Mi --cpu 1 --min-instances 0 --max-instances 5 --set-secrets="MONGO_URL=MONGO_URL:latest,GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest" --set-env-vars="DB_NAME=test_database"` desde `C:\squash-coach-deploy\`
+- **Comando de redeploy** (real): `cd C:\sc\backend && gcloud run deploy squash-coach-api --source . --region us-central1` (los secrets y env vars ya están configurados en el servicio, no hace falta volver a pasarlos)
 - **Archivos en el repo de deploy**: `server.py`, `Dockerfile`, `requirements-cloudrun.txt` (los 3 se descargan desde `/api/download-*` del preview de Emergent)
 
 ## Google OAuth (cuenta propia del usuario)
@@ -83,7 +83,7 @@ Aplicación móvil (React Native / Expo) + backend (FastAPI / MongoDB) para aná
 ## Estado actual
 - Frontend: compila ✅ (`shadow-training.tsx` sin errores TS nuevos tras añadir presets).
 - Backend: endpoints `/api/shadow-presets` (GET/POST/DELETE) validados en local (200 OK con auth).
-- ⚠️ **Cloud Run NO tiene aún los endpoints de Shadow Presets ni de Banners** → requiere redeploy desde `C:\squash-coach-deploy\`.
+- ⚠️ **Cloud Run NO tiene aún los endpoints de Shadow Presets ni de Banners** → requiere redeploy desde `C:\sc\backend\`.
 - Falta: usuario debe (1) re-deployar backend a Cloud Run, (2) sincronizar archivos frontend, (3) compilar APK EAS.
 
 ## Implementado adicional (01/06/2026)
