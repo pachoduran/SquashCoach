@@ -166,9 +166,15 @@ ENV PORT=8080
 CMD exec uvicorn server:app --host 0.0.0.0 --port ${PORT}
 ```
 
-### Comando de redeploy (desde local en Windows)
+### Comando de redeploy (desde local en Windows) — REAL QUE USA EL USUARIO
 ```bash
 cd C:\squash-coach-deploy
+gcloud run deploy squash-coach-api --source . --region us-central1
+```
+> ✅ Los secrets (`MONGO_URL`, `GOOGLE_CLIENT_ID`) y env vars (`DB_NAME=test_database`) ya están configurados en el servicio Cloud Run, así que **no hace falta pasarlos en cada deploy**. gcloud reutiliza la configuración de la última revisión.
+
+### Comando completo (solo si hay que recrear el servicio desde cero)
+```bash
 gcloud run deploy squash-coach-api ^
   --source . ^
   --region us-central1 ^
