@@ -1397,4 +1397,142 @@ const styles = StyleSheet.create({
   areaChipTextActive: {
     color: '#1E3A5F',
   },
+
+  // Dropdown de áreas + presets
+  dropdownBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF',
+    borderWidth: 2,
+    borderColor: '#1E3A5F',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 8,
+  },
+  dropdownBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E3A5F',
+  },
+  dropdownList: {
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#DDD',
+    paddingVertical: 4,
+    marginBottom: 12,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  dropdownItemActive: {
+    backgroundColor: '#FFF4F4',
+  },
+  dropdownItemText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1E3A5F',
+  },
+  dropdownItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dropdownItemMeta: {
+    fontSize: 12,
+    color: '#999',
+    marginRight: 8,
+  },
+  dropdownDeleteBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: '#EEE',
+    marginVertical: 4,
+  },
+  dropdownAddBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#D32F2F',
+    paddingVertical: 12,
+    marginHorizontal: 8,
+    marginVertical: 6,
+    borderRadius: 10,
+  },
+  dropdownAddBtnText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 14,
+    marginLeft: 6,
+  },
+
+  // Modal de guardar preset
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%',
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1E3A5F',
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 14,
+  },
+  modalInput: {
+    borderWidth: 2,
+    borderColor: '#DDD',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: '#222',
+    marginBottom: 16,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  modalBtn: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginLeft: 8,
+    minWidth: 90,
+    alignItems: 'center',
+  },
+  modalBtnGhost: {
+    backgroundColor: '#EEE',
+  },
+  modalBtnGhostText: {
+    color: '#1E3A5F',
+    fontWeight: '700',
+  },
+  modalBtnPrimary: {
+    backgroundColor: '#D32F2F',
+  },
+  modalBtnPrimaryText: {
+    color: '#FFF',
+    fontWeight: '700',
+  },
 });

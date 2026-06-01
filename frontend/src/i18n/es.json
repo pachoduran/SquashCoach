@@ -282,7 +282,12 @@
     "saveRoutine": "Guardar Rutina",
     "saved": "Guardado",
     "savedMsg": "Rutina guardada correctamente",
-    "saveError": "No se pudo guardar la rutina"
+    "saveError": "No se pudo guardar la rutina",
+    "saveCurrent": "Guardar selección actual",
+    "savePresetTitle": "Guardar combinación",
+    "presetNamePlaceholder": "Nombre (ej: Mis esquinas)",
+    "presetNameRequired": "Escribe un nombre para el preset",
+    "deletePresetConfirm": "¿Eliminar el preset"
   },
   "sombras": {
     "title": "Sombras",

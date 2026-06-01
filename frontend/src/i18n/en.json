@@ -282,7 +282,12 @@
     "saveRoutine": "Save Routine",
     "saved": "Saved",
     "savedMsg": "Routine saved successfully",
-    "saveError": "Could not save the routine"
+    "saveError": "Could not save the routine",
+    "saveCurrent": "Save current selection",
+    "savePresetTitle": "Save combination",
+    "presetNamePlaceholder": "Name (e.g. My corners)",
+    "presetNameRequired": "Enter a name for the preset",
+    "deletePresetConfirm": "Delete the preset"
   },
   "sombras": {
     "title": "Shadows",

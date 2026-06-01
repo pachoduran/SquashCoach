@@ -81,13 +81,24 @@ Aplicación móvil (React Native / Expo) + backend (FastAPI / MongoDB) para aná
   5. `sudo mv server.py.new server.py && sudo systemctl restart squash-coach`
 
 ## Estado actual
-- Frontend: compila ✅ (`Web Bundled OK`, sin errores TS nuevos).
-- Backend: ya desplegado por el usuario en Bluehost con endpoints `/api/shadow-routines`.
-- Falta: usuario debe compilar APK EAS y validar UX completa.
+- Frontend: compila ✅ (`shadow-training.tsx` sin errores TS nuevos tras añadir presets).
+- Backend: endpoints `/api/shadow-presets` (GET/POST/DELETE) validados en local (200 OK con auth).
+- ⚠️ **Cloud Run NO tiene aún los endpoints de Shadow Presets ni de Banners** → requiere redeploy desde `C:\squash-coach-deploy\`.
+- Falta: usuario debe (1) re-deployar backend a Cloud Run, (2) sincronizar archivos frontend, (3) compilar APK EAS.
+
+## Implementado adicional (01/06/2026)
+- **Shadow Training Presets** (P0 completado en código):
+  - Backend: colección `shadow_presets` (user_id, name, zone_mode, zone_ids). Endpoints `GET/POST/DELETE /api/shadow-presets` scoped por usuario → **sincroniza entre dispositivos al iniciar sesión** (Atlas en la nube).
+  - Frontend: dropdown desplegable en `shadow-training.tsx` con áreas predefinidas (Toda/Delantera/Trasera/Drive/Revés) + presets personalizados del usuario + modal para guardar la selección actual con nombre + botón papelera para borrar.
+  - i18n añadido (es/en): `shadow.saveCurrent`, `shadow.savePresetTitle`, `shadow.presetNamePlaceholder`, `shadow.presetNameRequired`, `shadow.deletePresetConfirm`.
+  - Estilos: `dropdownBtn/List/Item/...`, `modalOverlay/Card/Btn/...` añadidos al StyleSheet.
 
 ## Backlog
-- **P0** Confirmar en APK EAS que el banner aparece/desaparece correctamente.
-- **P1** Verificar comportamiento offline → online.
-- **P2** App web read-only para análisis de partidos (carryover).
-- **P3** Refactor de `new-match.tsx` (archivo muy grande).
-- **P3** Migrar fetch directo de torneos en `history.tsx` y `analysis.tsx` para que pase 100% por `syncService` (actualmente es redundante con SyncContext, pero no rompe nada).
+- **P0** Re-deploy backend a Cloud Run (endpoints `/api/shadow-presets` + `/api/banners*` pendientes en producción).
+- **P0** Build EAS APK preview y validar UX de presets en dispositivo.
+- **P1** Toggle Diestro/Zurdo en Shadow Training (invertir filtros Drive/Revés).
+- **P1** Pulir módulo Ritmo (BPM) — pendiente requisitos del usuario.
+- **P2** Subida de música/audio personalizado para el Cronómetro HIIT.
+- **P2** App web read-only para análisis de partidos.
+- **P2** Decomisionar servidor legacy Bluehost (Fase 5).
+- **P3** Refactor de `shadow-training.tsx` (≈1500 líneas) y de los 15+ endpoints `/api/download-*` en `server.py`.
