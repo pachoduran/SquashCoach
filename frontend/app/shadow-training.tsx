@@ -9,6 +9,9 @@ import {
   Alert,
   Dimensions,
   ImageBackground,
+  Modal,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -18,6 +21,15 @@ import { getDatabase } from '@/src/store/database';
 import { useAuth } from '@/src/context/AuthContext';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { syncService } from '@/src/store/syncService';
+
+const BACKEND_URL = 'https://squash-coach-api-804061220370.us-central1.run.app';
+
+interface CustomPreset {
+  preset_id: string;
+  name: string;
+  zone_mode: number;
+  zone_ids: number[];
+}
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COURT_WIDTH = SCREEN_WIDTH * 0.95;
@@ -96,7 +108,7 @@ export default function ShadowTraining() {
     restDuration?: string;
     numberOfSets?: string;
   }>();
-  const { user } = useAuth();
+  const { user, sessionToken } = useAuth();
   const { t } = useLanguage();
   const soundRef = useRef<Audio.Sound | null>(null);
   const soundStartRef = useRef<Audio.Sound | null>(null);
@@ -127,6 +139,102 @@ export default function ShadowTraining() {
     () => presetToIds((((params as any).zoneMode === '6' ? 6 : 12) as 6 | 12), 'all')
   );
 
+  // Presets personalizados del usuario
+  const [customPresets, setCustomPresets] = useState<CustomPreset[]>([]);
+  const [activeCustomPresetId, setActiveCustomPresetId] = useState<string | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [newPresetName, setNewPresetName] = useState('');
+  const [savingPreset, setSavingPreset] = useState(false);
+
+  const loadCustomPresets = async () => {
+    if (!sessionToken) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/shadow-presets`, {
+        headers: { Authorization: `Bearer ${sessionToken}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCustomPresets(Array.isArray(data) ? data : []);
+      }
+    } catch (_e) {}
+  };
+
+  useEffect(() => { loadCustomPresets(); }, [sessionToken]);
+
+  const saveCurrentAsPreset = async () => {
+    const name = (newPresetName || '').trim();
+    if (!name) {
+      Alert.alert('', t('shadow.presetNameRequired'));
+      return;
+    }
+    if (!sessionToken) return;
+    setSavingPreset(true);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/shadow-presets`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionToken}`,
+        },
+        body: JSON.stringify({
+          name,
+          zone_mode: zoneMode,
+          zone_ids: Array.from(enabledZones),
+        }),
+      });
+      if (!res.ok) {
+        Alert.alert('Error', await res.text());
+        return;
+      }
+      const created = await res.json();
+      setCustomPresets((arr) => [created, ...arr]);
+      setActiveCustomPresetId(created.preset_id);
+      setSaveModalOpen(false);
+      setNewPresetName('');
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Error de red');
+    } finally {
+      setSavingPreset(false);
+    }
+  };
+
+  const deleteCustomPreset = (preset: CustomPreset) => {
+    Alert.alert(
+      '',
+      `${t('shadow.deletePresetConfirm')} "${preset.name}"?`,
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            if (!sessionToken) return;
+            try {
+              await fetch(`${BACKEND_URL}/api/shadow-presets/${preset.preset_id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${sessionToken}` },
+              });
+              setCustomPresets((arr) => arr.filter((p) => p.preset_id !== preset.preset_id));
+              if (activeCustomPresetId === preset.preset_id) setActiveCustomPresetId(null);
+            } catch (_e) {}
+          },
+        },
+      ]
+    );
+  };
+
+  const applyCustomPreset = (preset: CustomPreset) => {
+    setZoneMode(preset.zone_mode as 6 | 12);
+    // Aplicamos zonas en el siguiente tick para que el useEffect del zoneMode no las pise
+    setTimeout(() => {
+      setEnabledZones(new Set(preset.zone_ids));
+      setCourtArea(detectActivePreset(preset.zone_mode as 6 | 12, new Set(preset.zone_ids)));
+      setActiveCustomPresetId(preset.preset_id);
+      setDropdownOpen(false);
+    }, 0);
+  };
+
   // Cuando cambia el numero de zonas, resetea a todas habilitadas
   useEffect(() => {
     setEnabledZones(presetToIds(zoneMode as 6 | 12, 'all'));
@@ -136,6 +244,8 @@ export default function ShadowTraining() {
   const applyAreaPreset = (area: CourtArea) => {
     setCourtArea(area);
     setEnabledZones(presetToIds(zoneMode as 6 | 12, area));
+    setActiveCustomPresetId(null);
+    setDropdownOpen(false);
   };
 
   const toggleZone = (zoneId: number) => {
@@ -149,6 +259,7 @@ export default function ShadowTraining() {
     }
     setEnabledZones(next);
     setCourtArea(detectActivePreset(zoneMode as 6 | 12, next));
+    setActiveCustomPresetId(null);
   };
 
   // Runtime
@@ -515,22 +626,120 @@ export default function ShadowTraining() {
             </TouchableOpacity>
           </View>
 
-          {/* Area de cancha a entrenar */}
+          {/* Area de cancha a entrenar — dropdown desplegable */}
           <Text style={styles.configLabel}>{t('shadow.courtArea')}</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
-            {(['all', 'front', 'back', 'drive', 'backhand'] as CourtArea[]).map(area => (
+          <TouchableOpacity
+            style={styles.dropdownBtn}
+            onPress={() => setDropdownOpen(!dropdownOpen)}
+            data-testid="court-area-dropdown"
+          >
+            <Text style={styles.dropdownBtnText}>
+              {activeCustomPresetId
+                ? (customPresets.find(p => p.preset_id === activeCustomPresetId)?.name || '—')
+                : t(`shadow.areas.${courtArea}`)}
+            </Text>
+            <Ionicons name={dropdownOpen ? 'chevron-up' : 'chevron-down'} size={20} color="#1E3A5F" />
+          </TouchableOpacity>
+
+          {dropdownOpen && (
+            <View style={styles.dropdownList}>
+              {(['all', 'front', 'back', 'drive', 'backhand'] as CourtArea[]).map((area) => (
+                <TouchableOpacity
+                  key={area}
+                  style={[
+                    styles.dropdownItem,
+                    courtArea === area && !activeCustomPresetId && styles.dropdownItemActive,
+                  ]}
+                  onPress={() => applyAreaPreset(area)}
+                  data-testid={`court-area-${area}`}
+                >
+                  <Text style={styles.dropdownItemText}>{t(`shadow.areas.${area}`)}</Text>
+                  {courtArea === area && !activeCustomPresetId && (
+                    <Ionicons name="checkmark" size={18} color="#D32F2F" />
+                  )}
+                </TouchableOpacity>
+              ))}
+              {customPresets.length > 0 && <View style={styles.dropdownDivider} />}
+              {customPresets.map((p) => (
+                <View key={p.preset_id} style={styles.dropdownItemRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.dropdownItem,
+                      { flex: 1 },
+                      activeCustomPresetId === p.preset_id && styles.dropdownItemActive,
+                    ]}
+                    onPress={() => applyCustomPreset(p)}
+                  >
+                    <Text style={styles.dropdownItemText}>{p.name}</Text>
+                    <Text style={styles.dropdownItemMeta}>
+                      {p.zone_mode} · {p.zone_ids.length} z
+                    </Text>
+                    {activeCustomPresetId === p.preset_id && (
+                      <Ionicons name="checkmark" size={18} color="#D32F2F" />
+                    )}
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.dropdownDeleteBtn}
+                    onPress={() => deleteCustomPreset(p)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Ionicons name="trash-outline" size={18} color="#999" />
+                  </TouchableOpacity>
+                </View>
+              ))}
               <TouchableOpacity
-                key={area}
-                style={[styles.areaChip, courtArea === area && styles.areaChipActive]}
-                onPress={() => applyAreaPreset(area)}
-                data-testid={`court-area-${area}`}
+                style={styles.dropdownAddBtn}
+                onPress={() => { setSaveModalOpen(true); setDropdownOpen(false); }}
+                data-testid="shadow-save-preset"
               >
-                <Text style={[styles.areaChipText, courtArea === area && styles.areaChipTextActive]}>
-                  {t(`shadow.areas.${area}`)}
-                </Text>
+                <Ionicons name="add-circle" size={20} color="#FFF" />
+                <Text style={styles.dropdownAddBtnText}>{t('shadow.saveCurrent')}</Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
+            </View>
+          )}
+
+          {/* Modal: Guardar preset */}
+          <Modal
+            visible={saveModalOpen}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setSaveModalOpen(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalCard}>
+                <Text style={styles.modalTitle}>{t('shadow.savePresetTitle')}</Text>
+                <Text style={styles.modalSubtitle}>
+                  {enabledZones.size} {t('shadow.zonesLabel').toLowerCase()} · {zoneMode}
+                </Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={newPresetName}
+                  onChangeText={setNewPresetName}
+                  placeholder={t('shadow.presetNamePlaceholder')}
+                  maxLength={60}
+                  autoFocus
+                />
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity
+                    style={[styles.modalBtn, styles.modalBtnGhost]}
+                    onPress={() => { setSaveModalOpen(false); setNewPresetName(''); }}
+                  >
+                    <Text style={styles.modalBtnGhostText}>{t('common.cancel')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalBtn, styles.modalBtnPrimary]}
+                    onPress={saveCurrentAsPreset}
+                    disabled={savingPreset}
+                  >
+                    {savingPreset
+                      ? <ActivityIndicator color="#FFF" />
+                      : <Text style={styles.modalBtnPrimaryText}>{t('common.save')}</Text>
+                    }
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
 
           {/* Preview */}
           <View style={styles.previewContainer}>

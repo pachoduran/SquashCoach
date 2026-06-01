@@ -1700,6 +1700,68 @@ async def delete_referee_match(
     return {"deleted": True, "referee_id": referee_id}
 
 # =============================================================================
+# SHADOW PRESETS (user-saved zone combinations)
+# =============================================================================
+
+class ShadowPresetCreate(BaseModel):
+    name: str
+    zone_mode: int   # 6 o 12
+    zone_ids: List[int]
+
+@api_router.get("/shadow-presets")
+async def list_shadow_presets(current_user: User = Depends(get_current_user)):
+    """Lista los presets personalizados del usuario."""
+    docs = await db.shadow_presets.find(
+        {"user_id": current_user.user_id},
+        {"_id": 0},
+    ).sort("created_at", -1).to_list(200)
+    for d in docs:
+        if isinstance(d.get("created_at"), datetime):
+            d["created_at"] = d["created_at"].isoformat()
+    return docs
+
+@api_router.post("/shadow-presets")
+async def create_shadow_preset(
+    data: ShadowPresetCreate,
+    current_user: User = Depends(get_current_user),
+):
+    """Crea un preset personalizado para el usuario."""
+    name = (data.name or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Nombre requerido")
+    if data.zone_mode not in (6, 12):
+        raise HTTPException(status_code=400, detail="zone_mode debe ser 6 o 12")
+    if not data.zone_ids:
+        raise HTTPException(status_code=400, detail="Selecciona al menos una zona")
+
+    preset = {
+        "preset_id": f"sp_{uuid.uuid4().hex[:12]}",
+        "user_id": current_user.user_id,
+        "name": name[:60],
+        "zone_mode": data.zone_mode,
+        "zone_ids": sorted(set(int(z) for z in data.zone_ids)),
+        "created_at": datetime.now(timezone.utc),
+    }
+    await db.shadow_presets.insert_one(preset)
+    preset.pop("_id", None)
+    preset["created_at"] = preset["created_at"].isoformat()
+    return preset
+
+@api_router.delete("/shadow-presets/{preset_id}")
+async def delete_shadow_preset(
+    preset_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    """Borra un preset personalizado del usuario."""
+    result = await db.shadow_presets.delete_one({
+        "preset_id": preset_id,
+        "user_id": current_user.user_id,
+    })
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Preset no encontrado")
+    return {"deleted": True, "preset_id": preset_id}
+
+# =============================================================================
 # BANNERS / ANNOUNCEMENTS (Admin-managed broadcasts shown on app open)
 # =============================================================================
 
