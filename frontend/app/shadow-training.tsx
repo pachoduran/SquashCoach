@@ -575,19 +575,7 @@ export default function ShadowTraining() {
           </View>
         )}
 
-        {/* Stats overlays a los lados del numero - solo durante active */}
-        {phase === 'active' && (
-          <>
-            <View style={courtStyles.statOverlayLeft} pointerEvents="none">
-              <Text style={courtStyles.statOverlayNumber}>{zonesVisited}</Text>
-              <Text style={courtStyles.statOverlayLabel}>{t('shadow.zonesLabel')}</Text>
-            </View>
-            <View style={courtStyles.statOverlayRight} pointerEvents="none">
-              <Text style={courtStyles.statOverlayNumber}>{intervalTime}s</Text>
-              <Text style={courtStyles.statOverlayLabel}>{t('shadow.intervalLabel')}</Text>
-            </View>
-          </>
-        )}
+        {/* Stats overlays movidos a la barra superior (trainingHeader) */}
       </ImageBackground>
     );
   };
@@ -849,15 +837,24 @@ export default function ShadowTraining() {
   if (phase === 'active' || phase === 'rest') {
     return (
       <SafeAreaView style={[styles.container, phase === 'rest' ? { backgroundColor: '#263238' } : {}]}>
-        {/* Top bar */}
+        {/* Top bar: 4 elementos espaciados — Serie | Zonas | Intervalo | Reloj */}
         <View style={styles.trainingHeader}>
-          <View style={styles.trainingInfo}>
-            <Text style={styles.trainingSetText}>Serie {currentSet}/{numberOfSets}</Text>
-            <View style={[styles.phaseBadge, phase === 'rest' ? { backgroundColor: '#FF9800' } : { backgroundColor: '#4CAF50' }]}>
-              <Text style={styles.phaseBadgeText}>{phase === 'active' ? t('shadow.active') : t('shadow.rest')}</Text>
-            </View>
+          <View style={styles.headerCell}>
+            <Text style={styles.headerValue}>{currentSet}/{numberOfSets}</Text>
+            <Text style={styles.headerLabel}>SERIE</Text>
           </View>
-          <Text style={styles.trainingTimer}>{formatTime(timeRemaining)}</Text>
+          <View style={styles.headerCell}>
+            <Text style={styles.headerValue}>{zonesVisited}</Text>
+            <Text style={styles.headerLabel}>{t('shadow.zonesLabel').toUpperCase()}</Text>
+          </View>
+          <View style={styles.headerCell}>
+            <Text style={styles.headerValue}>{intervalTime}s</Text>
+            <Text style={styles.headerLabel}>{t('shadow.intervalLabel').toUpperCase()}</Text>
+          </View>
+          <View style={styles.headerCell}>
+            <Text style={styles.headerValue}>{formatTime(timeRemaining)}</Text>
+            <Text style={styles.headerLabel}>{phase === 'active' ? '⏱' : t('shadow.rest').toUpperCase()}</Text>
+          </View>
         </View>
 
         {/* Court */}
@@ -1221,10 +1218,29 @@ const styles = StyleSheet.create({
   trainingHeader: {
     backgroundColor: '#1E3A5F',
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  headerCell: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerValue: {
+    color: '#FFF',
+    fontSize: 26,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
+    lineHeight: 30,
+  },
+  headerLabel: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginTop: 2,
   },
   trainingInfo: {
     flexDirection: 'row',

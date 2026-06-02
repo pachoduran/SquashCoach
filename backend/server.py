@@ -2123,3 +2123,8 @@ async def download_eas_json():
 @app.get("/api/download-app-json")
 async def download_app_json():
     return FileResponse("/app/frontend/app.json", media_type="application/json", filename="app.json")
+
+@app.get("/api/download-auth-context")
+async def download_auth_context():
+    return FileResponse("/app/frontend/src/context/AuthContext.tsx", media_type="text/plain", filename="AuthContext.tsx")
+

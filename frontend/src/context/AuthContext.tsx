@@ -273,6 +273,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       GoogleSignin.configure({
         webClientId: '804061220370-kv76t65r6nc8c85a2rhhtu5kin7097s8.apps.googleusercontent.com',
+        // iOS Client ID (Bundle ID: com.sqcoach.app) — necesario en iOS, no se usa en Android
+        iosClientId: '804061220370-IOS_CLIENT_ID_PLACEHOLDER.apps.googleusercontent.com',
         offlineAccess: false,
       });
 
