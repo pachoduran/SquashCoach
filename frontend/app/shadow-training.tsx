@@ -39,13 +39,13 @@ const COURT_HEIGHT = COURT_WIDTH * 1.51; // Ratio real de la imagen
 const ZONES_12: { id: number; x: number; y: number }[] = [
   { id: 1,  x: 0.88, y: 0.05 },
   { id: 2,  x: 0.88, y: 0.27 },
-  { id: 3,  x: 0.88, y: 0.47 },
+  { id: 3,  x: 0.88, y: 0.55 },
   { id: 4,  x: 0.88, y: 0.68 },
-  { id: 5,  x: 0.88, y: 0.85 },
-  { id: 6,  x: 0.48, y: 0.93 },
-  { id: 7,  x: 0.10, y: 0.90 },
+  { id: 5,  x: 0.88, y: 0.92 },
+  { id: 6,  x: 0.48, y: 0.92 },
+  { id: 7,  x: 0.10, y: 0.92 },
   { id: 8,  x: 0.10, y: 0.68 },
-  { id: 9,  x: 0.10, y: 0.47 },
+  { id: 9,  x: 0.10, y: 0.55 },
   { id: 10, x: 0.10, y: 0.27 },
   { id: 11, x: 0.10, y: 0.05 },
   { id: 12, x: 0.48, y: 0.05 },
@@ -54,10 +54,10 @@ const ZONES_12: { id: number; x: number; y: number }[] = [
 // 6 zonas (esquinas y laterales como en la imagen del usuario)
 const ZONES_6: { id: number; x: number; y: number }[] = [
   { id: 1, x: 0.88, y: 0.05 },
-  { id: 2, x: 0.88, y: 0.47 },
-  { id: 3, x: 0.88, y: 0.93 },
-  { id: 4, x: 0.10, y: 0.93 },
-  { id: 5, x: 0.10, y: 0.47 },
+  { id: 2, x: 0.88, y: 0.55 },
+  { id: 3, x: 0.88, y: 0.92 },
+  { id: 4, x: 0.10, y: 0.92 },
+  { id: 5, x: 0.10, y: 0.55 },
   { id: 6, x: 0.10, y: 0.05 },
 ];
 
@@ -73,8 +73,8 @@ function filterZones(zones: { id: number; x: number; y: number }[], area: CourtA
   switch (area) {
     case 'front':    return zones.filter(z => z.y < 0.5);   // mitad delantera (cerca del fronton)
     case 'back':     return zones.filter(z => z.y >= 0.5);  // mitad trasera
-    case 'drive':    return zones.filter(z => z.x < 0.5);   // lado izquierdo (drive para diestro)
-    case 'backhand': return zones.filter(z => z.x >= 0.5);  // lado derecho (reves para diestro)
+    case 'drive':    return zones.filter(z => z.x >= 0.5);  // lado derecho (drive para diestro)
+    case 'backhand': return zones.filter(z => z.x < 0.5);   // lado izquierdo (reves para diestro)
     default:         return zones;                           // toda la cancha
   }
 }
@@ -542,12 +542,18 @@ export default function ShadowTraining() {
                   borderRadius: zoneSize / 2,
                   left,
                   top,
-                  backgroundColor: isEnabled ? '#D32F2F' : '#9E9E9E',
-                  borderColor: isEnabled ? '#FFCDD2' : '#E0E0E0',
-                  opacity: isConfig ? 1 : (isEnabled ? 1 : 0.25),
+                  // En config: rojo si está habilitada / gris si está apagada
+                  // En entrenamiento: TODAS en gris (solo se muestran las habilitadas), excepto la activa que será naranja
+                  backgroundColor: isConfig
+                    ? (isEnabled ? '#D32F2F' : '#9E9E9E')
+                    : '#9E9E9E',
+                  borderColor: isConfig
+                    ? (isEnabled ? '#FFCDD2' : '#E0E0E0')
+                    : '#E0E0E0',
+                  // En entrenamiento ocultamos las apagadas (opacity 0). Las habilitadas se ven bien en gris.
+                  opacity: isConfig ? 1 : (isEnabled ? 1 : 0),
                 },
                 isActive && courtStyles.zoneActive,
-                !isActive && phase === 'active' && courtStyles.zoneInactive,
               ]}
             >
               <Text style={[
@@ -964,18 +970,18 @@ const courtStyles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.5)',
   },
   zoneActive: {
-    backgroundColor: '#D32F2F',
+    backgroundColor: '#FF6F00',
     borderColor: '#FFF',
-    shadowColor: '#D32F2F',
+    shadowColor: '#FF6F00',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
+    shadowOpacity: 0.85,
     shadowRadius: 16,
     elevation: 10,
-    transform: [{ scale: 1.2 }],
+    transform: [{ scale: 1.15 }],
   },
   zoneInactive: {
-    backgroundColor: '#7F1F1F',
-    borderColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: '#9E9E9E',
+    borderColor: '#E0E0E0',
   },
   zoneLabel: {
     color: '#FFF',
