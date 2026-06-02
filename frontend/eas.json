@@ -28,6 +28,9 @@
       "android": {
         "buildType": "app-bundle"
       },
+      "ios": {
+        "credentialsSource": "remote"
+      },
       "env": {
         "EXPO_NO_CAPABILITY_SYNC": "1",
         "EXPO_ASC_API_KEY_PATH": "./AuthKey_56AQ8A85QK.p8",
